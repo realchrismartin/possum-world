@@ -2,6 +2,9 @@
 **/*.rs.bk
 Cargo.lock
 bin/
+*.bin*
 pkg/
 wasm-pack.log
 .vscode/
+*node_modules*
+*dist*
