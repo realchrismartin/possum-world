@@ -5,6 +5,9 @@ export function init()
     const input_state = wasm.new_input_state();
     const game_state = wasm.new_game_state();
     const render_state = wasm.new_render_state();
+
+    render_state.set_context(document);
+
     let eventArray = [];
 
     addEventListener("keydown",(event) => {

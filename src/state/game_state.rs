@@ -19,7 +19,7 @@ impl GameState
         }
     }
 
-    pub fn update(self : &Self, input_state: &InputState)
+    pub fn update(&mut self, input_state: &InputState)
     {
         log("Updated the game!");
     }
