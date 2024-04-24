@@ -8,6 +8,9 @@ panic::set_hook(Box::new(console_error_panic_hook::hook));
 mod system;
 mod state;
 mod util;
+mod graphics;
+
+use web_sys::Document;
 
 use state::game_state::GameState;
 use state::input_state::InputState;
@@ -23,9 +26,9 @@ pub fn new_game_state() -> GameState
 }
 
 #[wasm_bindgen]
-pub fn new_render_state() -> RenderState 
+pub fn new_render_state(document : Document) -> Result<RenderState,JsValue>
 {
-    RenderState::new()
+    RenderState::new(&document)
 }
 
 #[wasm_bindgen]

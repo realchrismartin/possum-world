@@ -4,9 +4,33 @@ export function init()
 {
     const input_state = wasm.new_input_state();
     const game_state = wasm.new_game_state();
-    const render_state = wasm.new_render_state();
+    const render_state = wasm.new_render_state(document);
 
-    render_state.set_context(document);
+    if(render_state instanceof Error)
+    {
+        console.log(render_state);
+        return;
+    }
+   
+    let vert_shader = `#version 300 es
+ 
+        in vec4 position;
+
+        void main() {
+        
+            gl_Position = position;
+        }
+       `
+    
+    let frag_shader = `#version 300 es
+    precision highp float;
+    out vec4 outColor;
+    
+    void main() {
+        outColor = vec4(1, 1, 1, 1);
+    }
+    `
+   render_state.set_shader(vert_shader,frag_shader);
 
     let eventArray = [];
 
