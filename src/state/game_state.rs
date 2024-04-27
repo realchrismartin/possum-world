@@ -1,5 +1,4 @@
 use crate::wasm_bindgen;
-use crate::util::logging::log;
 use crate::state::input_state::InputState;
 
 #[wasm_bindgen]

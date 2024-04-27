@@ -1,10 +1,12 @@
+use crate::util::logging::log;
+use crate::util::logging::log_value;
+
 use crate::wasm_bindgen;
-use web_sys::Document;
 use wasm_bindgen::JsCast;
-use wasm_bindgen::JsValue;
+use web_sys::Document;
 use web_sys::WebGl2RenderingContext;
 use crate::graphics::shader::Shader;
-use crate::util::logging::log;
+use crate::graphics::sprite::Sprite;
 use std::option::Option;
 use crate::graphics::vertex_buffer::VertexBuffer;
 use std::collections::HashMap;
@@ -13,46 +15,41 @@ use std::any::Any;
 use crate::graphics::sprite_vertex::SpriteVertex;
 use crate::graphics::has_attribute_layout::HasAttributeLayout;
 
-pub enum VertexBufferVariant<T>
-{
-    Variant(VertexBuffer<T>)
-}
-
 #[wasm_bindgen]
 pub struct RenderState
 {
     context: WebGl2RenderingContext,
-    shader: Option<Shader>,
+    shader: Option<Shader>, //TODO: assumes one shader for all buffers
     buffer_map: HashMap<TypeId,Box<dyn Any>>
 }
 
 #[wasm_bindgen]
 impl RenderState
 {
-    pub fn new(document : &Document) -> Result<RenderState,JsValue> 
+    pub fn new(document : &Document) -> Option<RenderState>
     {
         let canvas = match document.get_element_by_id("canvas")
         {
             Some(canvas) => canvas,
-            None => return Err(JsValue::from_str("Failed to find canvas element"))
+            None => return None
         };
         
         let canvas = match canvas.dyn_into::<web_sys::HtmlCanvasElement>()
         {
             Ok(canvas) => canvas,
-            Err(e) => return Err(JsValue::from_str("Failed to cast canvas to HtmlCanvasElement"))
+            Err(e) => {log_value(&e);return None;}
         };
 
         let context = match canvas.get_context("webgl2")
         {
             Ok(context) =>context,
-            Err(e) => return Err(JsValue::from_str("Failed to find WebGL Context"))
+            Err(e) => {log_value(&e);return None;}
         };
 
         let web_context = match context.unwrap().dyn_into::<WebGl2RenderingContext>()
         {
             Ok(context) =>context,
-            Err(e) => return Err(JsValue::from_str("Failed to load WebGl2RenderingContext from context"))
+            Err(e) => {log_value(&e);return None;}
         };
 
         let mut state = Self
@@ -62,10 +59,10 @@ impl RenderState
             buffer_map: HashMap::new()
         };
 
-        
+        //Init all the buffers here for now because we are using wasm-bindgen and can't put generics in pub fns
         state.init_buffer::<SpriteVertex>();
 
-        Ok(state)
+        Some(state)
     }
 
     pub fn set_shader(&mut self, vertex_source :&str, frag_source: &str)
@@ -79,26 +76,88 @@ impl RenderState
             }
         };
 
-        log("Loaded shader!");
-
         self.shader = Some(shader);
     }
 
     fn init_buffer<T: HasAttributeLayout + 'static>(&mut self)
     {
-        let typeId = TypeId::of::<T>();
-        if(self.buffer_map.contains_key(&typeId))
+        let type_id = TypeId::of::<T>();
+        if self.buffer_map.contains_key(&type_id)
         {
             //nothing to do
             return;
         }
 
-        let buffer : VertexBuffer<T> = match VertexBuffer::new()
+        let buffer : VertexBuffer<T> = match VertexBuffer::new(&self.context)
         {
-            Ok(buffer) => buffer,
-            Err(err) => {return}
+            Some(buffer) => buffer,
+            None => {return}
         };
 
-        self.buffer_map.insert(typeId,Box::new(buffer));
+        self.buffer_map.insert(type_id,Box::new(buffer));
+    }
+
+    pub fn test_submit_data_and_draw(&mut self)
+    {
+        //TODO: this is for testing
+        let sprite = Sprite::new();
+        self.submit_data::<SpriteVertex>(sprite.get_vertices(),sprite.get_indices());
+        self.draw(sprite.get_indices().len());
+    }
+
+    fn submit_data<T: HasAttributeLayout + 'static>(&mut self, vertices : &[f32], indices : &[u32])
+    {
+        let buffer = match Self::get_mapped_buffer::<T>(&mut self.buffer_map)
+        {
+            Some(buffer) => buffer,
+            None => {return}
+        };
+
+        buffer.bind(&self.context);
+
+        buffer.buffer_data(&self.context,vertices,indices); 
+        //VertexBuffer::<T>::unbind(&self.context); TODO: doesn't unbind so that draw can just go and draw. fix this later!
+    }
+
+    fn draw(&self, indices_count: usize)
+    {
+        if self.shader.is_none()
+        {
+            return;
+        }
+
+        let program = match self.shader.as_ref()
+        {
+            Some(program) => program,
+            None => {return}
+        };
+       
+        //TODO: assumes buffer bound
+
+        self.context.use_program(Some(program.get_shader_program()));
+        self.context.clear_color(0.0, 0.0, 0.0, 1.0);
+        self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+        self.context.draw_elements_with_i32(WebGl2RenderingContext::TRIANGLES, indices_count as i32, WebGl2RenderingContext::UNSIGNED_INT,0);
+
+        //VertexBuffer::<SpriteVertex>::unbind(&self.context);
+    }
+
+    fn get_mapped_buffer<T: HasAttributeLayout + 'static>(buffer_map: &mut HashMap<TypeId,Box<dyn Any>>) -> Option<&mut VertexBuffer<T>>
+    {
+        let type_id = TypeId::of::<T>();
+
+        if !buffer_map.contains_key(&type_id)
+        {
+            //nothing to do
+            return None;
+        }
+
+        let boxed_buffer = match buffer_map.get_mut(&type_id)
+        {
+            Some(boxed_buffer) => boxed_buffer,
+            None => {return None;}
+        };
+
+        return (&mut *boxed_buffer).downcast_mut::<VertexBuffer<T>>()
     }
 }

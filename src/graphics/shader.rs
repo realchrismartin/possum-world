@@ -76,4 +76,9 @@ impl Shader
             .unwrap_or_else(|| String::from("Failed to link shader program")))
         }
     }
+
+    pub fn get_shader_program(&self) -> &WebGlProgram
+    {
+        return &self.shader;
+    }
 }

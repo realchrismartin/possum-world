@@ -1,5 +1,5 @@
-use crate::util::logging::log;
-use web_sys::WebGlVertexArrayObject;
+use web_sys::{WebGl2RenderingContext,WebGlVertexArrayObject};
+use std::option::Option;
 use crate::graphics::has_attribute_layout::HasAttributeLayout;
 
 pub struct SpriteVertex
@@ -20,25 +20,21 @@ impl SpriteVertex
 
 impl HasAttributeLayout for SpriteVertex
 {
-    fn generate_vao() -> Result<WebGlVertexArrayObject,String>
+    fn generate_vao(context: &WebGl2RenderingContext) -> Option<WebGlVertexArrayObject>
     {
-        //TODO: generate a Sprite VAO
-        log("We are generating a vao");
+        let position_attribute_location = 0; //Hardcoded. Needs to match wahtever shaders are ussed for this.
 
-        /*
-        let position_attribute_location = context.get_attrib_location(&program, "position");
-        let vao = context
-        .create_vertex_array()
-        .ok_or("Could not create vertex array object")?;
+        let vao = match context.create_vertex_array()
+        {
+            Some(vao) => vao,
+            None => return None
+        };
 
         context.bind_vertex_array(Some(&vao));
 
-        //TODO: bind the VBO's GL_ARRAY_BUFFER (glBindBuffer)
-        
-        //TODO: bind the VBO's GL_ELEMENT_ARRAY_BUFFER
-
         //Enable each vertex attribute
         //When this happens, whatever bound VBO there is becomes associated with this VAO.
+        //We assume the VBO is already bound
         context.vertex_attrib_pointer_with_i32(
             position_attribute_location as u32,
             3,
@@ -47,11 +43,12 @@ impl HasAttributeLayout for SpriteVertex
             0,
             0,
         );
+
         context.enable_vertex_attrib_array(position_attribute_location as u32);
 
-        //TODO: unbind the VAO
-        */
+        context.bind_vertex_array(Some(&vao)); //This is wrong TODOO
+        //context.bind_vertex_array(None);
 
-        Err("".to_string())
+        Some(vao)
     }
 }

@@ -28,7 +28,13 @@ pub fn new_game_state() -> GameState
 #[wasm_bindgen]
 pub fn new_render_state(document : Document) -> Result<RenderState,JsValue>
 {
-    RenderState::new(&document)
+    let state = match RenderState::new(&document)
+    {
+        Some(state) => state,
+        None => return Err(JsValue::from_str("Failed to create a render state"))
+    };
+
+    return Ok(state);
 }
 
 #[wasm_bindgen]
@@ -44,7 +50,7 @@ pub fn update(game_state : &mut GameState, input_state : &InputState)
 }
 
 #[wasm_bindgen]
-pub fn render(game_state : &GameState, render_state: &RenderState)
+pub fn render(game_state : &GameState, render_state: &mut RenderState)
 {
     render_game(game_state, render_state);
 }
