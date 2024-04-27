@@ -12,8 +12,7 @@ use crate::graphics::vertex_buffer::VertexBuffer;
 use std::collections::HashMap;
 use std::any::TypeId;
 use std::any::Any;
-use crate::graphics::sprite_vertex::SpriteVertex;
-use crate::graphics::has_attribute_layout::HasAttributeLayout;
+use crate::graphics::renderable::Renderable;
 
 #[wasm_bindgen]
 pub struct RenderState
@@ -60,7 +59,7 @@ impl RenderState
         };
 
         //Init all the buffers here for now because we are using wasm-bindgen and can't put generics in pub fns
-        state.init_buffer::<SpriteVertex>();
+        state.init_buffer::<Sprite>();
 
         Some(state)
     }
@@ -79,7 +78,7 @@ impl RenderState
         self.shader = Some(shader);
     }
 
-    fn init_buffer<T: HasAttributeLayout + 'static>(&mut self)
+    fn init_buffer<T: Renderable + 'static>(&mut self)
     {
         let type_id = TypeId::of::<T>();
         if self.buffer_map.contains_key(&type_id)
@@ -99,28 +98,6 @@ impl RenderState
 
     pub fn test_submit_data_and_draw(&mut self)
     {
-        //TODO: this is for testing
-        let sprite = Sprite::new();
-        self.submit_data::<SpriteVertex>(sprite.get_vertices(),sprite.get_indices());
-        self.draw(sprite.get_indices().len());
-    }
-
-    fn submit_data<T: HasAttributeLayout + 'static>(&mut self, vertices : &[f32], indices : &[u32])
-    {
-        let buffer = match Self::get_mapped_buffer::<T>(&mut self.buffer_map)
-        {
-            Some(buffer) => buffer,
-            None => {return}
-        };
-
-        buffer.bind(&self.context);
-
-        buffer.buffer_data(&self.context,vertices,indices); 
-        //VertexBuffer::<T>::unbind(&self.context); TODO: doesn't unbind so that draw can just go and draw. fix this later!
-    }
-
-    fn draw(&self, indices_count: usize)
-    {
         if self.shader.is_none()
         {
             return;
@@ -131,18 +108,43 @@ impl RenderState
             Some(program) => program,
             None => {return}
         };
-       
-        //TODO: assumes buffer bound
 
         self.context.use_program(Some(program.get_shader_program()));
+
+        //TODO: this is for testing
+        let sprite = Sprite::new([
+                -0.3,0.3,0.0,
+                -0.5,-0.5,0.0,
+                0.5,-0.5,0.0,
+                0.3,0.3,0.0
+            ],[0,1,2,2,3,0]);
+
+        let second_sprite = Sprite::new([
+                -0.1,0.1,0.0,
+                -0.2,-0.2,0.0,
+                0.5,-0.5,0.0,
+                0.3,0.3,0.0
+            ],[0,1,2,2,3,0]);
+
+        let buffer = match Self::get_mapped_buffer::<Sprite>(&mut self.buffer_map)
+        {
+            Some(buffer) => buffer,
+            None => {return}
+        };
+
+        buffer.bind(&self.context);
+        buffer.buffer_data(&self.context,&sprite);
+        //buffer.buffer_data(&self.context,&second_sprite); TODO: not working in buffer_data
+
         self.context.clear_color(0.0, 0.0, 0.0, 1.0);
         self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-        self.context.draw_elements_with_i32(WebGl2RenderingContext::TRIANGLES, indices_count as i32, WebGl2RenderingContext::UNSIGNED_INT,0);
+        self.context.draw_elements_with_i32(WebGl2RenderingContext::TRIANGLES, buffer.get_index_count() as i32, WebGl2RenderingContext::UNSIGNED_INT,0); //TODO: move context type
 
-        //VertexBuffer::<SpriteVertex>::unbind(&self.context);
+        buffer.clear_data();
+        VertexBuffer::<Sprite>::unbind(&self.context);
     }
 
-    fn get_mapped_buffer<T: HasAttributeLayout + 'static>(buffer_map: &mut HashMap<TypeId,Box<dyn Any>>) -> Option<&mut VertexBuffer<T>>
+    fn get_mapped_buffer<T: Renderable + 'static>(buffer_map: &mut HashMap<TypeId,Box<dyn Any>>) -> Option<&mut VertexBuffer<T>>
     {
         let type_id = TypeId::of::<T>();
 

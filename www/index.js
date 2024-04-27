@@ -2,6 +2,16 @@ import * as wasm from "possum_world"
 
 export function init()
 {
+    let canvas = document.getElementById("canvas");
+    canvas.height = document.documentElement.clientHeight; 
+    canvas.width = document.documentElement.clientWidth;
+
+    addEventListener("resize",(event) => {
+        let canvas = document.getElementById("canvas");
+        canvas.height = document.documentElement.clientHeight; 
+        canvas.width = document.documentElement.clientWidth;
+    });
+
     const input_state = wasm.new_input_state();
     const game_state = wasm.new_game_state();
     const render_state = wasm.new_render_state(document);
