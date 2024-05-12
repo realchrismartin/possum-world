@@ -120,10 +120,10 @@ impl RenderState
             ],[0,1,2,2,3,0]);
 
         let second_sprite = Sprite::new([
-                -0.1,0.1,0.0,
-                -0.2,-0.2,0.0,
-                0.5,-0.5,0.0,
-                0.3,0.3,0.0
+                0.1,0.4,0.0,
+                0.2,0.25,0.0,
+                0.7,-0.5,0.0,
+                0.4,0.3,0.0
             ],[0,1,2,2,3,0]);
 
         let buffer = match Self::get_mapped_buffer::<Sprite>(&mut self.buffer_map)
@@ -134,7 +134,7 @@ impl RenderState
 
         buffer.bind(&self.context);
         buffer.buffer_data(&self.context,&sprite);
-        //buffer.buffer_data(&self.context,&second_sprite); TODO: not working in buffer_data
+        buffer.buffer_data(&self.context,&second_sprite); //TODO: not working in buffer_data
 
         self.context.clear_color(0.0, 0.0, 0.0, 1.0);
         self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);

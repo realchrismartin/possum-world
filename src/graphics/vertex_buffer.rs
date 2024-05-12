@@ -1,10 +1,12 @@
 use crate::util::logging::log;
 use web_sys::{WebGl2RenderingContext,WebGlVertexArrayObject,WebGlBuffer};
 use crate::graphics::renderable::Renderable;
+use std::convert::TryInto;
 use std::marker::PhantomData;
 use std::option::Option;
 use web_sys::js_sys::Float32Array;
 use web_sys::js_sys::Uint32Array;
+use std::mem;
 
 static MAX_VERTICES : usize = 100;
 static MAX_INDICES : usize = 100;
@@ -103,18 +105,24 @@ impl<T: Renderable> VertexBuffer<T>
         let new_total_vertices = vertex_data.len() + self.current_vertex_count;
         let new_total_indices = index_data.len() + self.current_index_count;
 
-        if(new_total_vertices > MAX_VERTICES)
+        if new_total_vertices > MAX_VERTICES
         {
             return;
         }
 
-        if(new_total_indices > MAX_INDICES)
+        if new_total_indices > MAX_INDICES
         {
             return;
         }
+
+        let vertex_offset = (mem::size_of::<f32>() * self.current_vertex_count) as i32;
+        let index_offset = (mem::size_of::<u32>() * self.current_index_count) as i32;
 
         //Create a new index data array to offset
-        let new_indices : Vec<u32> = index_data.iter().map(|&x| x + (self.current_vertex_count as u32)).collect();
+        //TODO: magic 3 because of vertex data
+        let new_indices : Vec<u32> = index_data.iter().map(|&x| x + (self.current_vertex_count as u32 / 3)).collect();
+
+        log(format!("{:?}", new_indices).as_str());
 
         unsafe 
         {
@@ -123,12 +131,13 @@ impl<T: Renderable> VertexBuffer<T>
             
             context.buffer_sub_data_with_i32_and_array_buffer_view(
                 WebGl2RenderingContext::ARRAY_BUFFER,
-                self.current_vertex_count as i32, //Off by 1? TODO
+                vertex_offset,
                 &vertices_view
-            );
+                );
+            
             context.buffer_sub_data_with_i32_and_array_buffer_view(
                 WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
-                self.current_index_count as i32, //Same as above TODO
+                index_offset,
                 &indices_view
             );
         }
