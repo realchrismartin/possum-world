@@ -1,19 +1,17 @@
-use web_sys::{WebGl2RenderingContext,WebGlVertexArrayObject,WebGlBuffer};
-use std::option::Option;
+use web_sys::WebGl2RenderingContext;
 use crate::graphics::renderable::Renderable;
 
 pub struct Sprite
 {
-    vertices: [f32;12],
+    vertices: [f32;16],
     indices: [u32;6]
 }
 
 impl Sprite
 {
 
-    pub fn new(vertices: [f32;12], indices: [u32;6]) -> Self 
+    pub fn new(vertices: [f32;16], indices: [u32;6]) -> Self 
     {
-
         Sprite 
         {
             vertices: vertices,
@@ -27,7 +25,10 @@ impl Renderable for Sprite
 {
     fn init_vertex_layout(context: &WebGl2RenderingContext)
     {
-        let position_attribute_location = 0; //Hardcoded. Needs to match wahtever shaders are used for this.
+        let position_attribute_location = 0;
+        let model_matrix_index_attribute_location = 1;
+        
+        let float_size = std::mem::size_of::<f32>() as i32;
 
         //Enable each vertex attribute
         //When this happens, whatever bound VBO there is becomes associated with this VAO.
@@ -37,11 +38,21 @@ impl Renderable for Sprite
             3,
             WebGl2RenderingContext::FLOAT,
             false,
-            0,
-            0,
+            4* float_size,
+            0
+        );
+
+        context.vertex_attrib_pointer_with_i32(
+            model_matrix_index_attribute_location as u32,
+            1,
+            WebGl2RenderingContext::FLOAT,
+            false,
+            4* float_size,
+            3 * float_size
         );
 
         context.enable_vertex_attrib_array(position_attribute_location as u32);
+        context.enable_vertex_attrib_array(model_matrix_index_attribute_location as u32);
     }
 
     fn get_vertices(&self) -> &[f32]

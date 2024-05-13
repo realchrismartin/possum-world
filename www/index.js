@@ -25,14 +25,15 @@ export function init()
    
     let vert_shader = `#version 300 es
  
-        in vec4 position;
+        layout(location = 0) in vec4 position;
+        layout(location = 1) in float model_matrix_index;
 
         uniform mat4 vp_matrix;
+        uniform mat4 m_matrices[64];
 
         void main() 
         {
-            mat4 model_matrix = mat4(1.0); //Identity for now
-            gl_Position = model_matrix * vp_matrix * position;
+            gl_Position = m_matrices[int(model_matrix_index)] * vp_matrix * position;
         }
        `
     

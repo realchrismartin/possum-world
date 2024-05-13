@@ -117,19 +117,39 @@ impl RenderState
 
         //TODO: this is for testing
 
+        //Add the transform data
+        let s_w: glm::Mat4 = glm::Mat4::identity().into();
+        let mut s_2_w: glm::Mat4= glm::Mat4::identity().into();
+        
+        let translation : glm::TVec3<f32> = glm::vec3(0.2,0.2,-0.2);
+        s_2_w = glm::translate(&s_2_w,&translation);
+
+        let mut transform_uniform_data= Vec::<f32>::new();
+
+        transform_uniform_data.extend_from_slice(s_w.as_slice());
+        transform_uniform_data.extend_from_slice(s_2_w.as_slice());
+
         //Add the renderable stuff
         let sprite = Sprite::new([
                 -0.3,0.3,0.0,
+                0.0,
                 -0.5,-0.5,0.0,
+                0.0,
                 0.5,-0.5,0.0,
-                0.3,0.3,0.0
+                0.0,
+                0.3,0.3,0.0,
+                0.0
             ],[0,1,2,2,3,0]);
 
         let second_sprite = Sprite::new([
                 0.1,0.4,0.0,
+                1.0,
                 0.2,0.25,0.0,
+                1.0,
                 0.7,-0.5,0.0,
-                0.4,0.3,0.0
+                1.0,
+                0.4,0.3,0.0,
+                1.0
             ],[0,1,2,2,3,0]);
 
         let buffer = match Self::get_mapped_buffer::<Sprite>(&mut self.buffer_map)
@@ -143,6 +163,8 @@ impl RenderState
         buffer.buffer_data(&self.context,&second_sprite); 
 
         RenderState::submit_camera_uniforms(&self.context, program.get_shader_program(), &mut self.camera);
+
+        RenderState::submit_transform_uniforms(&self.context, program.get_shader_program(),&transform_uniform_data);
 
         self.context.clear_color(0.0, 0.0, 0.0, 1.0);
         self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
@@ -171,6 +193,12 @@ impl RenderState
         return (&mut *boxed_buffer).downcast_mut::<VertexBuffer<T>>()
     }
 
+    fn submit_transform_uniforms(context: &WebGl2RenderingContext, program: &WebGlProgram, data : &[f32])
+    {
+        let m_location = context.get_uniform_location(program,"m_matrices");
+        context.uniform_matrix4fv_with_f32_array(m_location.as_ref(),false,data);
+    }
+
     fn submit_camera_uniforms(context: &WebGl2RenderingContext, program: &WebGlProgram, camera: &mut Camera)
     {
         if !camera.dirty()
@@ -187,7 +215,5 @@ impl RenderState
         let vp_converted : glm::Mat4 = view_projection_matrix.into();
 
         context.uniform_matrix4fv_with_f32_array(vp_location.as_ref(),false,vp_converted.as_slice());
-
-        log(format!("{:?}", vp_converted.as_slice()).as_str());
     }
 }
