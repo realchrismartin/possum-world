@@ -5,6 +5,7 @@ use crate::wasm_bindgen;
 use wasm_bindgen::JsCast;
 use web_sys::Document;
 use web_sys::WebGl2RenderingContext;
+use web_sys::WebGlProgram;
 use crate::graphics::shader::Shader;
 use crate::graphics::sprite::Sprite;
 use std::option::Option;
@@ -13,12 +14,14 @@ use std::collections::HashMap;
 use std::any::TypeId;
 use std::any::Any;
 use crate::graphics::renderable::Renderable;
+use crate::graphics::camera::Camera;
 
 #[wasm_bindgen]
 pub struct RenderState
 {
     context: WebGl2RenderingContext,
     shader: Option<Shader>, //TODO: assumes one shader for all buffers
+    camera: Camera,
     buffer_map: HashMap<TypeId,Box<dyn Any>>
 }
 
@@ -55,6 +58,7 @@ impl RenderState
         {
             context: web_context,
             shader: None::<Shader>,
+            camera: Camera::new(canvas.width() as f32,canvas.height() as f32),
             buffer_map: HashMap::new()
         };
 
@@ -112,6 +116,8 @@ impl RenderState
         self.context.use_program(Some(program.get_shader_program()));
 
         //TODO: this is for testing
+
+        //Add the renderable stuff
         let sprite = Sprite::new([
                 -0.3,0.3,0.0,
                 -0.5,-0.5,0.0,
@@ -134,7 +140,9 @@ impl RenderState
 
         buffer.bind(&self.context);
         buffer.buffer_data(&self.context,&sprite);
-        buffer.buffer_data(&self.context,&second_sprite); //TODO: not working in buffer_data
+        buffer.buffer_data(&self.context,&second_sprite); 
+
+        RenderState::submit_camera_uniforms(&self.context, program.get_shader_program(), &mut self.camera);
 
         self.context.clear_color(0.0, 0.0, 0.0, 1.0);
         self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
@@ -161,5 +169,25 @@ impl RenderState
         };
 
         return (&mut *boxed_buffer).downcast_mut::<VertexBuffer<T>>()
+    }
+
+    fn submit_camera_uniforms(context: &WebGl2RenderingContext, program: &WebGlProgram, camera: &mut Camera)
+    {
+        if !camera.dirty()
+        {
+           return; 
+        }
+
+        camera.recalculate();
+
+        let vp_location = context.get_uniform_location(program,"vp_matrix");
+
+        let view_projection_matrix = camera.get_view_projection_matrix();
+        
+        let vp_converted : glm::Mat4 = view_projection_matrix.into();
+
+        context.uniform_matrix4fv_with_f32_array(vp_location.as_ref(),false,vp_converted.as_slice());
+
+        log(format!("{:?}", vp_converted.as_slice()).as_str());
     }
 }

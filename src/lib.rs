@@ -5,6 +5,8 @@ extern crate console_error_panic_hook;
 panic::set_hook(Box::new(console_error_panic_hook::hook));
  */
 
+extern crate nalgebra_glm as glm;
+
 mod system;
 mod state;
 mod util;

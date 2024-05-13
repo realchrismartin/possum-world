@@ -3,6 +3,7 @@ import * as wasm from "possum_world"
 export function init()
 {
     let canvas = document.getElementById("canvas");
+
     canvas.height = document.documentElement.clientHeight; 
     canvas.width = document.documentElement.clientWidth;
 
@@ -26,9 +27,12 @@ export function init()
  
         in vec4 position;
 
-        void main() {
-        
-            gl_Position = position;
+        uniform mat4 vp_matrix;
+
+        void main() 
+        {
+            mat4 model_matrix = mat4(1.0); //Identity for now
+            gl_Position = model_matrix * vp_matrix * position;
         }
        `
     

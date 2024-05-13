@@ -122,8 +122,6 @@ impl<T: Renderable> VertexBuffer<T>
         //TODO: magic 3 because of vertex data
         let new_indices : Vec<u32> = index_data.iter().map(|&x| x + (self.current_vertex_count as u32 / 3)).collect();
 
-        log(format!("{:?}", new_indices).as_str());
-
         unsafe 
         {
             let vertices_view = Float32Array::view(vertex_data);
