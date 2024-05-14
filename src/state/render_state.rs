@@ -79,6 +79,9 @@ impl RenderState
             }
         };
 
+        //TODO: later move this
+        self.context.use_program(Some(shader.get_shader_program()));
+
         self.shader = Some(shader);
     }
 
@@ -100,28 +103,14 @@ impl RenderState
         self.buffer_map.insert(type_id,Box::new(buffer));
     }
 
-    pub fn test_submit_data_and_draw(&mut self)
+    //TODO: this is for testing
+    pub fn test_submit_sprite_data(&mut self)
     {
-        if self.shader.is_none()
-        {
-            return;
-        }
-
-        let program = match self.shader.as_ref()
-        {
-            Some(program) => program,
-            None => {return}
-        };
-
-        self.context.use_program(Some(program.get_shader_program()));
-
-        //TODO: this is for testing
-
         //Add the transform data
         let s_w: glm::Mat4 = glm::Mat4::identity().into();
         let mut s_2_w: glm::Mat4= glm::Mat4::identity().into();
         
-        let translation : glm::TVec3<f32> = glm::vec3(0.2,0.2,-0.2);
+        let translation : glm::TVec3<f32> = glm::vec3(0.5,0.5,0.0);
         s_2_w = glm::translate(&s_2_w,&translation);
 
         let mut transform_uniform_data= Vec::<f32>::new();
@@ -131,13 +120,13 @@ impl RenderState
 
         //Add the renderable stuff
         let sprite = Sprite::new([
-                -0.3,0.3,0.0,
+                -0.5,0.5,0.0,
                 0.0,
                 -0.5,-0.5,0.0,
                 0.0,
                 0.5,-0.5,0.0,
                 0.0,
-                0.3,0.3,0.0,
+                0.5,0.5,0.0,
                 0.0
             ],[0,1,2,2,3,0]);
 
@@ -152,26 +141,65 @@ impl RenderState
                 1.0
             ],[0,1,2,2,3,0]);
 
-        let buffer = match Self::get_mapped_buffer::<Sprite>(&mut self.buffer_map)
+        self.submit_camera_uniforms();
+        self.submit_transform_uniforms(&transform_uniform_data);
+        self.submit_data(&sprite);
+        self.submit_data(&second_sprite);
+    }
+
+    pub fn test_draw_sprites(&mut self)
+    {
+        self.clear_context();
+        self.draw_buffer::<Sprite>();
+        self.clear_buffer::<Sprite>();
+    }
+
+    fn clear_context(&self)
+    {
+        let context = &self.context;
+
+        context.clear_color(0.0, 0.0, 0.0, 1.0);
+        context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+    }
+
+    fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T)
+    {
+        let buffer = match Self::get_mapped_buffer::<T>(&mut self.buffer_map)
+        {
+            Some(buffer) => buffer,
+            None => {return}
+        };
+
+
+        buffer.bind(&self.context);
+        buffer.buffer_data(&self.context,&renderable);
+        VertexBuffer::<T>::unbind(&self.context);
+    }
+
+    fn clear_buffer<T: Renderable + 'static>(&mut self)
+    {
+        let buffer = match Self::get_mapped_buffer::<T>(&mut self.buffer_map)
+        {
+            Some(buffer) => buffer,
+            None => {return}
+        };
+
+        buffer.clear_data();
+    }
+
+    fn draw_buffer<T: Renderable + 'static>(&mut self)
+    {
+        let buffer = match Self::get_mapped_buffer::<T>(&mut self.buffer_map)
         {
             Some(buffer) => buffer,
             None => {return}
         };
 
         buffer.bind(&self.context);
-        buffer.buffer_data(&self.context,&sprite);
-        buffer.buffer_data(&self.context,&second_sprite); 
 
-        RenderState::submit_camera_uniforms(&self.context, program.get_shader_program(), &mut self.camera);
+        self.context.draw_elements_with_i32(buffer.get_draw_type(), buffer.get_index_count() as i32, WebGl2RenderingContext::UNSIGNED_INT,0); //TODO: move context type
 
-        RenderState::submit_transform_uniforms(&self.context, program.get_shader_program(),&transform_uniform_data);
-
-        self.context.clear_color(0.0, 0.0, 0.0, 1.0);
-        self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-        self.context.draw_elements_with_i32(WebGl2RenderingContext::TRIANGLES, buffer.get_index_count() as i32, WebGl2RenderingContext::UNSIGNED_INT,0); //TODO: move context type
-
-        buffer.clear_data();
-        VertexBuffer::<Sprite>::unbind(&self.context);
+        VertexBuffer::<T>::unbind(&self.context);
     }
 
     fn get_mapped_buffer<T: Renderable + 'static>(buffer_map: &mut HashMap<TypeId,Box<dyn Any>>) -> Option<&mut VertexBuffer<T>>
@@ -193,14 +221,30 @@ impl RenderState
         return (&mut *boxed_buffer).downcast_mut::<VertexBuffer<T>>()
     }
 
-    fn submit_transform_uniforms(context: &WebGl2RenderingContext, program: &WebGlProgram, data : &[f32])
+    fn submit_transform_uniforms(&self, data : &[f32])
     {
-        let m_location = context.get_uniform_location(program,"m_matrices");
+        let shader = match &self.shader 
+        {
+            Some(shader) => shader,
+            None => {return}
+        };
+
+        let context = &self.context;
+        let m_location = context.get_uniform_location(shader.get_shader_program(),"m_matrices");
         context.uniform_matrix4fv_with_f32_array(m_location.as_ref(),false,data);
     }
 
-    fn submit_camera_uniforms(context: &WebGl2RenderingContext, program: &WebGlProgram, camera: &mut Camera)
+    fn submit_camera_uniforms(&mut self)
     {
+        let shader = match &self.shader 
+        {
+            Some(shader) => shader,
+            None => {return}
+        };
+
+        let camera = &mut self.camera;
+        let context = &self.context;
+
         if !camera.dirty()
         {
            return; 
@@ -208,7 +252,7 @@ impl RenderState
 
         camera.recalculate();
 
-        let vp_location = context.get_uniform_location(program,"vp_matrix");
+        let vp_location = context.get_uniform_location(shader.get_shader_program(),"vp_matrix");
 
         let view_projection_matrix = camera.get_view_projection_matrix();
         

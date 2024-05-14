@@ -1,7 +1,5 @@
-use crate::util::logging::log;
 use web_sys::{WebGl2RenderingContext,WebGlVertexArrayObject,WebGlBuffer};
 use crate::graphics::renderable::Renderable;
-use std::convert::TryInto;
 use std::marker::PhantomData;
 use std::option::Option;
 use web_sys::js_sys::Float32Array;
@@ -19,6 +17,7 @@ pub struct VertexBuffer<T>
     ebo: WebGlBuffer,
     current_vertex_count: usize,
     current_index_count: usize,
+    draw_type : u32
 }
 
 impl<T: Renderable> VertexBuffer<T>
@@ -66,7 +65,8 @@ impl<T: Renderable> VertexBuffer<T>
             vbo: vbo,
             ebo: ebo,
             current_vertex_count: 0,
-            current_index_count: 0
+            current_index_count: 0,
+            draw_type: WebGl2RenderingContext::TRIANGLES
         })
     }
 
@@ -81,6 +81,11 @@ impl<T: Renderable> VertexBuffer<T>
         context.bind_vertex_array(None); 
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, None);
         context.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, None);
+    }
+
+    pub fn get_draw_type(&self) -> u32
+    {
+        return self.draw_type;
     }
 
     pub fn get_index_count(&self) -> usize
@@ -115,12 +120,16 @@ impl<T: Renderable> VertexBuffer<T>
             return;
         }
 
+        if T::get_stride() <= 0
+        {
+            return;
+        }
+
         let vertex_offset = (mem::size_of::<f32>() * self.current_vertex_count) as i32;
         let index_offset = (mem::size_of::<u32>() * self.current_index_count) as i32;
 
         //Create a new index data array to offset
-        //TODO: magic 3 because of vertex data
-        let new_indices : Vec<u32> = index_data.iter().map(|&x| x + (self.current_vertex_count as u32 / 3)).collect();
+        let new_indices : Vec<u32> = index_data.iter().map(|&x| x + (self.current_vertex_count as u32 / T::get_stride() as u32)).collect();
 
         unsafe 
         {

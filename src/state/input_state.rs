@@ -1,10 +1,17 @@
 use crate::util::logging::log;
 use crate::wasm_bindgen;
+use std::collections::HashMap;
 
 
 #[wasm_bindgen]
 pub struct InputState
 {
+    pressed: HashMap<KeyPress,bool>
+}
+
+enum KeyPress
+{
+    W,S,A,D
 }
 
 #[wasm_bindgen]
@@ -14,6 +21,7 @@ impl InputState
     {
         Self
         {
+            pressed: HashMap::new()
         }
     }
 

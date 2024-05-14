@@ -9,7 +9,6 @@ pub struct Sprite
 
 impl Sprite
 {
-
     pub fn new(vertices: [f32;16], indices: [u32;6]) -> Self 
     {
         Sprite 
@@ -38,7 +37,7 @@ impl Renderable for Sprite
             3,
             WebGl2RenderingContext::FLOAT,
             false,
-            4* float_size,
+            Self::get_stride() as i32 * float_size,
             0
         );
 
@@ -47,7 +46,7 @@ impl Renderable for Sprite
             1,
             WebGl2RenderingContext::FLOAT,
             false,
-            4* float_size,
+            Self::get_stride() as i32 * float_size,
             3 * float_size
         );
 
@@ -64,4 +63,10 @@ impl Renderable for Sprite
     {
         return &self.indices;
     }
+
+    fn get_stride() -> usize
+    {
+        return 4;
+    }
+
 }
