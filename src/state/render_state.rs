@@ -56,6 +56,8 @@ impl RenderState
             Err(e) => {log_value(&e);return None;}
         };
 
+        web_context.enable(WebGl2RenderingContext::DEPTH_TEST);
+
         let mut state = Self
         {
             context: web_context,
@@ -92,7 +94,7 @@ impl RenderState
     //TODO: later move this
     pub fn set_texture(&mut self, img: HtmlImageElement)
     {
-        let the_texture = Texture::new();
+        let mut the_texture = Texture::new();
 
         let shader = self.shader.as_ref().expect("No shader bound!");
 
@@ -138,47 +140,55 @@ impl RenderState
     //TODO: this is for testing
     pub fn test_submit_sprite_data(&mut self)
     {
+        match self.texture
+        {
+            Some(_) => {},
+            None => { log("No texture bound."); return; }
+        }
+
         //Add the transform data
-        let s_w: glm::Mat4 = glm::Mat4::identity().into();
-        let mut s_2_w: glm::Mat4= glm::Mat4::identity().into();
+        let mut s_w: glm::Mat4 = glm::Mat4::identity().into();
+        let s_2_w: glm::Mat4= glm::Mat4::identity().into();
         
         let translation : glm::TVec3<f32> = glm::vec3(0.5,0.5,0.0);
-        s_2_w = glm::translate(&s_2_w,&translation);
+        s_w = glm::translate(&s_w,&translation);
 
         let mut transform_uniform_data= Vec::<f32>::new();
 
         transform_uniform_data.extend_from_slice(s_w.as_slice());
         transform_uniform_data.extend_from_slice(s_2_w.as_slice());
 
-        //Add the renderable stuff
+        let possum_tex_coords = self.texture.as_ref().unwrap().get_sprite_coordinates([0,0],[46,33]);
+        let bg_tex_coords = self.texture.as_ref().unwrap().get_sprite_coordinates([0,0],[1,1]);
+
         let sprite = Sprite::new([
-                -0.5,0.5,0.0,
+                -0.1,0.1,0.0,
                 0.0,
-                -0.5,0.5, //tex
-                -0.5,-0.5,0.0,
+                possum_tex_coords[0][0], possum_tex_coords[0][1],
+                -0.1,-0.1,0.0,
                 0.0,
-                -0.5,-0.5, //tex
-                0.5,-0.5,0.0,
+                possum_tex_coords[1][0], possum_tex_coords[1][1],
+                0.1,-0.1,0.0,
                 0.0,
-                0.5,-0.5, //tex
-                0.5,0.5,0.0,
+                possum_tex_coords[2][0], possum_tex_coords[2][1],
+                0.1,0.1,0.0,
                 0.0,
-                0.5,0.5, //tex
+                possum_tex_coords[3][0], possum_tex_coords[3][1],
             ],[0,1,2,2,3,0]);
 
         let second_sprite = Sprite::new([
-                0.1,0.4,0.0,
+                -1.0,1.0,3.0,
                 1.0,
-                0.0,0.0,
-                0.2,0.25,0.0,
+                bg_tex_coords[0][0], bg_tex_coords[0][1],
+                -1.0,-1.0,3.0,
                 1.0,
-                0.0,0.0,
-                0.7,-0.5,0.0,
+                bg_tex_coords[0][0], bg_tex_coords[0][1],
+                1.0,-1.0,3.0,
                 1.0,
-                0.0,0.0,
-                0.4,0.3,0.0,
+                bg_tex_coords[0][0], bg_tex_coords[0][1],
+                1.0,1.0,3.0,
                 1.0,
-                0.0,0.0,
+                bg_tex_coords[0][0], bg_tex_coords[0][1],
             ],[0,1,2,2,3,0]);
 
         self.submit_camera_uniforms();

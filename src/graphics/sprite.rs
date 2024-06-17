@@ -53,11 +53,11 @@ impl Renderable for Sprite
 
         context.vertex_attrib_pointer_with_i32(
             texture_coordinates_attribute_location as u32,
-            1,
+            2,
             WebGl2RenderingContext::FLOAT,
             false,
             Self::get_stride() as i32 * float_size,
-            2 * float_size
+            4 * float_size
         );
 
         context.enable_vertex_attrib_array(position_attribute_location as u32);

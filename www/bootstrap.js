@@ -7,5 +7,5 @@ import("./index.js").then((mod) => {
         mod.init(img);
     };
 
-    img.src = 'https://images.pexels.com/photos/7495924/pexels-photo-7495924.jpeg?auto=compress&cs=tinysrgb&w=600';
+    img.src = 'https://b38tn1k.com/sprites/possum.png';
 });

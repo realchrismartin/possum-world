@@ -25,7 +25,7 @@ export function init(textureElement)
    
     let vert_shader = `#version 300 es
  
-        layout(location = 0) in vec4 position;
+        layout(location = 0) in vec3 position;
         layout(location = 1) in float model_matrix_index;
         layout(location = 2) in vec2 texture_coordinates;
 
@@ -36,7 +36,7 @@ export function init(textureElement)
 
         void main() 
         {
-            gl_Position = m_matrices[int(model_matrix_index)] * vp_matrix * position;
+            gl_Position = m_matrices[int(model_matrix_index)] * vp_matrix * vec4(position,1.0);
             vertex_texture_coordinates = texture_coordinates;
         }
        `

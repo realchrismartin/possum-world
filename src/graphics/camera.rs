@@ -40,7 +40,7 @@ impl Camera
         let bottom = -1.0;
         let top = 1.0;
         let near = 1.0;
-        let far = -1.0;
+        let far = -5.0;
 
         self.projection_matrix = glm::ortho(left,right,bottom,top,near,far);
     }

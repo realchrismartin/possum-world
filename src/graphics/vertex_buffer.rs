@@ -5,6 +5,7 @@ use std::option::Option;
 use web_sys::js_sys::Float32Array;
 use web_sys::js_sys::Uint32Array;
 use std::mem;
+use crate::util::logging::log_f32;
 
 static MAX_VERTICES : usize = 100;
 static MAX_INDICES : usize = 100;
