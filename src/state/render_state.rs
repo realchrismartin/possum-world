@@ -96,6 +96,27 @@ impl RenderState
         self.shader = Some(shader);
     }
 
+    pub fn set_texture_sampler_uniform(&mut self)
+    {
+
+        let shader = self.shader.as_ref().expect("No shader bound!");
+
+        let shader_program = shader.get_shader_program();
+
+        let context = &self.context;
+
+        let loc =  match context.get_uniform_location(shader_program,"u_texture")
+        {
+            Some(l) => l,
+            None => { 
+                log("No u_texture uniform exists");
+                return;
+            }
+        };
+
+        self.context.uniform1i(Some(&loc), 0);
+    }
+
     fn init_buffer<T: Renderable + 'static>(&mut self)
     {
         let type_id = TypeId::of::<T>();
@@ -133,23 +154,31 @@ impl RenderState
         let sprite = Sprite::new([
                 -0.5,0.5,0.0,
                 0.0,
+                0.0,0.0,
                 -0.5,-0.5,0.0,
                 0.0,
+                0.0,0.0,
                 0.5,-0.5,0.0,
                 0.0,
+                0.0,0.0,
                 0.5,0.5,0.0,
-                0.0
+                0.0,
+                0.0,0.0,
             ],[0,1,2,2,3,0]);
 
         let second_sprite = Sprite::new([
                 0.1,0.4,0.0,
                 1.0,
+                0.0,0.0,
                 0.2,0.25,0.0,
                 1.0,
+                0.0,0.0,
                 0.7,-0.5,0.0,
                 1.0,
+                0.0,0.0,
                 0.4,0.3,0.0,
-                1.0
+                1.0,
+                0.0,0.0,
             ],[0,1,2,2,3,0]);
 
         self.submit_camera_uniforms();

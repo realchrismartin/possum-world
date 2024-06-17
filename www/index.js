@@ -27,25 +27,34 @@ export function init()
  
         layout(location = 0) in vec4 position;
         layout(location = 1) in float model_matrix_index;
+        layout(location = 2) in vec2 texture_coordinates;
 
         uniform mat4 vp_matrix;
         uniform mat4 m_matrices[64];
 
+        out vec2 vertex_texture_coordinates;
+
         void main() 
         {
             gl_Position = m_matrices[int(model_matrix_index)] * vp_matrix * position;
+            vertex_texture_coordinates = texture_coordinates;
         }
        `
     
     let frag_shader = `#version 300 es
     precision highp float;
+    in vec2 vertex_texture_coordinates;
     out vec4 outColor;
-    
-    void main() {
+    uniform sampler2D u_texture;
+
+    void main() 
+    {
         outColor = vec4(1, 1, 1, 1);
+        outColor = texture(u_texture, vertex_texture_coordinates);
     }
     `
    render_state.set_shader(vert_shader,frag_shader);
+   render_state.set_texture_sampler_uniform();
 
     let eventArray = [];
 

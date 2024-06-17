@@ -46,6 +46,7 @@ impl Texture
             Some(&pixel),
         )?;
 
+
         Ok(())
     }
 }

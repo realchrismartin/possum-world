@@ -3,13 +3,13 @@ use crate::graphics::renderable::Renderable;
 
 pub struct Sprite
 {
-    vertices: [f32;16],
+    vertices: [f32;24],
     indices: [u32;6]
 }
 
 impl Sprite
 {
-    pub fn new(vertices: [f32;16], indices: [u32;6]) -> Self 
+    pub fn new(vertices: [f32;24], indices: [u32;6]) -> Self 
     {
         Sprite 
         {
@@ -26,6 +26,7 @@ impl Renderable for Sprite
     {
         let position_attribute_location = 0;
         let model_matrix_index_attribute_location = 1;
+        let texture_coordinates_attribute_location = 2;
         
         let float_size = std::mem::size_of::<f32>() as i32;
 
@@ -50,8 +51,18 @@ impl Renderable for Sprite
             3 * float_size
         );
 
+        context.vertex_attrib_pointer_with_i32(
+            texture_coordinates_attribute_location as u32,
+            1,
+            WebGl2RenderingContext::FLOAT,
+            false,
+            Self::get_stride() as i32 * float_size,
+            2 * float_size
+        );
+
         context.enable_vertex_attrib_array(position_attribute_location as u32);
         context.enable_vertex_attrib_array(model_matrix_index_attribute_location as u32);
+        context.enable_vertex_attrib_array(texture_coordinates_attribute_location as u32);
     }
 
     fn get_vertices(&self) -> &[f32]
@@ -66,7 +77,7 @@ impl Renderable for Sprite
 
     fn get_stride() -> usize
     {
-        return 4;
+        return 6;
     }
 
 }
