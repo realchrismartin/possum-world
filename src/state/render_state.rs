@@ -5,9 +5,9 @@ use crate::wasm_bindgen;
 use wasm_bindgen::JsCast;
 use web_sys::Document;
 use web_sys::WebGl2RenderingContext;
-use web_sys::WebGlProgram;
 use crate::graphics::shader::Shader;
 use crate::graphics::sprite::Sprite;
+use crate::graphics::texture::Texture;
 use std::option::Option;
 use crate::graphics::vertex_buffer::VertexBuffer;
 use std::collections::HashMap;
@@ -21,6 +21,7 @@ pub struct RenderState
 {
     context: WebGl2RenderingContext,
     shader: Option<Shader>, //TODO: assumes one shader for all buffers
+    texture: Texture,
     camera: Camera,
     buffer_map: HashMap<TypeId,Box<dyn Any>>
 }
@@ -54,10 +55,20 @@ impl RenderState
             Err(e) => {log_value(&e);return None;}
         };
 
+        //TODO: move this elsewhere
+        let the_texture = Texture::new("somesource");
+
+        match the_texture.load(&web_context)
+        {
+            Ok(_r) => { },
+            Err(e) => {log_value(&e);return None;}
+        };
+
         let mut state = Self
         {
             context: web_context,
             shader: None::<Shader>,
+            texture: the_texture,
             camera: Camera::new(canvas.width() as f32,canvas.height() as f32),
             buffer_map: HashMap::new()
         };

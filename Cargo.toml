@@ -27,6 +27,7 @@ features = [
   'WebGlShader',
   'WebGlUniformLocation',
   'Window',
+  'WebGlTexture',
   'KeyboardEvent',
   'EventTarget',
   'console'
