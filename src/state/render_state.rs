@@ -4,6 +4,7 @@ use crate::util::logging::log_value;
 use crate::wasm_bindgen;
 use wasm_bindgen::JsCast;
 use web_sys::Document;
+use web_sys::HtmlImageElement;
 use web_sys::WebGl2RenderingContext;
 use crate::graphics::shader::Shader;
 use crate::graphics::sprite::Sprite;
@@ -21,7 +22,7 @@ pub struct RenderState
 {
     context: WebGl2RenderingContext,
     shader: Option<Shader>, //TODO: assumes one shader for all buffers
-    texture: Texture,
+    texture: Option<Texture>, //TODO: only one texture currently
     camera: Camera,
     buffer_map: HashMap<TypeId,Box<dyn Any>>
 }
@@ -55,20 +56,11 @@ impl RenderState
             Err(e) => {log_value(&e);return None;}
         };
 
-        //TODO: move this elsewhere
-        let the_texture = Texture::new("somesource");
-
-        match the_texture.load(&web_context)
-        {
-            Ok(_r) => { },
-            Err(e) => {log_value(&e);return None;}
-        };
-
         let mut state = Self
         {
             context: web_context,
             shader: None::<Shader>,
-            texture: the_texture,
+            texture: None::<Texture>,
             camera: Camera::new(canvas.width() as f32,canvas.height() as f32),
             buffer_map: HashMap::new()
         };
@@ -79,33 +71,38 @@ impl RenderState
         Some(state)
     }
 
+    //TODO: later move this
     pub fn set_shader(&mut self, vertex_source :&str, frag_source: &str)
     {
         let shader = match Shader::new(&self.context,vertex_source,frag_source)
         {
             Ok(shader) => shader,
             Err(e) => {
+                log("Shader error:");
                 log(e.as_str());
                 return;
             }
         };
 
-        //TODO: later move this
         self.context.use_program(Some(shader.get_shader_program()));
 
         self.shader = Some(shader);
     }
 
-    pub fn set_texture_sampler_uniform(&mut self)
+    //TODO: later move this
+    pub fn set_texture(&mut self, img: HtmlImageElement)
     {
+        let the_texture = Texture::new();
 
         let shader = self.shader.as_ref().expect("No shader bound!");
 
-        let shader_program = shader.get_shader_program();
+        match the_texture.load(&self.context,img)
+        {
+            Ok(_r) => { },
+            Err(e) => {log_value(&e);return;}
+        };
 
-        let context = &self.context;
-
-        let loc =  match context.get_uniform_location(shader_program,"u_texture")
+        let loc =  match self.context.get_uniform_location(shader.get_shader_program(),"u_texture")
         {
             Some(l) => l,
             None => { 
@@ -114,7 +111,10 @@ impl RenderState
             }
         };
 
+        //Assign texture2d to uniform 0
         self.context.uniform1i(Some(&loc), 0);
+
+        self.texture = Some(the_texture);
     }
 
     fn init_buffer<T: Renderable + 'static>(&mut self)
@@ -154,16 +154,16 @@ impl RenderState
         let sprite = Sprite::new([
                 -0.5,0.5,0.0,
                 0.0,
-                0.0,0.0,
+                -0.5,0.5, //tex
                 -0.5,-0.5,0.0,
                 0.0,
-                0.0,0.0,
+                -0.5,-0.5, //tex
                 0.5,-0.5,0.0,
                 0.0,
-                0.0,0.0,
+                0.5,-0.5, //tex
                 0.5,0.5,0.0,
                 0.0,
-                0.0,0.0,
+                0.5,0.5, //tex
             ],[0,1,2,2,3,0]);
 
         let second_sprite = Sprite::new([

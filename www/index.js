@@ -1,6 +1,6 @@
 import * as wasm from "possum_world"
 
-export function init()
+export function init(textureElement)
 {
     let canvas = document.getElementById("canvas");
 
@@ -49,12 +49,12 @@ export function init()
 
     void main() 
     {
-        outColor = vec4(1, 1, 1, 1);
         outColor = texture(u_texture, vertex_texture_coordinates);
+        //outColor = vec4(1,1,1,1);
     }
     `
    render_state.set_shader(vert_shader,frag_shader);
-   render_state.set_texture_sampler_uniform();
+   render_state.set_texture(textureElement);
 
     let eventArray = [];
 
