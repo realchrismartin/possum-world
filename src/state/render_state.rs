@@ -22,7 +22,7 @@ pub struct RenderState
 {
     context: WebGl2RenderingContext,
     shader: Option<Shader>, //TODO: assumes one shader for all buffers
-    texture: Option<Texture>, //TODO: only one texture currently
+    textures: Vec<Texture>, 
     camera: Camera,
     buffer_map: HashMap<TypeId,Box<dyn Any>>
 }
@@ -62,7 +62,7 @@ impl RenderState
         {
             context: web_context,
             shader: None::<Shader>,
-            texture: None::<Texture>,
+            textures: Vec::<Texture>::new(),
             camera: Camera::new(canvas.width() as f32,canvas.height() as f32),
             buffer_map: HashMap::new()
         };
@@ -92,31 +92,39 @@ impl RenderState
     }
 
     //TODO: later move this
-    pub fn set_texture(&mut self, img: HtmlImageElement)
+    pub fn load_texture(&mut self, img: HtmlImageElement)
     {
         let mut the_texture = Texture::new();
 
         let shader = self.shader.as_ref().expect("No shader bound!");
 
-        match the_texture.load(&self.context,img)
+        let next_texture = WebGl2RenderingContext::TEXTURE0 + (self.textures.len() as u32); //Unsafe? :) TODO
+
+        match the_texture.load(&self.context,img,next_texture)
         {
             Ok(_r) => { },
             Err(e) => {log_value(&e);return;}
         };
 
-        let loc =  match self.context.get_uniform_location(shader.get_shader_program(),"u_texture")
+        self.textures.push(the_texture);
+
+        //Update the uniform locations
+        for i in 0..self.textures.len()
         {
-            Some(l) => l,
-            None => { 
-                log("No u_texture uniform exists");
-                return;
-            }
-        };
+            let uniform_name = format!("u_texture_{}",i);
 
-        //Assign texture2d to uniform 0
-        self.context.uniform1i(Some(&loc), 0);
+            let loc =  match self.context.get_uniform_location(shader.get_shader_program(),uniform_name.as_str())
+            {
+                Some(l) => l,
+                None => { 
+                    log(format!("No {} uniform exists",uniform_name).as_str());
+                    return;
+                }
+            };
 
-        self.texture = Some(the_texture);
+            self.context.uniform1i(Some(&loc), i as i32);
+        }
+
     }
 
     fn init_buffer<T: Renderable + 'static>(&mut self)
@@ -140,43 +148,48 @@ impl RenderState
     //TODO: this is for testing
     pub fn submit_sprite_data(&mut self)
     {
-        match self.texture
-        {
-            Some(_) => {},
-            None => { log("No texture bound."); return; }
-        }
-
-        let possum_tex_coords = self.texture.as_ref().unwrap().get_sprite_coordinates([0,0],[46,33]);
-        let bg_tex_coords = self.texture.as_ref().unwrap().get_sprite_coordinates([0,0],[1,1]);
+        let possum_tex_coords = self.textures[0].get_sprite_coordinates([0,0],[46,33]);
+        let bg_tex_coords = self.textures[0].get_sprite_coordinates([0,0],[1000,500]);
 
         let sprite = Sprite::new([
                 -0.1,0.1,0.0,
                 0.0,
                 possum_tex_coords[0][0], possum_tex_coords[0][1],
+                0.0,
                 -0.1,-0.1,0.0,
                 0.0,
                 possum_tex_coords[1][0], possum_tex_coords[1][1],
+                0.0,
                 0.1,-0.1,0.0,
                 0.0,
                 possum_tex_coords[2][0], possum_tex_coords[2][1],
+                0.0,
                 0.1,0.1,0.0,
                 0.0,
                 possum_tex_coords[3][0], possum_tex_coords[3][1],
+                0.0,
             ],[0,1,2,2,3,0]);
 
         let second_sprite = Sprite::new([
                 -1.0,1.0,3.0,
                 1.0,
                 bg_tex_coords[0][0], bg_tex_coords[0][1],
+                1.0,
+
                 -1.0,-1.0,3.0,
                 1.0,
-                bg_tex_coords[0][0], bg_tex_coords[0][1],
+                bg_tex_coords[1][0], bg_tex_coords[1][1],
+                1.0,
+
                 1.0,-1.0,3.0,
                 1.0,
-                bg_tex_coords[0][0], bg_tex_coords[0][1],
+                bg_tex_coords[2][0], bg_tex_coords[2][1],
+                1.0,
+
                 1.0,1.0,3.0,
                 1.0,
-                bg_tex_coords[0][0], bg_tex_coords[0][1],
+                bg_tex_coords[3][0], bg_tex_coords[3][1],
+                1.0,
             ],[0,1,2,2,3,0]);
 
         self.submit_camera_uniforms();

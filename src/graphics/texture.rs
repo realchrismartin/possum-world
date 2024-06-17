@@ -39,13 +39,14 @@ impl Texture
         return [left_top,left_bottom,right_bottom,right_top];
     }
 
-    pub fn load(&mut self, context: &WebGl2RenderingContext, img: HtmlImageElement) -> Result<(),JsValue>
+    pub fn load(&mut self, context: &WebGl2RenderingContext, img: HtmlImageElement, texture_number: u32) -> Result<(),JsValue>
     {
         let texture = context.create_texture().expect("Cannot create texture");
+        context.active_texture(texture_number);
         context.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&texture));
 
-        context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_WRAP_S, WebGl2RenderingContext::CLAMP_TO_EDGE as i32);
-        context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_WRAP_T, WebGl2RenderingContext::CLAMP_TO_EDGE as i32);
+        context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_WRAP_S, WebGl2RenderingContext::MIRRORED_REPEAT as i32);
+        context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_WRAP_T, WebGl2RenderingContext::MIRRORED_REPEAT as i32);
         context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_MIN_FILTER, WebGl2RenderingContext::LINEAR as i32);
         context.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_MAG_FILTER, WebGl2RenderingContext::LINEAR as i32);
         

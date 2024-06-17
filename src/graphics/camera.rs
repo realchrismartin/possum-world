@@ -27,7 +27,7 @@ impl Camera
     fn update_view_matrix(&mut self)
     {
         let eye = glm::vec3(0.0,0.0,0.0);
-        let target = glm::vec3(0.0,0.0,-1.0);
+        let target = glm::vec3(0.0,0.0,-5.0);
         let up_vector = glm::vec3(0.0,1.0,0.0);
 
         self.view_matrix = glm::look_at(&eye,&target,&up_vector);
