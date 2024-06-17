@@ -52,9 +52,9 @@ pub fn update(game_state : &mut GameState, input_state : &InputState)
 }
 
 #[wasm_bindgen]
-pub fn render(game_state : &GameState, render_state: &mut RenderState)
+pub fn render(game_state : &GameState, render_state: &mut RenderState, angle: f32)
 {
-    render_game(game_state, render_state);
+    render_game(game_state, render_state, angle);
 }
 
 #[wasm_bindgen]

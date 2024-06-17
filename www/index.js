@@ -55,12 +55,15 @@ export function init(textureElement)
     `
    render_state.set_shader(vert_shader,frag_shader);
    render_state.set_texture(textureElement);
+   render_state.submit_sprite_data(); //For now, submit data once here.
 
     let eventArray = [];
 
     addEventListener("keydown",(event) => {
         eventArray.push(event.code);
     });
+
+    let rotation = 0;
 
     const gameLoop = () =>
     {
@@ -69,8 +72,15 @@ export function init(textureElement)
         });
         eventArray = []
 
+        rotation += .005;
+
+        if(rotation > 360)
+        {
+            rotation = 0;
+        }
+
         wasm.update(game_state,input_state);
-        wasm.render(game_state,render_state);
+        wasm.render(game_state,render_state,rotation);
         requestAnimationFrame(gameLoop);
     };
 
