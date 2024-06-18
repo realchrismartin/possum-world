@@ -1,4 +1,3 @@
-
 loadImage = (src) => {
     return new Promise((resolve,reject) => 
     {
@@ -19,18 +18,44 @@ loadImage = (src) => {
     });
 };
 
+loadShader = (src) => {
+    return new Promise((resolve,reject) => 
+    {
+        fetch(src).then((res) => 
+        {
+            resolve(res.text());
+        }).catch((err) =>
+        {
+            reject(err);
+        });
+    });
+};
+
+let texture_sources = 
+[
+    loadImage("http://localhost:3030/static/possum_sprite_sheet.png"),
+    loadImage("http://localhost:3030/static/background.png"),
+];
+
+let shader_sources = 
+[
+    loadShader("http://localhost:3030/static/sprite_vert.glsl"),
+    loadShader("http://localhost:3030/static/sprite_frag.glsl"),
+];
+
 import("./index.js").then((mod) => 
 {
-    let texture_sources = 
-    [
-        loadImage("https://b38tn1k.com/sprites/possum.png"),
-        loadImage("https://as2.ftcdn.net/v2/jpg/01/62/70/99/1000_F_162709948_qKGXdatZdGFkhUp84GPWqezGGTfnj1RP.jpg"),
-    ];
-
-    Promise.all(texture_sources).then((images) => 
+    Promise.all(texture_sources).then((textures) => 
     {
-        mod.init(images)
+        Promise.all(shader_sources).then((shaders) => 
+        {
+            //TODO: handle errors here
+            mod.init(textures,shaders);
+
+        }).catch((err)=> {
+            console.log("Failed to load shaders:",err);
+        });
     }).catch((err)=> {
-        console.log("Failed to load:",err);
+        console.log("Failed to load textures:",err);
     });
 });

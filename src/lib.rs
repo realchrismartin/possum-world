@@ -80,10 +80,10 @@ impl Game
         render_state.submit_camera_uniforms(); //TODO: if we change perspective, do this more than once.
 
         //Possum!
-        let sprite = Sprite::new([384,240],[0,0],[46,33],0,0,-1.0);
+        let sprite = Sprite::new([500,500],[0,0],[38,17],0,0,-1.0);
 
         //Background!
-        let second_sprite = Sprite::new([1000,500],[0,0],[1000,500],1,1,-2.0); //TODO: z
+        let second_sprite = Sprite::new([500,500],[0,0],[500,500],1,1,-2.0); 
         
         render_state.submit_data(&sprite);
         render_state.submit_data(&second_sprite);

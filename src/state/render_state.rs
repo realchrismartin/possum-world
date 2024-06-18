@@ -53,6 +53,9 @@ impl RenderState
             Err(e) => {log_value(&e);return None;}
         };
 
+        //TODO: fix blending
+        //web_context.enable(WebGl2RenderingContext::BLEND);
+        //web_context.blend_func(WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA,WebGl2RenderingContext::DST_COLOR);
         web_context.enable(WebGl2RenderingContext::DEPTH_TEST);
 
         let mut state = Self
