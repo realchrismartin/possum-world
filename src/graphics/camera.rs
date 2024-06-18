@@ -1,5 +1,4 @@
 use nalgebra_glm::TMat4;
-use crate::util::logging::log_f32;
 
 pub struct Camera
 {

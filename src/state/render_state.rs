@@ -1,7 +1,6 @@
 use crate::util::logging::log;
 use crate::util::logging::log_value;
 
-use crate::wasm_bindgen;
 use wasm_bindgen::JsCast;
 use web_sys::Document;
 use web_sys::HtmlImageElement;
@@ -17,7 +16,6 @@ use std::any::Any;
 use crate::graphics::renderable::Renderable;
 use crate::graphics::camera::Camera;
 
-#[wasm_bindgen]
 pub struct RenderState
 {
     context: WebGl2RenderingContext,
@@ -27,7 +25,6 @@ pub struct RenderState
     buffer_map: HashMap<TypeId,Box<dyn Any>>
 }
 
-#[wasm_bindgen]
 impl RenderState
 {
     pub fn new(document : &Document) -> Option<RenderState>
@@ -145,66 +142,7 @@ impl RenderState
         self.buffer_map.insert(type_id,Box::new(buffer));
     }
 
-    //TODO: this is for testing
-    pub fn submit_sprite_data(&mut self)
-    {
-        let possum_tex_coords = self.textures[0].get_sprite_coordinates([0,0],[46,33]);
-        let bg_tex_coords = self.textures[0].get_sprite_coordinates([0,0],[1000,500]);
-
-        let sprite = Sprite::new([
-                -0.1,0.1,0.0,
-                0.0,
-                possum_tex_coords[0][0], possum_tex_coords[0][1],
-                0.0,
-                -0.1,-0.1,0.0,
-                0.0,
-                possum_tex_coords[1][0], possum_tex_coords[1][1],
-                0.0,
-                0.1,-0.1,0.0,
-                0.0,
-                possum_tex_coords[2][0], possum_tex_coords[2][1],
-                0.0,
-                0.1,0.1,0.0,
-                0.0,
-                possum_tex_coords[3][0], possum_tex_coords[3][1],
-                0.0,
-            ],[0,1,2,2,3,0]);
-
-        let second_sprite = Sprite::new([
-                -1.0,1.0,3.0,
-                1.0,
-                bg_tex_coords[0][0], bg_tex_coords[0][1],
-                1.0,
-
-                -1.0,-1.0,3.0,
-                1.0,
-                bg_tex_coords[1][0], bg_tex_coords[1][1],
-                1.0,
-
-                1.0,-1.0,3.0,
-                1.0,
-                bg_tex_coords[2][0], bg_tex_coords[2][1],
-                1.0,
-
-                1.0,1.0,3.0,
-                1.0,
-                bg_tex_coords[3][0], bg_tex_coords[3][1],
-                1.0,
-            ],[0,1,2,2,3,0]);
-
-        self.submit_camera_uniforms();
-        self.submit_data(&sprite);
-        self.submit_data(&second_sprite);
-    }
-
-    pub fn draw_sprites(&mut self)
-    {
-        self.clear_context();
-        self.draw_buffer::<Sprite>();
-        //self.clear_buffer::<Sprite>(); //TODO: not cleared because we only load sprite data once.
-    }
-
-    fn clear_context(&self)
+    pub fn clear_context(&self)
     {
         let context = &self.context;
 
@@ -212,7 +150,7 @@ impl RenderState
         context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
 
-    fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T)
+    pub fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T)
     {
         let buffer = match Self::get_mapped_buffer::<T>(&mut self.buffer_map)
         {
@@ -237,9 +175,9 @@ impl RenderState
         buffer.clear_data();
     }
 
-    fn draw_buffer<T: Renderable + 'static>(&mut self)
+    pub fn draw_buffer<T: Renderable + 'static>(& self)
     {
-        let buffer = match Self::get_mapped_buffer::<T>(&mut self.buffer_map)
+        let buffer = match Self::get_const_mapped_buffer::<T>(&self.buffer_map)
         {
             Some(buffer) => buffer,
             None => {return}
@@ -250,6 +188,25 @@ impl RenderState
         self.context.draw_elements_with_i32(buffer.get_draw_type(), buffer.get_index_count() as i32, WebGl2RenderingContext::UNSIGNED_INT,0); //TODO: move context type
 
         VertexBuffer::<T>::unbind(&self.context);
+    }
+
+    fn get_const_mapped_buffer<T: Renderable + 'static>(buffer_map: &HashMap<TypeId,Box<dyn Any>>) -> Option<&VertexBuffer<T>>
+    {
+        let type_id = TypeId::of::<T>();
+
+        if !buffer_map.contains_key(&type_id)
+        {
+            //nothing to do
+            return None;
+        }
+
+        let boxed_buffer = match buffer_map.get(&type_id)
+        {
+            Some(boxed_buffer) => boxed_buffer,
+            None => {return None;}
+        };
+
+        return (&*boxed_buffer).downcast_ref::<VertexBuffer<T>>()
     }
 
     fn get_mapped_buffer<T: Renderable + 'static>(buffer_map: &mut HashMap<TypeId,Box<dyn Any>>) -> Option<&mut VertexBuffer<T>>
@@ -284,7 +241,7 @@ impl RenderState
         context.uniform_matrix4fv_with_f32_array(m_location.as_ref(),false,data);
     }
 
-    fn submit_camera_uniforms(&mut self)
+    pub fn submit_camera_uniforms(&mut self)
     {
         let shader = match &self.shader 
         {

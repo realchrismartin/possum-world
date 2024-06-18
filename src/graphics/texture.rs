@@ -2,6 +2,7 @@ use web_sys::WebGl2RenderingContext;
 use web_sys::HtmlImageElement;
 use wasm_bindgen::JsValue;
 use std::cmp::max;
+use crate::util::logging::log;
 pub struct Texture
 {
     level: i32,
@@ -26,18 +27,6 @@ impl Texture
         }
     }
 
-    pub fn get_sprite_coordinates(&self,top_left_pixel_coordinate: [i32;2], dimensions: [i32;2]) -> [[f32;2];4]
-    {
-        let width_ratio = 1.0 / self.width as f32;
-        let height_ratio = 1.0 / self.height as f32;
-
-        let left_bottom = [width_ratio * top_left_pixel_coordinate[0] as f32,(height_ratio * top_left_pixel_coordinate[1] as f32) + dimensions[1] as f32 * height_ratio ];
-        let left_top = [left_bottom[0],left_bottom[1] - dimensions[1] as f32 * height_ratio];
-        let right_bottom = [left_bottom[0] + dimensions[0] as f32 * width_ratio,left_bottom[1]];
-        let right_top = [right_bottom[0],left_top[1]];
-
-        return [left_top,left_bottom,right_bottom,right_top];
-    }
 
     pub fn load(&mut self, context: &WebGl2RenderingContext, img: HtmlImageElement, texture_number: u32) -> Result<(),JsValue>
     {
@@ -61,6 +50,8 @@ impl Texture
 
         self.height = max(img.height(),1);
         self.width = max(img.width(),1);
+
+        log(format!("{} {}",self.width,self.height).as_str());
 
         Ok(())
     }

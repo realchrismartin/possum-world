@@ -9,13 +9,52 @@ pub struct Sprite
 
 impl Sprite
 {
-    pub fn new(vertices: [f32;28], indices: [u32;6]) -> Self 
+    pub fn new(texture_dimensions: [i32;2], texture_coordinates: [i32;2], size: [i32;2], texture_index: u32, transform_index: u32, z: f32) -> Self 
     {
+        let tex_coords = Self::get_texture_coordinates(texture_coordinates,size,texture_dimensions);
+
         Sprite 
         {
-            vertices: vertices,
-            indices: indices
+            vertices: 
+            [
+                -1.0,1.0,z,
+                transform_index as f32,
+                tex_coords[0][0], tex_coords[0][1],
+                texture_index as f32,
+
+                -1.0,-1.0,z,
+                transform_index as f32,
+                tex_coords[1][0], tex_coords[1][1],
+                texture_index as f32,
+
+                1.0,-1.0,z,
+                transform_index as f32,
+                tex_coords[2][0], tex_coords[2][1],
+                texture_index as f32,
+
+                1.0,1.0,z,
+                transform_index as f32,
+                tex_coords[3][0], tex_coords[3][1],
+                texture_index as f32,
+            ],
+            indices: [0,1,2,2,3,0]
         }
+    }
+
+    fn get_texture_coordinates(top_left_pixel_coordinate: [i32;2], dimensions: [i32;2], texture_dimensions: [i32;2]) -> [[f32;2];4]
+    {
+        let x = top_left_pixel_coordinate[0] as f32 / texture_dimensions[0] as f32;
+        let y = top_left_pixel_coordinate[1] as f32 / texture_dimensions[1] as f32;
+
+        let width = dimensions[0] as f32 / texture_dimensions[0] as f32;
+        let height = dimensions[1] as f32 / texture_dimensions[1] as f32;
+
+        let left_top = [x,y];
+        let left_bottom = [x,y + height];
+        let right_bottom = [x + width,y + height];
+        let right_top = [x + width,y];
+
+        return [left_top,left_bottom,right_bottom,right_top];
     }
 }
 

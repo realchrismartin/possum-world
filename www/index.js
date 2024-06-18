@@ -1,4 +1,4 @@
-import * as wasm from "possum_world"
+import {Game} from "possum_world"
 
 export function init(textures)
 {
@@ -13,16 +13,7 @@ export function init(textures)
         canvas.width = document.documentElement.clientWidth;
     });
 
-    const input_state = wasm.new_input_state();
-    const game_state = wasm.new_game_state();
-    const render_state = wasm.new_render_state(document);
 
-    if(render_state instanceof Error)
-    {
-        console.log(render_state);
-        return;
-    }
-   
     let vert_shader = `#version 300 es
  
         layout(location = 0) in vec3 position;
@@ -66,36 +57,31 @@ export function init(textures)
     }
     `
 
-   console.log(textures);
-   render_state.set_shader(vert_shader,frag_shader);
-   render_state.load_texture(textures[0]);
-   render_state.load_texture(textures[1]);
-   render_state.submit_sprite_data(); //For now, submit data once here.
+    const game = Game.new();
 
-    let eventArray = [];
-
-    addEventListener("keydown",(event) => {
-        eventArray.push(event.code);
+    addEventListener("keydown",(event) => 
+    {
+        game.process_event(event.code);
     });
 
-    let rotation = 0;
+    //Set up the renderer with its shader and textures
+    game.init_renderer(document);
+    game.load_shader(vert_shader,frag_shader);
 
+    for(const texture of textures)
+    {
+        game.load_texture(texture);
+    }
+
+    //Load initial data - has to be done after renderer is set up.
+    game.init_render_data();
+
+    //Run the game loop
     const gameLoop = () =>
     {
-        eventArray.forEach((event) =>{
-           wasm.process_event(input_state,event);
-        });
-        eventArray = []
+        game.update();
+        game.render();
 
-        rotation += .005;
-
-        if(rotation > 360)
-        {
-            rotation = 0;
-        }
-
-        wasm.update(game_state,input_state);
-        wasm.render(game_state,render_state,rotation);
         requestAnimationFrame(gameLoop);
     };
 
