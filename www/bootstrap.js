@@ -2,7 +2,6 @@ loadImage = (src) => {
     return new Promise((resolve,reject) => 
     {
         let img = document.createElement('img');
-        img.crossOrigin = "*";
 
         img.onload = () =>
         {
@@ -33,14 +32,14 @@ loadShader = (src) => {
 
 let texture_sources = 
 [
-    loadImage("http://localhost:3030/static/possum_sprite_sheet.png"),
-    loadImage("http://localhost:3030/static/background.png"),
+    loadImage("/possum_sprite_sheet.png"),
+    loadImage("/background.png"),
 ];
 
 let shader_sources = 
 [
-    loadShader("http://localhost:3030/static/sprite_vert.glsl"),
-    loadShader("http://localhost:3030/static/sprite_frag.glsl"),
+    loadShader("/sprite_vert.glsl"),
+    loadShader("/sprite_frag.glsl"),
 ];
 
 import("./index.js").then((mod) => 

@@ -16,7 +16,9 @@
   "license": "",
   "homepage": "",
   "dependencies": {
-    "possum_world": "file:../pkg"
+    "css-loader": "^7.1.2",
+    "possum_world": "file:../pkg",
+    "style-loader": "^4.0.0"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^5.1.2",
