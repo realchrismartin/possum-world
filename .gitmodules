@@ -1,0 +1,3 @@
+[submodule "extern/possum-world-fileserver"]
+	path = extern/possum-world-fileserver
+	url = https://github.com/realchrismartin/possum-world-fileserver
