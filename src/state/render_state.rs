@@ -15,6 +15,7 @@ use std::any::TypeId;
 use std::any::Any;
 use crate::graphics::renderable::Renderable;
 use crate::graphics::camera::Camera;
+use crate::graphics::transform_buffer::TransformBuffer;
 use std::ops::Range;
 
 pub struct RenderState
@@ -23,7 +24,8 @@ pub struct RenderState
     shader: Option<Shader>, //TODO: assumes one shader for all buffers
     textures: Vec<Texture>, 
     camera: Camera,
-    buffer_map: HashMap<TypeId,Box<dyn Any>>
+    vertex_buffer_map: HashMap<TypeId,Box<dyn Any>>,
+    transform_buffer: TransformBuffer
 }
 
 impl RenderState
@@ -65,7 +67,8 @@ impl RenderState
             shader: None::<Shader>,
             textures: Vec::<Texture>::new(),
             camera: Camera::new(canvas.width() as f32,canvas.height() as f32),
-            buffer_map: HashMap::new()
+            vertex_buffer_map: HashMap::new(),
+            transform_buffer: TransformBuffer::new()
         };
 
         //Init all the buffers here for now because we are using wasm-bindgen and can't put generics in pub fns
@@ -131,7 +134,7 @@ impl RenderState
     fn init_buffer<T: Renderable + 'static>(&mut self)
     {
         let type_id = TypeId::of::<T>();
-        if self.buffer_map.contains_key(&type_id)
+        if self.vertex_buffer_map.contains_key(&type_id)
         {
             //nothing to do
             return;
@@ -143,7 +146,7 @@ impl RenderState
             None => {return}
         };
 
-        self.buffer_map.insert(type_id,Box::new(buffer));
+        self.vertex_buffer_map.insert(type_id,Box::new(buffer));
     }
 
     pub fn clear_context(&self)
@@ -154,9 +157,14 @@ impl RenderState
         context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
 
+    pub fn transform_buffer(&mut self) -> &mut TransformBuffer
+    {
+        &mut self.transform_buffer
+    }
+
     pub fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T) -> Range<i32>
     {
-        let buffer = match Self::get_mapped_buffer::<T>(&mut self.buffer_map)
+        let buffer = match Self::get_mapped_buffer::<T>(&mut self.vertex_buffer_map)
         {
             Some(buffer) => buffer,
             None => {return Range::<i32> { start:0, end:0 }}
@@ -172,7 +180,7 @@ impl RenderState
 
     pub fn draw_buffer<T: Renderable + 'static>(& mut self, ranges: &Vec<Range<i32>>)
     {
-        let buffer = match Self::get_mapped_buffer::<T>(&mut self.buffer_map)
+        let buffer = match Self::get_mapped_buffer::<T>(&mut self.vertex_buffer_map)
         {
             Some(buffer) => buffer,
             None => {return}
@@ -196,17 +204,17 @@ impl RenderState
         VertexBuffer::<T>::unbind(&self.context);
     }
 
-    fn get_const_mapped_buffer<T: Renderable + 'static>(buffer_map: &HashMap<TypeId,Box<dyn Any>>) -> Option<&VertexBuffer<T>>
+    fn get_const_mapped_buffer<T: Renderable + 'static>(vertex_buffer_map: &HashMap<TypeId,Box<dyn Any>>) -> Option<&VertexBuffer<T>>
     {
         let type_id = TypeId::of::<T>();
 
-        if !buffer_map.contains_key(&type_id)
+        if !vertex_buffer_map.contains_key(&type_id)
         {
             //nothing to do
             return None;
         }
 
-        let boxed_buffer = match buffer_map.get(&type_id)
+        let boxed_buffer = match vertex_buffer_map.get(&type_id)
         {
             Some(boxed_buffer) => boxed_buffer,
             None => {return None;}
@@ -215,17 +223,17 @@ impl RenderState
         return (&*boxed_buffer).downcast_ref::<VertexBuffer<T>>()
     }
 
-    fn get_mapped_buffer<T: Renderable + 'static>(buffer_map: &mut HashMap<TypeId,Box<dyn Any>>) -> Option<&mut VertexBuffer<T>>
+    fn get_mapped_buffer<T: Renderable + 'static>(vertex_buffer_map: &mut HashMap<TypeId,Box<dyn Any>>) -> Option<&mut VertexBuffer<T>>
     {
         let type_id = TypeId::of::<T>();
 
-        if !buffer_map.contains_key(&type_id)
+        if !vertex_buffer_map.contains_key(&type_id)
         {
             //nothing to do
             return None;
         }
 
-        let boxed_buffer = match buffer_map.get_mut(&type_id)
+        let boxed_buffer = match vertex_buffer_map.get_mut(&type_id)
         {
             Some(boxed_buffer) => boxed_buffer,
             None => {return None;}
@@ -234,21 +242,35 @@ impl RenderState
         return (&mut *boxed_buffer).downcast_mut::<VertexBuffer<T>>()
     }
 
-    pub fn submit_transform_uniforms(&self, data : &[f32])
+    pub fn submit_transform_buffer_uniforms(&mut self)
     {
+        if !self.transform_buffer.dirty()
+        {
+            return;
+        }
+
         let shader = match &self.shader 
         {
             Some(shader) => shader,
             None => {return}
         };
 
+        //Unfortunately, we need to update all of the transform data if any one of the matrices changes (buffer becomes dirty)
+        //Optimize this later if we can.
         let context = &self.context;
         let m_location = context.get_uniform_location(shader.get_shader_program(),"m_matrices");
-        context.uniform_matrix4fv_with_f32_array(m_location.as_ref(),false,data);
+        context.uniform_matrix4fv_with_f32_array(m_location.as_ref(),false,&self.transform_buffer.data().as_slice());
+
+        self.transform_buffer.set_clean();
     }
 
     pub fn submit_camera_uniforms(&mut self)
     {
+        if !self.camera.dirty()
+        {
+           return; 
+        }
+
         let shader = match &self.shader 
         {
             Some(shader) => shader,
@@ -257,11 +279,6 @@ impl RenderState
 
         let camera = &mut self.camera;
         let context = &self.context;
-
-        if !camera.dirty()
-        {
-           return; 
-        }
 
         camera.recalculate();
 

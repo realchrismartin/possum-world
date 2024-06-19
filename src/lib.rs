@@ -18,8 +18,8 @@ use state::input_state::InputState;
 use state::render_state::RenderState;
 use std::ops::Range;
 
-use util::logging::log;
 use graphics::sprite::Sprite;
+use crate::util::logging::log_f32;
 
 #[wasm_bindgen]
 pub struct Game
@@ -83,31 +83,27 @@ impl Game
         render_state.submit_camera_uniforms(); //TODO: if we change perspective, do this more than once.
 
         //Possum!
-        let sprite = Sprite::new([500,500],[0,0],[38,17],0,0,-1.0);
+        //TODO: later, move transform data somewhere else.
+        //NB: Z scale has to be 0 or we get clipped right now.
+        let mut s_w: glm::Mat4 = glm::Mat4::identity().into();
+        let mut s_2_w: glm::Mat4 = glm::Mat4::identity().into();
+
+        let scale = glm::vec3(0.1,0.1,0.0);
+        s_w = glm::scale(&s_w, &scale);
+
+        let scale_2 = glm::vec3(2.0,2.0,0.0);
+        s_2_w = glm::scale(&s_w, &scale_2);
+
+        //TODO: encapsulate the transform buffer better later
+        let transform_1 = render_state.transform_buffer().add_matrix(&s_w);
+        let sprite = Sprite::new([500,500],[0,0],[38,17],0,transform_1 as u32,-1.0);
 
         //Background!
-        let second_sprite = Sprite::new([500,500],[0,0],[500,500],1,1,-2.0); 
+        let transform_2 = render_state.transform_buffer().add_matrix(&s_2_w);
+        let second_sprite = Sprite::new([500,500],[0,0],[500,500],1,transform_2 as u32,-2.0); 
         
         self.sprite_draw_ranges.push(render_state.submit_data(&sprite));
         self.sprite_draw_ranges.push(render_state.submit_data(&second_sprite));
-
-        //TODO: later, move transform data somewhere else.
-        let mut s_w: glm::Mat4 = glm::Mat4::identity().into();
-        let mut s_2_w: glm::Mat4= glm::Mat4::identity().into();
-
-        //NB: Z scale has to be 0 or we get clipped right now.
-        let scale : glm::TVec3<f32> = glm::vec3(0.1,0.1,0.0);
-        s_w = glm::scale(&s_w, &scale);
-
-        let background_scale : glm::TVec3<f32> = glm::vec3(1.5,1.5,0.0);
-        s_2_w = glm::scale(&s_2_w, &background_scale);
-
-        let mut transform_uniform_data= Vec::<f32>::new();
-
-        transform_uniform_data.extend_from_slice(s_w.as_slice());
-        transform_uniform_data.extend_from_slice(s_2_w.as_slice());
-
-        render_state.submit_transform_uniforms(&transform_uniform_data);
 
     }
 
@@ -126,6 +122,7 @@ impl Game
         };
 
         render_state.clear_context();
+        render_state.submit_transform_buffer_uniforms();
         render_state.draw_buffer::<Sprite>(&self.sprite_draw_ranges);
     }
 
