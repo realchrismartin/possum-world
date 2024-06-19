@@ -130,7 +130,6 @@ impl<T: Renderable> VertexBuffer<T>
         let index_offset = (mem::size_of::<u32>() * self.current_index_count) as i32;
 
         //Create a new index data array to offset
-        //TODO: does this work if we only draw subsets?
         let new_indices : Vec<u32> = index_data.iter().map(|&x| x + (self.current_vertex_count as u32 / T::get_stride() as u32)).collect();
 
         unsafe
