@@ -16,6 +16,7 @@ use web_sys::{Document, HtmlImageElement};
 use state::game_state::GameState;
 use state::input_state::InputState;
 use state::render_state::RenderState;
+use std::ops::Range;
 
 use util::logging::log;
 use graphics::sprite::Sprite;
@@ -25,7 +26,8 @@ pub struct Game
 {
     game_state: GameState,
     render_state: Option<RenderState>,
-    input_state: InputState
+    input_state: InputState,
+    sprite_draw_ranges: Vec<Range::<i32>> //TODO: temporary
 }
 
 #[wasm_bindgen]
@@ -37,7 +39,8 @@ impl Game
         {
             game_state: GameState::new(),
             render_state: None::<RenderState>,
-            input_state: InputState::new()
+            input_state: InputState::new(),
+            sprite_draw_ranges: Vec::<Range<i32>>::new()
         }
     }
 
@@ -85,8 +88,8 @@ impl Game
         //Background!
         let second_sprite = Sprite::new([500,500],[0,0],[500,500],1,1,-2.0); 
         
-        render_state.submit_data(&sprite);
-        render_state.submit_data(&second_sprite);
+        self.sprite_draw_ranges.push(render_state.submit_data(&sprite));
+        self.sprite_draw_ranges.push(render_state.submit_data(&second_sprite));
 
         //TODO: later, move transform data somewhere else.
         let mut s_w: glm::Mat4 = glm::Mat4::identity().into();
@@ -114,16 +117,16 @@ impl Game
         //TODO: also update render state?
     }
 
-    pub fn render(&self)
+    pub fn render(&mut self)
     {
-        let render_state = match &self.render_state
+        let render_state = match &mut self.render_state
         {
             Some(r) => {r}
             None => { return; }
         };
 
         render_state.clear_context();
-        render_state.draw_buffer::<Sprite>();
+        render_state.draw_buffer::<Sprite>(&self.sprite_draw_ranges);
     }
 
     pub fn process_event(&self, code : &str)

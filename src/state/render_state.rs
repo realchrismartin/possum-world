@@ -15,6 +15,7 @@ use std::any::TypeId;
 use std::any::Any;
 use crate::graphics::renderable::Renderable;
 use crate::graphics::camera::Camera;
+use std::ops::Range;
 
 pub struct RenderState
 {
@@ -153,21 +154,23 @@ impl RenderState
         context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
 
-    pub fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T)
+    pub fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T) -> Range<i32>
     {
         let buffer = match Self::get_mapped_buffer::<T>(&mut self.buffer_map)
         {
             Some(buffer) => buffer,
-            None => {return}
+            None => {return Range::<i32> { start:0, end:0 }}
         };
 
 
         buffer.bind(&self.context);
-        buffer.buffer_data(&self.context,&renderable);
+        let range = buffer.buffer_data(&self.context,&renderable);
         VertexBuffer::<T>::unbind(&self.context);
+
+        range
     }
 
-    fn clear_buffer<T: Renderable + 'static>(&mut self)
+    pub fn draw_buffer<T: Renderable + 'static>(& mut self, ranges: &Vec<Range<i32>>)
     {
         let buffer = match Self::get_mapped_buffer::<T>(&mut self.buffer_map)
         {
@@ -175,20 +178,20 @@ impl RenderState
             None => {return}
         };
 
-        buffer.clear_data();
-    }
-
-    pub fn draw_buffer<T: Renderable + 'static>(& self)
-    {
-        let buffer = match Self::get_const_mapped_buffer::<T>(&self.buffer_map)
-        {
-            Some(buffer) => buffer,
-            None => {return}
-        };
-
         buffer.bind(&self.context);
 
-        self.context.draw_elements_with_i32(buffer.get_draw_type(), buffer.get_index_count() as i32, WebGl2RenderingContext::UNSIGNED_INT,0); //TODO: move context type
+        //Draw once for each specified range on the buffer
+        for range in ranges 
+        {
+            let count = range.end - range.start;
+
+            if count < 0 
+            {
+                continue;
+            }
+
+            self.context.draw_elements_with_i32(buffer.get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,range.start); //TODO: move context type
+        }
 
         VertexBuffer::<T>::unbind(&self.context);
     }

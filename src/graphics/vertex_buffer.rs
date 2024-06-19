@@ -5,7 +5,7 @@ use std::option::Option;
 use web_sys::js_sys::Float32Array;
 use web_sys::js_sys::Uint32Array;
 use std::mem;
-use crate::util::logging::log_f32;
+use std::ops::Range;
 
 static MAX_VERTICES : usize = 100;
 static MAX_INDICES : usize = 100;
@@ -18,7 +18,7 @@ pub struct VertexBuffer<T>
     ebo: WebGlBuffer,
     current_vertex_count: usize,
     current_index_count: usize,
-    draw_type : u32
+    draw_type : u32,
 }
 
 impl<T: Renderable> VertexBuffer<T>
@@ -67,7 +67,7 @@ impl<T: Renderable> VertexBuffer<T>
             ebo: ebo,
             current_vertex_count: 0,
             current_index_count: 0,
-            draw_type: WebGl2RenderingContext::TRIANGLES
+            draw_type: WebGl2RenderingContext::TRIANGLES,
         })
     }
 
@@ -101,7 +101,7 @@ impl<T: Renderable> VertexBuffer<T>
         self.current_vertex_count = 0;
     }
 
-    pub fn buffer_data(&mut self, context: &WebGl2RenderingContext, renderable: &T)
+    pub fn buffer_data(&mut self, context: &WebGl2RenderingContext, renderable: &T) -> Range<i32>
     {
         //TODO: assumes we are bound
 
@@ -113,26 +113,27 @@ impl<T: Renderable> VertexBuffer<T>
 
         if new_total_vertices > MAX_VERTICES
         {
-            return;
+            return Range::<i32>{ start: 0, end: 0};
         }
 
         if new_total_indices > MAX_INDICES
         {
-            return;
+            return Range::<i32>{ start: 0, end: 0};
         }
 
         if T::get_stride() <= 0
         {
-            return;
+            return Range::<i32>{ start: 0, end: 0};
         }
 
         let vertex_offset = (mem::size_of::<f32>() * self.current_vertex_count) as i32;
         let index_offset = (mem::size_of::<u32>() * self.current_index_count) as i32;
 
         //Create a new index data array to offset
+        //TODO: does this work if we only draw subsets?
         let new_indices : Vec<u32> = index_data.iter().map(|&x| x + (self.current_vertex_count as u32 / T::get_stride() as u32)).collect();
 
-        unsafe 
+        unsafe
         {
             let vertices_view = Float32Array::view(vertex_data);
             let indices_view = Uint32Array::view(new_indices.as_slice());
@@ -152,5 +153,8 @@ impl<T: Renderable> VertexBuffer<T>
 
         self.current_vertex_count = new_total_vertices;
         self.current_index_count = new_total_indices;
+
+        Range::<i32>{ start: index_offset, end: index_offset + index_data.len() as i32}
+
     }
 }
