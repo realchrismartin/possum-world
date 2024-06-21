@@ -28,6 +28,11 @@ impl Texture
     }
 
 
+    pub fn get_dimensions(&self) -> [u32;2]
+    {
+        [self.width,self.height]
+    }
+
     pub fn load(&mut self, context: &WebGl2RenderingContext, img: HtmlImageElement, texture_number: u32) -> Result<(),JsValue>
     {
         let texture = context.create_texture().expect("Cannot create texture");

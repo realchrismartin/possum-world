@@ -13,26 +13,26 @@ export function init(textures,shader_sources)
         canvas.width = document.documentElement.clientWidth;
     });
 
-    const game = Game.new();
+    const game = Game.new(document);
 
     addEventListener("keydown",(event) => 
     {
         game.process_event(event.code);
     });
-
-    //Set up the renderer with its shader and textures
-    game.init_renderer(document);
     
     //TODO: allow loading more than one shader
     game.load_shader(shader_sources[0],shader_sources[1]);
 
+    let index = 0;
     for(const texture of textures)
     {
-        game.load_texture(texture);
+        game.load_texture(index,texture);
+        index++;
     }
 
     //Load initial data - has to be done after renderer is set up.
     game.init_render_data();
+    game.init_game_data();
 
     //Run the game loop
     const gameLoop = () =>

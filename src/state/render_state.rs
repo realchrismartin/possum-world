@@ -22,7 +22,7 @@ pub struct RenderState
 {
     context: WebGl2RenderingContext,
     shader: Option<Shader>, //TODO: assumes one shader for all buffers
-    textures: Vec<Texture>, 
+    textures: HashMap<u32,Texture>, 
     camera: Camera,
     vertex_buffer_map: HashMap<TypeId,Box<dyn Any>>,
     transform_buffer: TransformBuffer
@@ -65,7 +65,7 @@ impl RenderState
         {
             context: web_context,
             shader: None::<Shader>,
-            textures: Vec::<Texture>::new(),
+            textures: HashMap::new(),
             camera: Camera::new(canvas.width() as f32,canvas.height() as f32),
             vertex_buffer_map: HashMap::new(),
             transform_buffer: TransformBuffer::new()
@@ -96,7 +96,7 @@ impl RenderState
     }
 
     //TODO: later move this
-    pub fn load_texture(&mut self, img: HtmlImageElement)
+    pub fn load_texture(&mut self, index: u32, img: HtmlImageElement)
     {
         let mut the_texture = Texture::new();
 
@@ -110,25 +110,30 @@ impl RenderState
             Err(e) => {log_value(&e);return;}
         };
 
-        self.textures.push(the_texture);
+        let uniform_name = format!("u_texture_{}",index);
 
-        //Update the uniform locations
-        for i in 0..self.textures.len()
+        let loc =  match self.context.get_uniform_location(shader.get_shader_program(),uniform_name.as_str())
         {
-            let uniform_name = format!("u_texture_{}",i);
+            Some(l) => l,
+            None => { 
+                log(format!("No {} uniform exists",uniform_name).as_str());
+                return;
+            }
+        };
 
-            let loc =  match self.context.get_uniform_location(shader.get_shader_program(),uniform_name.as_str())
-            {
-                Some(l) => l,
-                None => { 
-                    log(format!("No {} uniform exists",uniform_name).as_str());
-                    return;
-                }
-            };
+        self.textures.insert(index,the_texture);
+        self.context.uniform1i(Some(&loc), index as i32);
 
-            self.context.uniform1i(Some(&loc), i as i32);
+    }
+
+    pub fn get_texture(&self, index: u32) -> Option<&Texture>
+    {
+        if !self.textures.contains_key(&index)
+        {
+            return None;
         }
 
+        self.textures.get(&index)
     }
 
     fn init_buffer<T: Renderable + 'static>(&mut self)

@@ -1,6 +1,33 @@
 use web_sys::WebGl2RenderingContext;
 use crate::graphics::renderable::Renderable;
 
+pub struct SpriteConfig
+{
+    texture_coordinates: [i32;2],
+    size: [i32;2],
+    texture_index: u32,
+    z: f32
+}
+
+impl SpriteConfig
+{
+    pub fn new(texture_coordinates: [i32;2], size: [i32;2], texture_index: u32, z: f32) -> Self 
+    {
+        Self
+        {
+            texture_coordinates,
+            size,
+            texture_index,
+            z
+        }
+    }
+
+    pub fn get_texture_index(&self) -> u32
+    {
+        self.texture_index
+    }
+}
+
 pub struct Sprite
 {
     vertices: [f32;28],
@@ -10,40 +37,40 @@ pub struct Sprite
 
 impl Sprite
 {
-    pub fn new(texture_dimensions: [i32;2], texture_coordinates: [i32;2], size: [i32;2], texture_index: u32, transform_index: u32, z: f32) -> Self 
+    pub fn new(sprite_config : &SpriteConfig, transform_index: u32, texture_dimensions: [u32;2]) -> Self 
     {
-        let tex_coords = Self::get_texture_coordinates(texture_coordinates,size,texture_dimensions);
+        let tex_coords = Self::get_texture_coordinates(sprite_config.texture_coordinates,sprite_config.size,texture_dimensions);
 
         Sprite 
         {
             vertices: 
             [
-                -1.0,1.0,z,
+                -1.0,1.0,sprite_config.z,
                 transform_index as f32,
                 tex_coords[0][0], tex_coords[0][1],
-                texture_index as f32,
+                sprite_config.texture_index as f32,
 
-                -1.0,-1.0,z,
+                -1.0,-1.0,sprite_config.z,
                 transform_index as f32,
                 tex_coords[1][0], tex_coords[1][1],
-                texture_index as f32,
+                sprite_config.texture_index as f32,
 
-                1.0,-1.0,z,
+                1.0,-1.0,sprite_config.z,
                 transform_index as f32,
                 tex_coords[2][0], tex_coords[2][1],
-                texture_index as f32,
+                sprite_config.texture_index as f32,
 
-                1.0,1.0,z,
+                1.0,1.0,sprite_config.z,
                 transform_index as f32,
                 tex_coords[3][0], tex_coords[3][1],
-                texture_index as f32,
+                sprite_config.texture_index as f32,
             ],
             indices: [0,1,2,2,3,0],
             should_be_drawn: true
         }
     }
 
-    fn get_texture_coordinates(top_left_pixel_coordinate: [i32;2], dimensions: [i32;2], texture_dimensions: [i32;2]) -> [[f32;2];4]
+    fn get_texture_coordinates(top_left_pixel_coordinate: [i32;2], dimensions: [i32;2], texture_dimensions: [u32;2]) -> [[f32;2];4]
     {
         let x = top_left_pixel_coordinate[0] as f32 / texture_dimensions[0] as f32;
         let y = top_left_pixel_coordinate[1] as f32 / texture_dimensions[1] as f32;

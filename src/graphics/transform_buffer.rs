@@ -1,5 +1,4 @@
 
-#[derive(Debug)]
 pub struct TransformBuffer
 {
     transform_data: Vec<f32>,
