@@ -56,8 +56,6 @@ impl Texture
         self.height = max(img.height(),1);
         self.width = max(img.width(),1);
 
-        log(format!("{} {}",self.width,self.height).as_str());
-
         Ok(())
     }
 }

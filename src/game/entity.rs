@@ -1,12 +1,15 @@
 use crate::graphics::sprite::Sprite;
 use crate::graphics::renderable::Renderable;
 use std::ops::Range;
+use crate::util::logging::log_f32;
 
 pub struct Entity
 {
     sprites: Vec<Sprite>,
     sprite_draw_ranges: Vec<Range::<i32>>,
     active_sprite_draw_ranges: Vec<Range::<i32>>,
+    transform: glm::Mat4,
+    transform_dirty: bool
 }
 
 impl Entity
@@ -18,6 +21,8 @@ impl Entity
             sprites: Vec::new(),
             sprite_draw_ranges: Vec::new(),
             active_sprite_draw_ranges: Vec::new(),
+            transform: glm::Mat4::identity().into(),
+            transform_dirty: false
         }
     }
 
@@ -54,6 +59,40 @@ impl Entity
     pub fn get_active_sprite_ranges(&self) -> &Vec<Range::<i32>>
     {
         &self.active_sprite_draw_ranges
+    }
+
+    pub fn transform(&mut self, transform: &glm::Mat4)
+    {
+        //NB: this sets and doesn't "modify" the existing transform via composition because we replace the transforms in the buffer directly.
+        self.transform = *transform;
+        self.transform_dirty = true;
+    }
+
+    pub fn is_transform_dirty(&self) -> bool
+    {
+        self.transform_dirty
+    }
+
+    pub fn set_transform_clean(&mut self)
+    {
+        self.transform_dirty = false;
+    }
+
+    pub fn get_transform(&self) -> &glm::Mat4
+    {
+        &self.transform
+    }
+
+    pub fn get_transform_indices(&self) -> Vec<u32>
+    {
+        let mut res = Vec::new();
+
+        for sprite in &self.sprites
+        {
+            res.push(sprite.get_transform_index());
+        }
+
+        res
     }
 
     //TODO: support transforming an entity's sprites using their transform indices

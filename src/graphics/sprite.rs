@@ -11,14 +11,14 @@ pub struct SpriteConfig
 
 impl SpriteConfig
 {
-    pub fn new(texture_coordinates: [i32;2], size: [i32;2], texture_index: u32, z: f32) -> Self 
+    pub fn new(tex_coordinates: [i32;2], sprite_size: [i32;2], tex_index: u32, z_ind: f32) -> Self 
     {
         Self
         {
-            texture_coordinates,
-            size,
-            texture_index,
-            z
+            texture_coordinates :tex_coordinates,
+            size: sprite_size,
+            texture_index: tex_index,
+            z: z_ind
         }
     }
 
@@ -32,6 +32,7 @@ pub struct Sprite
 {
     vertices: [f32;28],
     indices: [u32;6],
+    transform_index: u32,
     should_be_drawn: bool 
 }
 
@@ -66,8 +67,14 @@ impl Sprite
                 sprite_config.texture_index as f32,
             ],
             indices: [0,1,2,2,3,0],
-            should_be_drawn: true
+            should_be_drawn: true,
+            transform_index: transform_index
         }
+    }
+
+    pub fn get_transform_index(&self) -> u32
+    {
+        self.transform_index
     }
 
     fn get_texture_coordinates(top_left_pixel_coordinate: [i32;2], dimensions: [i32;2], texture_dimensions: [u32;2]) -> [[f32;2];4]

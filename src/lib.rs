@@ -87,18 +87,51 @@ impl Game
             None => { return; }
         };
 
-        let possum_sprite_1 = SpriteConfig::new([0,0],[38,17],0,-1.0);
-        let possum_sprite_2 = SpriteConfig::new([0,0],[38,17],0,-1.0);
-        let bg_sprite = SpriteConfig::new([0,0],[500,500],1,-2.0); 
+        let possum_sprite_1 = SpriteConfig::new([0,0],[38,17],0,-0.5);
+        let possum_sprite_2 = SpriteConfig::new([0,0],[38,17],0,-0.5);
+        let bg_sprite = SpriteConfig::new([0,0],[153,119],1,-1.0); 
 
         self.game_state.create_entity(render_state, &vec![possum_sprite_1,possum_sprite_2]);
         self.game_state.create_entity(render_state, &vec![bg_sprite]);
+
+        let game_state = &mut self.game_state;
+
+        {
+            let mut poss_entity = match game_state.get_mutable_entity(0)
+            {
+                Some(p) => p,
+                None => {return}
+            };
+
+            let mut scale_down = glm::Mat4::identity().into();
+            let scale = glm::vec3(0.25,0.25,0.0);
+            scale_down = glm::scale(&scale_down,&scale);
+            poss_entity.transform(&scale_down);
+        }
+
+        let mut bg_entity = match game_state.get_mutable_entity(1)
+        {
+            Some(p) => p,
+            None => {return}
+        };
+
+        let mut scale_up= glm::Mat4::identity().into();
+        let sc = glm::vec3(1.0,1.0,0.0);
+        scale_up= glm::scale(&scale_up,&sc);
+
+        bg_entity.transform(&scale_up)
+
     }
 
     pub fn update(&mut self)
     {
-        self.game_state.update(&self.input_state);
-        //TODO: also update render state?
+        let render_state = match &mut self.render_state
+        {
+            Some(r) => {r}
+            None => { return; }
+        };
+
+        self.game_state.update(render_state, &self.input_state);
     }
 
     pub fn render(&mut self)

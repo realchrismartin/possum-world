@@ -27,7 +27,7 @@ export function init(textures,shader_sources)
     for(const texture of textures)
     {
         game.load_texture(index,texture);
-        index++;
+        index = index + 1;
     }
 
     //Load initial data - has to be done after renderer is set up.

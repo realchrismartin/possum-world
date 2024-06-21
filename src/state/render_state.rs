@@ -1,5 +1,6 @@
 use crate::util::logging::log;
 use crate::util::logging::log_value;
+use crate::util::logging::log_f32;
 
 use wasm_bindgen::JsCast;
 use web_sys::Document;
@@ -102,13 +103,7 @@ impl RenderState
 
         let shader = self.shader.as_ref().expect("No shader bound!");
 
-        let next_texture = WebGl2RenderingContext::TEXTURE0 + (self.textures.len() as u32); //Unsafe? :) TODO
-
-        match the_texture.load(&self.context,img,next_texture)
-        {
-            Ok(_r) => { },
-            Err(e) => {log_value(&e);return;}
-        };
+        let next_texture = WebGl2RenderingContext::TEXTURE0 + index;
 
         let uniform_name = format!("u_texture_{}",index);
 
@@ -119,6 +114,12 @@ impl RenderState
                 log(format!("No {} uniform exists",uniform_name).as_str());
                 return;
             }
+        };
+
+        match the_texture.load(&self.context,img,next_texture)
+        {
+            Ok(_r) => { },
+            Err(e) => {log_value(&e);return;}
         };
 
         self.textures.insert(index,the_texture);

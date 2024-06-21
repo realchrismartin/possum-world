@@ -4,6 +4,7 @@ use crate::game::entity::Entity;
 use crate::graphics::sprite::{Sprite,SpriteConfig};
 use std::ops::Range;
 use crate::util::logging::log;
+use crate::util::logging::log_f32;
 
 pub struct GameState
 {
@@ -20,9 +21,27 @@ impl GameState
         }
     }
 
-    pub fn update(&mut self, input_state: &InputState)
+    pub fn update(&mut self, render_state: &mut RenderState, input_state: &InputState)
     {
         //log("Updated the game!");
+
+        //After all transformations are done:
+        for entity in &mut self.entities
+        {
+            //Apply the entity's transform by replacing all transforms the entity "owns" in the transform buffer.
+            if entity.is_transform_dirty()
+            {
+                log("dirt!");
+                for transform_index in entity.get_transform_indices()
+                {
+                    log_f32(transform_index as f32);
+                    let transform = entity.get_transform();
+                    render_state.transform_buffer().update_matrix(transform_index, transform);
+                }
+
+                entity.set_transform_clean();
+            }
+        }
     }
 
     pub fn create_entity(&mut self, render_state: &mut RenderState, sprite_configs: &Vec<SpriteConfig>)
@@ -44,6 +63,16 @@ impl GameState
         }
 
         self.entities.push(entity);
+    }
+
+    pub fn get_mutable_entity(&mut self, index: u32) -> Option<&mut Entity>
+    {
+        if index >= self.entities.len() as u32
+        {
+            return None
+        }
+
+        Some(&mut self.entities[index as usize])
     }
 
     pub fn get_active_sprite_ranges(&self) -> Vec<Range<i32>>
