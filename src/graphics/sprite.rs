@@ -4,7 +4,8 @@ use crate::graphics::renderable::Renderable;
 pub struct Sprite
 {
     vertices: [f32;28],
-    indices: [u32;6]
+    indices: [u32;6],
+    should_be_drawn: bool 
 }
 
 impl Sprite
@@ -37,7 +38,8 @@ impl Sprite
                 tex_coords[3][0], tex_coords[3][1],
                 texture_index as f32,
             ],
-            indices: [0,1,2,2,3,0]
+            indices: [0,1,2,2,3,0],
+            should_be_drawn: true
         }
     }
 
@@ -128,6 +130,16 @@ impl Renderable for Sprite
     fn get_stride() -> usize
     {
         return 7;
+    }
+
+    fn should_be_drawn(&self) -> bool
+    {
+        return self.should_be_drawn;
+    }
+
+    fn set_should_be_drawn(&mut self, state: bool)
+    {
+        self.should_be_drawn = state;
     }
 
 }

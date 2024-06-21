@@ -6,4 +6,6 @@ pub trait Renderable
     fn get_vertices(&self) -> &[f32];
     fn get_indices(&self) -> &[u32];
     fn get_stride() -> usize;
+    fn should_be_drawn(&self) -> bool;
+    fn set_should_be_drawn(&mut self, state: bool);
 }

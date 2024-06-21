@@ -10,13 +10,15 @@ extern crate nalgebra_glm as glm;
 mod state;
 mod util;
 mod graphics;
+mod game;
 
 use web_sys::{Document, HtmlImageElement};
 
 use state::game_state::GameState;
 use state::input_state::InputState;
 use state::render_state::RenderState;
-use std::ops::Range;
+use game::entity::Entity;
+use core::ops::Range;
 
 use graphics::sprite::Sprite;
 use crate::util::logging::log_f32;
@@ -27,7 +29,7 @@ pub struct Game
     game_state: GameState,
     render_state: Option<RenderState>,
     input_state: InputState,
-    sprite_draw_ranges: Vec<Range::<i32>> //TODO: temporary
+    entities: Vec<Entity> //TODO
 }
 
 #[wasm_bindgen]
@@ -40,7 +42,7 @@ impl Game
             game_state: GameState::new(),
             render_state: None::<RenderState>,
             input_state: InputState::new(),
-            sprite_draw_ranges: Vec::<Range<i32>>::new()
+            entities: Vec::new()
         }
     }
 
@@ -101,9 +103,15 @@ impl Game
         //Background!
         let transform_2 = render_state.transform_buffer().add_matrix(&s_2_w);
         let second_sprite = Sprite::new([500,500],[0,0],[500,500],1,transform_2 as u32,-2.0); 
-        
-        self.sprite_draw_ranges.push(render_state.submit_data(&sprite));
-        self.sprite_draw_ranges.push(render_state.submit_data(&second_sprite));
+
+        let mut possum_entity = Entity::new();
+        possum_entity.add_sprite(render_state, sprite);
+
+        let mut bg_entity = Entity::new();
+        bg_entity.add_sprite(render_state, second_sprite);
+
+        self.entities.push(possum_entity);
+        self.entities.push(bg_entity);
 
     }
 
@@ -123,7 +131,14 @@ impl Game
 
         render_state.clear_context();
         render_state.submit_transform_buffer_uniforms();
-        render_state.draw_buffer::<Sprite>(&self.sprite_draw_ranges);
+
+        let mut ranges = Vec::<Range<i32>>::new();
+        for entity in &self.entities
+        {
+            ranges.extend(entity.get_active_sprite_ranges().clone());
+        }
+
+        render_state.draw_buffer::<Sprite>(&ranges);
     }
 
     pub fn process_event(&self, code : &str)
