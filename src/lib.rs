@@ -25,6 +25,7 @@ pub struct Game
     game_state: GameState,
     render_state: Option<RenderState>,
     input_state: InputState,
+    sprites: Vec<Sprite> //TODO
 }
 
 #[wasm_bindgen]
@@ -37,6 +38,7 @@ impl Game
             game_state: GameState::new(),
             render_state: RenderState::new(document),
             input_state: InputState::new(),
+            sprites: Vec::new()
         }
     }
 
@@ -87,9 +89,27 @@ impl Game
             None => { return; }
         };
 
-        let possum_sprite_1 = render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[38,17],0,-0.5));
-        let possum_sprite_2 = render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[38,17],0,-0.5));
-        let bg_sprite = render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[153,119],1,-1.0));
+        let possum_sprite_1 = match render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[38,17],0,-0.5))
+        {
+            Some(s) => s,
+            None => { return; }
+        };
+
+        let possum_sprite_2 = match render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[38,17],0,-0.5))
+        {
+            Some(s) => s,
+            None => { return; }
+        };
+
+        let bg_sprite = match render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[153,119],1,-1.0))
+        {
+            Some(s) => s,
+            None => { return; }
+        };
+
+        self.sprites.push(possum_sprite_1);
+        self.sprites.push(possum_sprite_2);
+        self.sprites.push(bg_sprite);
 
         /*
         self.game_state.create_entity(render_state, &vec![possum_sprite_1,possum_sprite_2]);

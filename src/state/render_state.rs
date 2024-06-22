@@ -15,6 +15,7 @@ use std::any::Any;
 use crate::graphics::renderable::{Renderable,RenderableConfig};
 use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
+use crate::graphics::transform::Transform;
 use std::ops::Range;
 
 pub struct RenderState
@@ -209,6 +210,43 @@ impl RenderState
         context.uniform_matrix4fv_with_f32_array(vp_location.as_ref(),false,vp_converted.as_slice());
     }
 
+    pub fn set_transform<T: Renderable + 'static>(&self, renderable: &T, transform: &Transform)
+    {
+        //TODO: use the Transform to update the spot on the buffer where the render wants it
+    }
+
+    pub fn draw<T: Renderable + 'static>(&self, renderables: &Vec<T>)
+    {
+        let buffer = match Self::get_const_mapped_buffer::<T>(&self.vertex_buffer_map)
+        {
+            Some(buffer) => buffer,
+            None => {return}
+        };
+
+        buffer.bind(&self.context);
+
+        for renderable in renderables
+        {
+            let range = renderable.get_element_location();
+
+            let count = range.end - range.start;
+
+            if count < 0 
+            {
+                continue;
+            }
+
+            if !buffer.is_range_valid(&range)
+            {
+                continue;
+            }
+
+            self.context.draw_elements_with_i32(T::get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,range.start);
+        }
+
+        VertexBuffer::<T>::unbind(&self.context);
+    }
+
     fn get_texture(&self, index: u32) -> Option<&Texture>
     {
         if !self.textures.contains_key(&index)
@@ -274,42 +312,6 @@ impl RenderState
         buffer.bind(&self.context);
         buffer.buffer_data(&self.context,&renderable,&renderable_config);
         VertexBuffer::<T>::unbind(&self.context);
-    }
-
-    fn draw_buffer<T: Renderable + 'static>(&self, ranges: &Vec<Range<i32>>)
-    {
-        let buffer = match Self::get_const_mapped_buffer::<T>(&self.vertex_buffer_map)
-        {
-            Some(buffer) => buffer,
-            None => {return}
-        };
-
-        buffer.bind(&self.context);
-
-        //Draw once for each specified range on the buffer
-        for range in ranges 
-        {
-            let count = range.end - range.start;
-
-            if count < 0 
-            {
-                continue;
-            }
-
-            if !buffer.is_range_valid(&range)
-            {
-                continue;
-            }
-
-            self.context.draw_elements_with_i32(buffer.get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,range.start); //TODO: move context type
-        }
-
-        VertexBuffer::<T>::unbind(&self.context);
-    }
-
-    fn get_const_mapped_buffer_with_typeid(type_id: &TypeId, vertex_buffer_map: &HashMap<TypeId,Box<dyn Any>>) //-> Option<&VertexBuffer<_>>
-    {
-
     }
 
     fn get_const_mapped_buffer<T: Renderable + 'static>(vertex_buffer_map: &HashMap<TypeId,Box<dyn Any>>) -> Option<&VertexBuffer<T>>

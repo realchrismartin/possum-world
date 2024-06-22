@@ -18,7 +18,6 @@ pub struct VertexBuffer<T>
     ebo: WebGlBuffer,
     current_vertex_count: usize,
     current_index_count: usize,
-    draw_type : u32,
 }
 
 impl<T: Renderable> VertexBuffer<T>
@@ -66,8 +65,7 @@ impl<T: Renderable> VertexBuffer<T>
             vbo: vbo,
             ebo: ebo,
             current_vertex_count: 0,
-            current_index_count: 0,
-            draw_type: WebGl2RenderingContext::TRIANGLES,
+            current_index_count: 0
         })
     }
 
@@ -82,11 +80,6 @@ impl<T: Renderable> VertexBuffer<T>
         context.bind_vertex_array(None); 
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, None);
         context.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, None);
-    }
-
-    pub fn get_draw_type(&self) -> u32
-    {
-        return self.draw_type;
     }
 
     pub fn clear_data(&mut self)

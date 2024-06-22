@@ -114,4 +114,6 @@ pub trait Renderable
 
     //Get the location of this renderable's transform on its buffer
     fn get_transform_location(&self) -> u32;
+
+    fn get_draw_type() -> u32;
 }

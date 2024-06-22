@@ -1,3 +1,5 @@
+use web_sys::WebGl2RenderingContext;
+
 use crate::graphics::renderable::{Renderable, RenderableConfig};
 use crate::graphics::vertex_layout::{VertexLayout,VertexLayoutElement};
 use crate::util::util::get_rectangular_texture_coordinates;
@@ -79,5 +81,10 @@ impl Renderable for Sprite
     fn get_transform_location(&self) -> u32 
     {
        self.transform_location 
+    }
+
+    fn get_draw_type() -> u32
+    {
+        WebGl2RenderingContext::TRIANGLES
     }
 }
