@@ -53,7 +53,7 @@ impl<T: Renderable> VertexBuffer<T>
         context.buffer_data_with_i32(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, (MAX_INDICES * std::mem::size_of::<u32>()) as i32, WebGl2RenderingContext::STATIC_DRAW);
 
         //Associate the VBO and set up vertex attributes
-        //init_vertex_attributes assumes the VAO is bound
+        //init_vertex_layout assumes the VAO we created above is bound
         T::init_vertex_layout(&context);
 
         //Unbind everything to ensure that the context is clean now.
@@ -89,11 +89,6 @@ impl<T: Renderable> VertexBuffer<T>
         return self.draw_type;
     }
 
-    pub fn get_index_count(&self) -> usize
-    {
-        return self.current_index_count;
-    }
-
     pub fn clear_data(&mut self)
     {
         //TODO: overwrite data, or don't.
@@ -101,10 +96,46 @@ impl<T: Renderable> VertexBuffer<T>
         self.current_vertex_count = 0;
     }
 
+    //Return true if this buffer could render this range (i.e. there are enough index elements).
+    pub fn is_range_valid(&self, range: &Range<i32>) -> bool
+    {
+        //Common sense checks
+        if range.start < 0
+        {
+            return false;
+        }
+
+        if range.end < 0
+        {
+            return false;
+        }
+
+        if range.end - range.start <= 0
+        {
+            return false;
+        }
+
+        let current_ebo_size = (mem::size_of::<u32>() * self.current_index_count) as i32;
+
+        //TODO: check off by one?
+
+        if current_ebo_size < range.start
+        {
+            return false;
+        }
+
+        if current_ebo_size < range.end
+        {
+            return false;
+        }
+
+        true
+    }
+
+    //Buffer the data from the renderable, then return the element range on this buffer that data occupies
+    //Assumes this buffer is bound already
     pub fn buffer_data(&mut self, context: &WebGl2RenderingContext, renderable: &T) -> Range<i32>
     {
-        //TODO: assumes we are bound
-
         let vertex_data = renderable.get_vertices();
         let index_data = renderable.get_indices();
 
@@ -130,7 +161,6 @@ impl<T: Renderable> VertexBuffer<T>
         let index_offset = (mem::size_of::<u32>() * self.current_index_count) as i32;
 
         //Create a new index data array to offset
-        //TODO: how many elements are uplaoded alrady
         let new_indices : Vec<u32> = index_data.iter().map(|&x| x + (self.current_vertex_count as u32 / T::get_stride() as u32)).collect();
 
         unsafe
@@ -142,7 +172,7 @@ impl<T: Renderable> VertexBuffer<T>
                 WebGl2RenderingContext::ARRAY_BUFFER,
                 vertex_offset,
                 &vertices_view
-                );
+            );
             
             context.buffer_sub_data_with_i32_and_array_buffer_view(
                 WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
@@ -154,7 +184,8 @@ impl<T: Renderable> VertexBuffer<T>
         self.current_vertex_count = new_total_vertices;
         self.current_index_count = new_total_indices;
 
-        Range::<i32>{ start: index_offset, end: index_offset + index_data.len() as i32}
+        //Return a range that indicates the elements that were just submitted to the buffer
+        Range::<i32>{ start: index_offset, end: index_offset + (mem::size_of::<u32>() * index_data.len()) as i32}
 
     }
 }

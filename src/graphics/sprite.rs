@@ -1,102 +1,27 @@
-use crate::graphics::renderable::Renderable;
+use crate::graphics::renderable::{Renderable, RenderableConfig};
 use crate::graphics::vertex_layout::{VertexLayout,VertexLayoutElement};
+use crate::util::util::get_rectangular_texture_coordinates;
+use std::ops::Range;
 
-pub struct SpriteConfig
-{
-    texture_coordinates: [i32;2],
-    size: [i32;2],
-    texture_index: u32,
-    z: f32
-}
-
-impl SpriteConfig
-{
-    pub fn new(tex_coordinates: [i32;2], sprite_size: [i32;2], tex_index: u32, z_ind: f32) -> Self 
-    {
-        Self
-        {
-            texture_coordinates :tex_coordinates,
-            size: sprite_size,
-            texture_index: tex_index,
-            z: z_ind
-        }
-    }
-
-    pub fn get_texture_index(&self) -> u32
-    {
-        self.texture_index
-    }
-}
-
+//Like all Renderables, a Sprite is a handle that points to locations on our buffers.
+//It doesn't hold vertex or index data. That data is generated once on upload to the GPU.
 pub struct Sprite
 {
-    vertices: [f32;28],
-    indices: [u32;6],
-    transform_index: u32,
-    should_be_drawn: bool 
+    element_location: Range<i32>,
+    transform_location: u32,
 }
-
-impl Sprite
-{
-    pub fn new(sprite_config : &SpriteConfig, transform_index: u32, texture_dimensions: [u32;2]) -> Self 
-    {
-        let tex_coords = Self::get_texture_coordinates(sprite_config.texture_coordinates,sprite_config.size,texture_dimensions);
-
-        Sprite 
-        {
-            vertices: 
-            [
-                -1.0,1.0,sprite_config.z,
-                transform_index as f32,
-                tex_coords[0][0], tex_coords[0][1],
-                sprite_config.texture_index as f32,
-
-                -1.0,-1.0,sprite_config.z,
-                transform_index as f32,
-                tex_coords[1][0], tex_coords[1][1],
-                sprite_config.texture_index as f32,
-
-                1.0,-1.0,sprite_config.z,
-                transform_index as f32,
-                tex_coords[2][0], tex_coords[2][1],
-                sprite_config.texture_index as f32,
-
-                1.0,1.0,sprite_config.z,
-                transform_index as f32,
-                tex_coords[3][0], tex_coords[3][1],
-                sprite_config.texture_index as f32,
-            ],
-            indices: [0,1,2,2,3,0],
-            should_be_drawn: true,
-            transform_index: transform_index
-        }
-    }
-
-    pub fn get_transform_index(&self) -> u32
-    {
-        self.transform_index
-    }
-
-    fn get_texture_coordinates(top_left_pixel_coordinate: [i32;2], dimensions: [i32;2], texture_dimensions: [u32;2]) -> [[f32;2];4]
-    {
-        let x = top_left_pixel_coordinate[0] as f32 / texture_dimensions[0] as f32;
-        let y = top_left_pixel_coordinate[1] as f32 / texture_dimensions[1] as f32;
-
-        let width = dimensions[0] as f32 / texture_dimensions[0] as f32;
-        let height = dimensions[1] as f32 / texture_dimensions[1] as f32;
-
-        let left_top = [x,y];
-        let left_bottom = [x,y + height];
-        let right_bottom = [x + width,y + height];
-        let right_top = [x + width,y];
-
-        return [left_top,left_bottom,right_bottom,right_top];
-    }
-}
-
 
 impl Renderable for Sprite
 {
+    fn new(element_location: &Range<i32>, transform_location: u32) -> Self 
+    {
+        Self 
+        {
+            element_location: *element_location,
+            transform_location,
+        }
+    }
+
     fn get_vertex_layout() -> super::vertex_layout::VertexLayout
     {
        VertexLayout::new(vec![
@@ -107,24 +32,52 @@ impl Renderable for Sprite
        ])
     }
 
-    fn get_vertices(&self) -> &[f32]
+    fn get_vertices(&self, renderable_config: &RenderableConfig) -> Vec<f32>
     {
-        return &self.vertices;
+        //TODO: maybe later don't use self at all here
+
+        let tex_coords = get_rectangular_texture_coordinates(renderable_config.get_texture_coordinates(), 
+            renderable_config.get_size(), renderable_config.get_texture_dimensions());
+
+        vec![
+            -1.0,1.0,
+            renderable_config.get_z(),
+            self.transform_location as f32,
+            tex_coords[0][0], tex_coords[0][1],
+            renderable_config.get_texture_index() as f32,
+
+            -1.0,-1.0,
+            renderable_config.get_z(),
+            self.transform_location as f32,
+            tex_coords[1][0], tex_coords[1][1],
+            renderable_config.get_texture_index() as f32,
+
+            1.0,-1.0,
+            renderable_config.get_z(),
+            self.transform_location as f32,
+            tex_coords[2][0], tex_coords[2][1],
+            renderable_config.get_texture_index() as f32,
+
+            1.0,1.0,
+            renderable_config.get_z(),
+            self.transform_location as f32,
+            tex_coords[3][0], tex_coords[3][1],
+            renderable_config.get_texture_index() as f32,
+        ]
     }
 
-    fn get_indices(&self) -> &[u32]
+    fn get_indices(&self, renderable_config: &RenderableConfig) -> Vec<u32>
     {
-        return &self.indices;
+        vec![0,1,2,2,3,0]
     }
 
-    fn should_be_drawn(&self) -> bool
+    fn get_element_location(&self) -> &Range<i32> 
     {
-        return self.should_be_drawn;
+      &self.element_location  
     }
 
-    fn set_should_be_drawn(&mut self, state: bool)
+    fn get_transform_location(&self) -> u32 
     {
-        self.should_be_drawn = state;
+       self.transform_location 
     }
-
 }

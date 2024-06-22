@@ -1,4 +1,5 @@
 
+use crate::graphics::transform::Transform;
 pub struct TransformBuffer
 {
     transform_data: Vec<f32>,
@@ -27,14 +28,16 @@ impl TransformBuffer
         self.buffer_dirty = false;
     }
 
-    pub fn update_matrix(&mut self, index: u32, matrix: &glm::Mat4)
+    //TODO: fix to use transform
+    /*
+    pub fn update_transform(&mut self, index: u32, transform: &glm::Mat4)
     {
         if index >= self.transform_data.len() as u32
         {
             return;
         }
 
-        let matrix_slice = matrix.as_slice();
+        let matrix_slice = transform.as_slice();
         let mut matrix_index = 0;
 
         //A 4x4 matrix has 16 floats
@@ -48,21 +51,17 @@ impl TransformBuffer
 
         self.buffer_dirty = true;
     }
+    */
 
-    pub fn add_matrix(&mut self,matrix: &glm::Mat4) -> u32 
+    pub fn request_new_transform(&mut self) -> u32 
     {
         let mat_index = self.next_available_index;
         self.next_available_index += 1;
         self.buffer_dirty = true;
 
-        self.transform_data.extend_from_slice(matrix.as_slice());
+        self.transform_data.extend_from_slice(glm::Mat4::identity().as_slice());
 
         mat_index
-    }
-
-    pub fn add_identity_matrix(&mut self) -> u32 
-    {
-        return self.add_matrix(&glm::Mat4::identity().into());
     }
 
     pub fn data(&self) -> &Vec<f32>
