@@ -79,20 +79,26 @@ impl RenderState
             None => { return None; }
         };
 
-        //TODO: this impinges on the generality of this interface - currently passing "sprite specific data" in the RC
+        //Get the space on the buffer that the new data will take up.
+        //NB: this relies on the property that any given instance of a specific Renderable always has the same # of indices.
+        let element_location = match self.get_next_range_on_buffer::<T>()
+        {
+            Some(range) => range,
+            None => { return None; }
+        };
 
         //Copy the RC to make it mutable
         let mut copied_renderable_config = renderable_config.clone();
         copied_renderable_config.set_texture_dimensions(&texture_dimensions);
 
         //Request a transform from the buffer. It lives there in RAM. The buffer will handle moving the data over to uniforms.
-        let transform_index = self.transform_buffer.request_new_transform();
+        let transform_location = self.transform_buffer.request_new_transform();
 
         //Create a renderable
-        let renderable = T::new(copied_renderable_config);
+        let renderable = T::new(element_location, transform_location);
 
         //immediately submit its data to the buffer. This will only be done once.
-        let range = self.submit_data(&renderable);
+        self.submit_data(&renderable,&copied_renderable_config);
 
         //Return the renderable. The owner of the renderable can later submit it to be drawn, so we will know which buffer to use.
         Some(renderable)
@@ -231,7 +237,25 @@ impl RenderState
         self.vertex_buffer_map.insert(type_id,Box::new(buffer));
     }
 
-    fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T) -> Range<i32>
+    fn get_next_range_on_buffer<T: Renderable + 'static>(&mut self) -> Option<Range<i32>>
+    {
+        let type_id = TypeId::of::<T>();
+        if !self.vertex_buffer_map.contains_key(&type_id)
+        {
+            //Lazily initialize our buffer here.
+            self.init_buffer::<T>();
+        }
+
+        let buffer = match Self::get_const_mapped_buffer::<T>(&mut self.vertex_buffer_map)
+        {
+            Some(buffer) => buffer,
+            None => {return None; }
+        };
+
+        Some(buffer.get_next_range())
+    }
+
+    fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T, renderable_config: &RenderableConfig)
     {
         let type_id = TypeId::of::<T>();
         if !self.vertex_buffer_map.contains_key(&type_id)
@@ -244,14 +268,12 @@ impl RenderState
         let buffer = match Self::get_mapped_buffer::<T>(&mut self.vertex_buffer_map)
         {
             Some(buffer) => buffer,
-            None => {return Range::<i32> { start:0, end:0 }}
+            None => {return; }
         };
 
         buffer.bind(&self.context);
-        let range = buffer.buffer_data(&self.context,&renderable);
+        buffer.buffer_data(&self.context,&renderable,&renderable_config);
         VertexBuffer::<T>::unbind(&self.context);
-
-        range
     }
 
     fn draw_buffer<T: Renderable + 'static>(&self, ranges: &Vec<Range<i32>>)

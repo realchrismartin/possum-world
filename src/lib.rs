@@ -87,9 +87,9 @@ impl Game
             None => { return; }
         };
 
-        let possum_sprite_1 = RenderableConfig::new([0,0],[38,17],0,-0.5);
-        let possum_sprite_2 = RenderableConfig::new([0,0],[38,17],0,-0.5);
-        let bg_sprite = RenderableConfig::new([0,0],[153,119],1,-1.0); 
+        let possum_sprite_1 = render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[38,17],0,-0.5));
+        let possum_sprite_2 = render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[38,17],0,-0.5));
+        let bg_sprite = render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[153,119],1,-1.0));
 
         /*
         self.game_state.create_entity(render_state, &vec![possum_sprite_1,possum_sprite_2]);

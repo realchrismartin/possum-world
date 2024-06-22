@@ -13,11 +13,11 @@ pub struct Sprite
 
 impl Renderable for Sprite
 {
-    fn new(element_location: &Range<i32>, transform_location: u32) -> Self 
+    fn new(element_location: Range<i32>, transform_location: u32) -> Self 
     {
         Self 
         {
-            element_location: *element_location,
+            element_location,
             transform_location,
         }
     }
@@ -66,7 +66,7 @@ impl Renderable for Sprite
         ]
     }
 
-    fn get_indices(&self, renderable_config: &RenderableConfig) -> Vec<u32>
+    fn get_indices() -> Vec<u32>
     {
         vec![0,1,2,2,3,0]
     }

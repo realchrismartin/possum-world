@@ -3,6 +3,7 @@ use crate::graphics::vertex_layout::VertexLayout;
 use std::ops::Range;
 
 //This struct may contain more data than is needed for any given Renderable. TODO: address?
+#[derive(Clone)]
 pub struct RenderableConfig
 {
     texture_coordinates: [i32;2],
@@ -63,7 +64,7 @@ impl RenderableConfig
 // Using this data, the renderer can set up a buffer for a renderable type and hold the data, passing back a lightweight handle that knows where the data is.
 pub trait Renderable
 {
-    fn new(element_location: &Range<i32>, transform_location: u32) -> Self;
+    fn new(element_location: Range<i32>, transform_location: u32) -> Self;
 
     fn init_vertex_layout(context: &WebGl2RenderingContext)
     {
@@ -102,7 +103,8 @@ pub trait Renderable
     fn get_vertices(&self, renderable_config: &RenderableConfig) -> Vec<f32>;
 
     //Given a renderable config, generate indices for this renderable
-    fn get_indices(&self, renderable_config: &RenderableConfig) -> Vec<u32>;
+    //This has to always be the same for any given Renderable type (ie consistent for that type)
+    fn get_indices() -> Vec<u32>;
 
     //Generate the vertex layout for this renderable
     fn get_vertex_layout() -> VertexLayout;
@@ -112,5 +114,4 @@ pub trait Renderable
 
     //Get the location of this renderable's transform on its buffer
     fn get_transform_location(&self) -> u32;
-
 }
