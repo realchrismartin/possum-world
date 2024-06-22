@@ -161,8 +161,28 @@ impl RenderState
         context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
 
+    pub fn set_translation<T: Renderable + 'static>(&mut self, renderable: &T, translation: glm::Vec3)
+    {
+        self.transform_buffer.set_translation(renderable.get_transform_location(), translation);
+    }
+
+    pub fn set_rotation<T: Renderable + 'static>(&mut self, renderable: &T, rotation: f32)
+    {
+        self.transform_buffer.set_rotation(renderable.get_transform_location(), rotation);
+    }
+
+    pub fn set_scale<T: Renderable + 'static>(&mut self, renderable: &T, scale: glm::Vec3)
+    {
+        self.transform_buffer.set_scale(renderable.get_transform_location(),scale);
+    }
+
     pub fn submit_transform_buffer_uniforms(&mut self)
     {
+        //For any of the transforms that need to be recalculated, do it now.
+        //TODO: later, optimize so that we don't have to iterate over all transforms here.
+        self.transform_buffer.recalculate_transforms_and_update_data();
+
+        //If the recalculation didn't require the buffer to change, do nothing.
         if !self.transform_buffer.dirty()
         {
             return;
@@ -208,11 +228,6 @@ impl RenderState
         let vp_converted : glm::Mat4 = view_projection_matrix.into();
 
         context.uniform_matrix4fv_with_f32_array(vp_location.as_ref(),false,vp_converted.as_slice());
-    }
-
-    pub fn set_transform<T: Renderable + 'static>(&self, renderable: &T, transform: &Transform)
-    {
-        //TODO: use the Transform to update the spot on the buffer where the render wants it
     }
 
     pub fn draw<T: Renderable + 'static>(&self, renderables: &Vec<T>)
