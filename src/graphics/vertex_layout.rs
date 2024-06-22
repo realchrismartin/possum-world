@@ -1,19 +1,7 @@
 pub struct VertexLayoutElement
 {
-    pub location: i32,
+    pub location: u32,
     pub size: i32
-}
-
-impl VertexLayoutElement
-{
-    pub fn new(location :i32, size: i32) -> Self
-    {
-        Self
-        {
-            location,
-            size
-        }
-    }
 }
 
 pub struct VertexLayout
