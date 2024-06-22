@@ -10,6 +10,7 @@ loadImage = (src) => {
 
         img.onerror = (err) =>
         {
+            console.log(err);
             reject(err);
         }
 

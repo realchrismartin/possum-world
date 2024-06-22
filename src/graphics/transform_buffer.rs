@@ -79,9 +79,6 @@ impl TransformBuffer
 
             any_dirty = true;
 
-            log("Calcing");
-            log_f32(index as f32);
-
             let matrix = transform.calculate();
 
             let matrix_slice = matrix.as_slice();

@@ -34,10 +34,18 @@ export function init(textures,shader_sources)
     game.init_render_data();
     game.init_game_data();
 
+    //TODO: make the clock less rudimentary
+    let now = new Date();
+
     //Run the game loop
     const gameLoop = () =>
     {
-        game.update();
+        let previous = now;
+        now = new Date();
+
+        let delta_time = (now - previous); //in MS
+
+        game.update(delta_time);
         game.render();
 
         requestAnimationFrame(gameLoop);

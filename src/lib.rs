@@ -25,6 +25,7 @@ pub struct Game
     game_state: GameState,
     render_state: Option<RenderState>,
     input_state: InputState,
+    elapsed_ms: f32, //TODO
     sprites: Vec<Sprite> //TODO
 }
 
@@ -38,6 +39,7 @@ impl Game
             game_state: GameState::new(),
             render_state: RenderState::new(document),
             input_state: InputState::new(),
+            elapsed_ms: 0.0,
             sprites: Vec::new()
         }
     }
@@ -89,27 +91,27 @@ impl Game
             None => { return; }
         };
 
-        let possum_sprite_1 = match render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[38,17],0,-0.5))
+        let possum_sprite_1 = match render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[376,192],0,-0.5))
         {
             Some(s) => s,
             None => { return; }
         };
 
-        let bg_sprite = match render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[153,119],1,0.0))
+        let bg_sprite = match render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[500,500],1,0.0))
         {
             Some(s) => s,
             None => { return; }
         };
 
-        render_state.set_scale(&possum_sprite_1,glm::vec3(0.1,0.1,0.1));
-        render_state.set_scale(&bg_sprite,glm::vec3(2.0,2.0,0.1));
+        render_state.set_scale(&possum_sprite_1,glm::vec3(0.3,0.3,0.1));
+        render_state.set_scale(&bg_sprite,glm::vec3(1.0,1.0,0.1));
 
         self.sprites.push(possum_sprite_1);
         self.sprites.push(bg_sprite);
 
     }
 
-    pub fn update(&mut self)
+    pub fn update(&mut self, delta_time: f32)
     {
         let render_state = match &mut self.render_state
         {
@@ -118,6 +120,13 @@ impl Game
         };
 
         self.game_state.update(render_state, &self.input_state);
+
+        self.elapsed_ms += delta_time;
+
+        //TODO: not safe, temporary for testing
+        render_state.set_rotation(&self.sprites[0], f32::sin(self.elapsed_ms / 1000.0));
+
+        render_state.set_translation(&self.sprites[0], glm::vec3(0.0,f32::sin(self.elapsed_ms / 1000.0),-0.5));
     }
 
     pub fn render(&mut self)
