@@ -15,14 +15,23 @@ export function init(textures,shader_sources)
 
     const game = Game.new(document);
 
+    //Attach event listeners for keypresses
     addEventListener("keydown",(event) => 
     {
-        game.process_event(event.code);
+        game.process_keypress_event(true,event.code);
+    });
+
+    addEventListener("keyup",(event) => 
+    {
+        game.process_keypress_event(false,event.code);
     });
     
+    
+    //Load shader
     //TODO: allow loading more than one shader
     game.load_shader(shader_sources[0],shader_sources[1]);
 
+    //Load textures
     let index = 0;
     for(const texture of textures)
     {
@@ -31,7 +40,6 @@ export function init(textures,shader_sources)
     }
 
     //Load initial data - has to be done after renderer is set up.
-    game.init_render_data();
     game.init_game_data();
 
     //TODO: make the clock less rudimentary

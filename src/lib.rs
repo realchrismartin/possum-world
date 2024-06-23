@@ -16,17 +16,13 @@ use web_sys::{Document, HtmlImageElement};
 use state::game_state::GameState;
 use state::input_state::InputState;
 use state::render_state::RenderState;
-use graphics::renderable::RenderableConfig;
-use graphics::sprite::Sprite;
 
 #[wasm_bindgen]
 pub struct Game
 {
     game_state: GameState,
     render_state: Option<RenderState>,
-    input_state: InputState,
-    elapsed_ms: f32, //TODO
-    sprites: Vec<Sprite> //TODO
+    input_state: InputState
 }
 
 #[wasm_bindgen]
@@ -38,9 +34,7 @@ impl Game
         {
             game_state: GameState::new(),
             render_state: RenderState::new(document),
-            input_state: InputState::new(),
-            elapsed_ms: 0.0,
-            sprites: Vec::new()
+            input_state: InputState::new()
         }
     }
 
@@ -72,17 +66,6 @@ impl Game
         render_state.load_texture(index,img);
     }
 
-    pub fn init_render_data(&mut self)
-    {
-        let render_state = match &mut self.render_state
-        {
-            Some(r) => {r}
-            None => { return; }
-        };
-
-        render_state.submit_camera_uniforms(); //TODO: if we change perspective, do this more than once.
-    }
-
     pub fn init_game_data(&mut self)
     {
         let render_state = match &mut self.render_state
@@ -91,24 +74,7 @@ impl Game
             None => { return; }
         };
 
-        let possum_sprite_1 = match render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[376,192],0,-0.5))
-        {
-            Some(s) => s,
-            None => { return; }
-        };
-
-        let bg_sprite = match render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([0,0],[500,500],1,0.0))
-        {
-            Some(s) => s,
-            None => { return; }
-        };
-
-        render_state.set_scale(&possum_sprite_1,glm::vec3(0.3,0.3,0.1));
-        render_state.set_scale(&bg_sprite,glm::vec3(1.0,1.0,0.1));
-
-        self.sprites.push(possum_sprite_1);
-        self.sprites.push(bg_sprite);
-
+        self.game_state.init(render_state);
     }
 
     pub fn update(&mut self, delta_time: f32)
@@ -119,14 +85,7 @@ impl Game
             None => { return; }
         };
 
-        self.game_state.update(render_state, &self.input_state);
-
-        self.elapsed_ms += delta_time;
-
-        //TODO: not safe, temporary for testing
-        render_state.set_rotation(&self.sprites[0], f32::sin(self.elapsed_ms / 1000.0));
-
-        render_state.set_translation(&self.sprites[0], glm::vec3(0.0,f32::sin(self.elapsed_ms / 1000.0),-0.5));
+        self.game_state.update(render_state, &self.input_state, delta_time);
     }
 
     pub fn render(&mut self)
@@ -138,13 +97,13 @@ impl Game
         };
 
         render_state.clear_context();
+        render_state.submit_camera_uniforms(); 
         render_state.submit_transform_buffer_uniforms();
-
-        render_state.draw(&self.sprites);
+        render_state.draw(self.game_state.get_active_renderables()); //TODO: just sprites for now.
     }
 
-    pub fn process_event(&self, code : &str)
+    pub fn process_keypress_event(&mut self, pressed: bool, code : &str)
     {
-        self.input_state.process_input(code);
+        self.input_state.process_input(pressed,code);
     }
 }
