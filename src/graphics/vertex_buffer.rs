@@ -7,8 +7,8 @@ use web_sys::js_sys::Uint32Array;
 use std::mem;
 use std::ops::Range;
 
-static MAX_VERTICES : usize = 100;
-static MAX_INDICES : usize = 100;
+static MAX_VERTICES : usize = 25000;
+static MAX_INDICES : usize = 25000;
 
 pub struct VertexBuffer<T>
 {

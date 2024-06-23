@@ -1,9 +1,7 @@
 use crate::util::logging::log;
-use crate::wasm_bindgen;
 use std::collections::HashMap;
 use std::fmt;
 
-#[wasm_bindgen]
 pub struct InputState
 {
     active: HashMap<KeyPress,bool>
@@ -31,7 +29,6 @@ impl fmt::Display for KeyPress
     }
 }
 
-#[wasm_bindgen]
 impl InputState
 {
     pub fn new() -> Self
@@ -40,6 +37,44 @@ impl InputState
         {
             active: HashMap::from([(KeyPress::W, false),(KeyPress::S, false),(KeyPress::A, false), (KeyPress::D, false)])
         }
+    }
+
+    pub fn is_pressed(&self, key : KeyPress) -> bool
+    {
+        let res = match self.active.get(&key)
+        {
+            Some(r) => return *r,
+            None => {}
+        };
+
+        false
+    }
+
+    pub fn get_movement_direction(&self) -> glm::Vec2
+    {
+        let mut res = glm::vec2(0.0,0.0);
+
+        if self.is_pressed(KeyPress::W)
+        {
+            res += glm::vec2(0.0,1.0);
+        }
+
+        if self.is_pressed(KeyPress::S)
+        {
+            res += glm::vec2(0.0,-1.0);
+        }
+
+        if self.is_pressed(KeyPress::A)
+        {
+            res += glm::vec2(-1.0,0.0);
+        }
+
+        if self.is_pressed(KeyPress::D)
+        {
+            res += glm::vec2(1.0,0.0);
+        }
+
+        res
     }
 
     pub fn process_input(&mut self, pressed: bool, code: &str)

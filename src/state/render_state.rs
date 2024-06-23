@@ -15,8 +15,11 @@ use std::any::Any;
 use crate::graphics::renderable::{Renderable,RenderableConfig};
 use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
-use crate::graphics::transform::Transform;
+use crate::util::util::world_position_to_screen_translation;
 use std::ops::Range;
+
+static WORLD_SIZE_X : f32 = 1000.0;
+static WORLD_SIZE_Y : f32 = 1000.0;
 
 pub struct RenderState
 {
@@ -161,6 +164,13 @@ impl RenderState
         context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
     }
 
+    //0,0 is the bottom left corner of the world
+    //0,max_y is the top left corner
+    pub fn set_position<T: Renderable + 'static>(&mut self, renderable: &T, position : glm::Vec2)
+    {
+        self.set_translation(renderable, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X,WORLD_SIZE_Y)));
+    }
+
     pub fn set_translation<T: Renderable + 'static>(&mut self, renderable: &T, translation: glm::Vec3)
     {
         self.transform_buffer.set_translation(renderable.get_transform_location(), translation);
@@ -199,6 +209,8 @@ impl RenderState
         let context = &self.context;
         let m_location = context.get_uniform_location(shader.get_shader_program(),"m_matrices");
         context.uniform_matrix4fv_with_f32_array(m_location.as_ref(),false,&self.transform_buffer.data().as_slice());
+
+        log(format!("This many uniforms uploaded: {}",&self.transform_buffer.data().len()).as_str());
 
         self.transform_buffer.set_clean();
     }
