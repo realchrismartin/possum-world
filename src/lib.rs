@@ -10,6 +10,7 @@ extern crate nalgebra_glm as glm;
 mod state;
 mod util;
 mod graphics;
+mod game;
 
 use web_sys::{Document, HtmlImageElement};
 
@@ -99,7 +100,9 @@ impl Game
         render_state.clear_context();
         render_state.submit_camera_uniforms(); 
         render_state.submit_transform_buffer_uniforms();
-        render_state.draw(self.game_state.get_active_renderables()); //TODO: just sprites for now.
+
+        render_state.draw(self.game_state.get_background_renderables()); //TODO: just sprites for now.
+        render_state.draw(self.game_state.get_player_renderables()); //TODO: just sprites for now.
     }
 
     pub fn process_keypress_event(&mut self, pressed: bool, code : &str)

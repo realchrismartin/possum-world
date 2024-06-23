@@ -59,9 +59,8 @@ impl RenderState
             Err(e) => {log_value(&e);return None;}
         };
 
-        //TODO: fix blending
-        //web_context.enable(WebGl2RenderingContext::BLEND);
-        //web_context.blend_func(WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA,WebGl2RenderingContext::DST_COLOR);
+        web_context.enable(WebGl2RenderingContext::BLEND);
+        web_context.blend_func(WebGl2RenderingContext::SRC_ALPHA ,WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
         web_context.enable(WebGl2RenderingContext::DEPTH_TEST);
 
         Some(Self
@@ -75,7 +74,17 @@ impl RenderState
         })
     }
 
+    pub fn request_new_renderable_with_existing_transform<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, existing_transform: u32) -> Option<T>
+    {
+        self.request_new_renderable_impl(renderable_config,Some(existing_transform))
+    }
+
     pub fn request_new_renderable<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig) -> Option<T>
+    {
+        self.request_new_renderable_impl(renderable_config,None)
+    }
+
+    fn request_new_renderable_impl<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, existing_transform: Option<u32>) -> Option<T>
     {
         let texture_dimensions = match self.get_texture(renderable_config.get_texture_index())
         {
@@ -95,8 +104,13 @@ impl RenderState
         let mut copied_renderable_config = renderable_config.clone();
         copied_renderable_config.set_texture_dimensions(&texture_dimensions);
 
+        //If an existing transform is requested, use it, otherwise:
         //Request a transform from the buffer. It lives there in RAM. The buffer will handle moving the data over to uniforms.
-        let transform_location = self.transform_buffer.request_new_transform();
+        let transform_location = match existing_transform
+        {
+            Some(transform) => transform,
+            None => self.transform_buffer.request_new_transform()
+        };
 
         //Create a renderable
         let renderable = T::new(element_location, transform_location);
@@ -162,6 +176,26 @@ impl RenderState
 
         context.clear_color(0.0, 0.0, 0.0, 1.0);
         context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+    }
+
+    pub fn set_position_with_index(&mut self, transform_index: u32, position : glm::Vec2)
+    {
+        self.set_translation_with_index(transform_index, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X,WORLD_SIZE_Y)));
+    }
+
+    pub fn set_translation_with_index(&mut self, transform_index: u32, translation: glm::Vec3)
+    {
+        self.transform_buffer.set_translation(transform_index, translation);
+    }
+
+    pub fn set_rotation_with_index(&mut self, transform_index: u32, rotation: f32)
+    {
+        self.transform_buffer.set_rotation(transform_index, rotation);
+    }
+
+    pub fn set_scale_with_index(&mut self, transform_index: u32, scale: glm::Vec3)
+    {
+        self.transform_buffer.set_scale(transform_index,scale);
     }
 
     //0,0 is the bottom left corner of the world
