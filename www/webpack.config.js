@@ -10,7 +10,7 @@ module.exports = {
   mode: "development",
   plugins: [
     new CopyWebpackPlugin(['index.html','styles.css',
-      '../static/background.png',
+      '../static/background_sprite_sheet.png',
       '../static/possum_sprite_sheet.png',
       '../static/sprite_frag.glsl',
       '../static/sprite_vert.glsl'

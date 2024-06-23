@@ -4,13 +4,14 @@ export function init(textures,shader_sources)
 {
     let canvas = document.getElementById("canvas");
 
-    canvas.height = document.documentElement.clientHeight; 
-    canvas.width = document.documentElement.clientWidth;
+    //TODO
+    canvas.height = "1000"; // document.documentElement.clientHeight; 
+    canvas.width = "1000"; //document.documentElement.clientWidth;
 
     addEventListener("resize",(event) => {
         let canvas = document.getElementById("canvas");
-        canvas.height = document.documentElement.clientHeight; 
-        canvas.width = document.documentElement.clientWidth;
+        //canvas.height = document.documentElement.clientHeight; 
+        //canvas.width = document.documentElement.clientWidth;
     });
 
     const game = Game.new(document);

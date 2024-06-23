@@ -10,7 +10,6 @@ loadImage = (src) => {
 
         img.onerror = (err) =>
         {
-            console.log(err);
             reject(err);
         }
 
@@ -34,7 +33,7 @@ loadShader = (src) => {
 let texture_sources = 
 [
     loadImage("/possum_sprite_sheet.png"),
-    loadImage("/background.png"),
+    loadImage("/background_sprite_sheet.png"),
 ];
 
 let shader_sources = 
