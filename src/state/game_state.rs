@@ -5,6 +5,7 @@ use crate::graphics::renderable::RenderableConfig;
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
 use rand::Rng;
+use crate::util::logging::log;
 
 pub struct GameState
 {
@@ -30,7 +31,6 @@ impl GameState
     pub fn init(&mut self, render_state: &mut RenderState)
     {
         //TODO: rectangular for now because otherwise we stretch onto the rectangular base sprite.
-        /*
         let player = AnimatedEntity::new(render_state,50.0,
             
             vec![
@@ -60,7 +60,6 @@ impl GameState
         render_state.set_scale_with_index(player.get_transform_location(),glm::vec3(0.1,0.1,1.0));
 
         self.player = Some(player);
-         */
 
         //Generate a random tile grid
         let mut rng = rand::thread_rng();
@@ -127,11 +126,13 @@ impl GameState
             return;
         }
 
-        if movement_direction.x > 0.0 && self.player_last_move_direction <= 0
+        if movement_direction.x > 0.0 && !player.get_facing_right()
         {
+            log("faced right");
             player.set_facing(true);
-        } else if movement_direction.x < 0.0 && self.player_last_move_direction > 0
+        } else if movement_direction.x < 0.0 && player.get_facing_right()
         {
+            log("faced left");
             player.set_facing(false);
         }
 

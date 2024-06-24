@@ -74,6 +74,10 @@ impl RenderState
         })
     }
 
+    pub fn request_new_transform(&mut self) -> u32
+    {
+        self.transform_buffer.request_new_transform()
+    }
     pub fn request_new_renderable_with_existing_transform<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, existing_transform: u32) -> Option<T>
     {
         self.request_new_renderable_impl(renderable_config,Some(existing_transform))

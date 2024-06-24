@@ -34,33 +34,44 @@ impl AnimatedEntity
                 inactive_sprites_right: VecDeque::new(),
                 shared_transform_index: 0, //Will not be accurate
                 animating: false,
-                time_per_frame,
+                facing_right: true,
                 time_since_frame_change: 0.0,
-                facing_right: true
-
+                time_per_frame: time_per_frame
             }
         }
+
+        log("Got here first.");
 
         let mut active_sprites = Vec::new();
         let mut left_inactive_sprites = VecDeque::<Sprite>::new();
         let mut right_inactive_sprites = VecDeque::<Sprite>::new();
 
         //Create all of the sprites but only use one transform index.
-        
-        //Initialize left sprites first.
-        Self::init_sprites(render_state, &left_sprite_configs, &mut left_inactive_sprites, None);
+        let transform = render_state.request_new_transform();
 
-        //Then initialize right sprites.
-        if left_inactive_sprites.len() > 0
+        for config in &left_sprite_configs
         {
-            Self::init_sprites(render_state, &right_sprite_configs, &mut right_inactive_sprites, Some(left_inactive_sprites.get(0).unwrap().get_transform_location()));
-        } else 
-        {
-            Self::init_sprites(render_state, &right_sprite_configs, &mut right_inactive_sprites, None);
+            let sprite = match render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,transform)
+            {
+                Some(s) => s,
+                None => { continue; }
+            };
+
+            left_inactive_sprites.push_back(sprite);
         }
 
-        //Now select an active sprite and get the transform all sprites are using while we're at it
-        let mut transform = None;
+        for config in &right_sprite_configs
+        {
+            let sprite = match render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,transform)
+            {
+                Some(s) => s,
+                None => { continue; }
+            };
+
+            right_inactive_sprites.push_back(sprite);
+        }
+
+        //Now select an active sprite 
 
         if facing_right
         {
@@ -76,14 +87,13 @@ impl AnimatedEntity
                         inactive_sprites_right: VecDeque::new(),
                         shared_transform_index: 0, //Will not be accurate
                         animating: false,
-                        time_per_frame,
+                        facing_right: true,
                         time_since_frame_change: 0.0,
-                        facing_right: true
+                        time_per_frame: time_per_frame
                     }
                 }
             };
 
-            transform = Some(active.get_transform_location());
             active_sprites.push(active);
 
         } else 
@@ -100,14 +110,13 @@ impl AnimatedEntity
                         inactive_sprites_right: VecDeque::new(),
                         shared_transform_index: 0, //Will not be accurate
                         animating: false,
-                        time_per_frame,
+                        facing_right: true,
                         time_since_frame_change: 0.0,
-                        facing_right: true
+                        time_per_frame: time_per_frame
                     }
                 }
             };
 
-            transform = Some(active.get_transform_location());
             active_sprites.push(active);
         }
 
@@ -116,7 +125,7 @@ impl AnimatedEntity
             active_sprite: active_sprites,
             inactive_sprites_left: left_inactive_sprites,
             inactive_sprites_right: right_inactive_sprites,
-            shared_transform_index: transform.unwrap(), //will panic if not set
+            shared_transform_index: transform,
             animating: false,
             time_since_frame_change: 0.0,
             time_per_frame,
@@ -124,54 +133,11 @@ impl AnimatedEntity
         }
     }
 
-    fn init_sprites(render_state: &mut RenderState, configs: &Vec<RenderableConfig>, inactive_sprites: &mut VecDeque<Sprite>, shared_transform_index: Option<u32>)
+    pub fn get_facing_right(&self) -> bool
     {
-        let mut first = false;
-
-        let mut transform = None;
-
-        for config in configs
-        {
-            if first
-            {
-                let mut request = None;
-
-                match shared_transform_index
-                {
-                    Some(index) => 
-                    {
-                        request = render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,index);
-                    },
-                    None => 
-                    {
-                        request = render_state.request_new_renderable::<Sprite>(&config);
-                    }
-                };
-
-                let sprite = match request
-                {
-                    Some(s) => s,
-                    None => { continue; }
-                };
-
-                transform = Some(sprite.get_transform_location());
-
-                inactive_sprites.push_back(sprite);
-
-                first = false;
-            } else 
-            {
-                let sprite = match render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,transform.unwrap())
-                {
-                    Some(s) => s,
-                    None => { continue; }
-                };
-
-                inactive_sprites.push_back(sprite);
-            }
-        }
-
+        self.facing_right
     }
+
 
     pub fn set_facing(&mut self, face_right: bool)
     {
