@@ -171,6 +171,7 @@ impl<T: Renderable> VertexBuffer<T>
 
         if T::get_stride() <= 0
         {
+            log("No stride.");
             return;
         }
 

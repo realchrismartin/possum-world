@@ -1,3 +1,4 @@
+use graphics::renderable::Renderable;
 use wasm_bindgen::prelude::*;
 /*
 use std::panic;
@@ -17,6 +18,7 @@ use web_sys::{Document, HtmlImageElement};
 use state::game_state::GameState;
 use state::input_state::InputState;
 use state::render_state::RenderState;
+use util::logging::log;
 
 #[wasm_bindgen]
 pub struct Game
@@ -102,12 +104,7 @@ impl Game
         render_state.bind_and_update_transform_buffer_data();
 
         render_state.draw(self.game_state.get_background_renderables()); //TODO: just sprites for now.
-        render_state.draw(self.game_state.get_player_renderables()); //TODO: just sprites for now.
-
-        for i in self.game_state.get_npc_entities()
-        {
-            render_state.draw(i.get_active_sprite());
-        }
+        render_state.draw(self.game_state.get_actor_renderables());
     }
 
     pub fn process_keypress_event(&mut self, pressed: bool, code : &str)

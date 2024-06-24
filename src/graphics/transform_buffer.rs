@@ -129,7 +129,7 @@ impl TransformBuffer
             };
 
             let matrix = transform.calculate();
-            let offset = mem::size_of::<glm::Mat4>() * (*dirty_transform_index as usize);
+            let offset = mem::size_of::<f32>() * 16 * (*dirty_transform_index as usize);
 
             unsafe
             {

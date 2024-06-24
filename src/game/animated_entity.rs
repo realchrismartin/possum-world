@@ -9,7 +9,7 @@ pub struct AnimatedEntity
     active_sprite: Vec<Sprite>,
     inactive_sprites_left: VecDeque<Sprite>,
     inactive_sprites_right: VecDeque<Sprite>,
-    shared_transform_index: u32,
+    shared_transform_index: Option<u32>,
     animating: bool,
     facing_right: bool,
     time_since_frame_change: f32,
@@ -32,7 +32,7 @@ impl AnimatedEntity
                 active_sprite: Vec::new(),
                 inactive_sprites_left: VecDeque::new(),
                 inactive_sprites_right: VecDeque::new(),
-                shared_transform_index: 0, //Will not be accurate
+                shared_transform_index: None,
                 animating: false,
                 facing_right: true,
                 time_since_frame_change: 0.0,
@@ -83,7 +83,7 @@ impl AnimatedEntity
                         active_sprite: Vec::new(),
                         inactive_sprites_left: VecDeque::new(),
                         inactive_sprites_right: VecDeque::new(),
-                        shared_transform_index: 0, //Will not be accurate
+                        shared_transform_index: None,
                         animating: false,
                         facing_right: true,
                         time_since_frame_change: 0.0,
@@ -106,7 +106,7 @@ impl AnimatedEntity
                         active_sprite: Vec::new(),
                         inactive_sprites_left: VecDeque::new(),
                         inactive_sprites_right: VecDeque::new(),
-                        shared_transform_index: 0, //Will not be accurate
+                        shared_transform_index: None,
                         animating: false,
                         facing_right: true,
                         time_since_frame_change: 0.0,
@@ -123,7 +123,7 @@ impl AnimatedEntity
             active_sprite: active_sprites,
             inactive_sprites_left: left_inactive_sprites,
             inactive_sprites_right: right_inactive_sprites,
-            shared_transform_index: transform,
+            shared_transform_index: Some(transform),
             animating: false,
             time_since_frame_change: 0.0,
             time_per_frame,
@@ -136,7 +136,6 @@ impl AnimatedEntity
         self.facing_right
     }
 
-
     pub fn set_facing(&mut self, face_right: bool)
     {
         if self.facing_right == face_right
@@ -148,12 +147,14 @@ impl AnimatedEntity
         if self.facing_right && self.inactive_sprites_left.len() == 0
         {
             //Don't allow a flip if the other side has no sprites
+            log("Refused to flip");
             return; 
         }
 
         if !self.facing_right && self.inactive_sprites_right.len() == 0
         {
             //Don't allow a flip if the other side has no sprites
+            log("Refused to flip");
             return;
         }
 
@@ -168,6 +169,8 @@ impl AnimatedEntity
            let active = self.active_sprite.pop(); //Front is the same as back
            self.inactive_sprites_left.push_back(active.unwrap());
         }
+
+        self.active_sprite.clear(); //To be safe.
 
         //Grab the next sprite from the new queue and make it active
         self.facing_right = face_right;
@@ -207,6 +210,9 @@ impl AnimatedEntity
             Some(sprite) => sprite,
             None => { return; }
         };
+
+        //To be safe.
+        self.active_sprite.clear();
 
         //Put the active sprite in the inactive queue at the back
         if self.facing_right
@@ -262,12 +268,10 @@ impl AnimatedEntity
 
     pub fn get_active_sprite(&self) -> &Vec<Sprite>
     {
-        log(format!("Active: Range {} {}",self.active_sprite.get(0).unwrap().get_element_location().start,self.active_sprite.get(0).unwrap().get_element_location().end).as_str());
-
         &self.active_sprite
     }
 
-    pub fn get_transform_location(&self) -> u32
+    pub fn get_transform_location(&self) -> Option<u32>
     {
         self.shared_transform_index
     }

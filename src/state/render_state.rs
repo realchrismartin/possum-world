@@ -186,6 +186,7 @@ impl RenderState
 
         context.clear_color(0.0, 0.0, 0.0, 1.0);
         context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+        context.clear(WebGl2RenderingContext::DEPTH_BUFFER_BIT);
     }
 
     pub fn set_position_with_index(&mut self, transform_index: u32, position : glm::Vec2)
@@ -376,7 +377,9 @@ impl RenderState
         let buffer = match Self::get_mapped_buffer::<T>(&mut self.vertex_buffer_map)
         {
             Some(buffer) => buffer,
-            None => {return; }
+            None => {
+                log("returned");
+                return; }
         };
 
         buffer.bind(&self.context);

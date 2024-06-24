@@ -9,7 +9,6 @@ use crate::util::logging::log;
 
 pub struct GameState
 {
-    player: Option<AnimatedEntity>,
     friendly_possums: Vec<AnimatedEntity>,
     tiles: Vec<Sprite>
 }
@@ -20,7 +19,6 @@ impl GameState
     {
         Self
         {
-            player: None,
             friendly_possums: Vec::new(),
             tiles: Vec::new()
         }
@@ -29,17 +27,17 @@ impl GameState
     pub fn init(&mut self, render_state: &mut RenderState)
     {
 
-       self.player = Some(Self::add_possum(render_state,glm::vec2(500.0,100.0)));
-
-       self.init_tile_grid(render_state);
-
        let mut rng = rand::thread_rng();
 
-       for i in 0..5
-       {
-            let range = rng.gen_range(50..950);
-            self.friendly_possums.push(Self::add_possum(render_state,glm::vec2(range as f32,500.0)));
-       }
+        let poss = match Self::add_possum(render_state,glm::vec2(500.0,500.0))
+        {
+            Some(p) => p,
+            None => { return; }
+        };
+
+        self.friendly_possums.push(poss);
+
+       self.init_tile_grid(render_state);
     }
 
     pub fn init_tile_grid(&mut self, render_state: &mut RenderState)
@@ -87,7 +85,7 @@ impl GameState
         }
     }
 
-    pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec2) -> AnimatedEntity
+    pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec2) -> Option<AnimatedEntity>
     {
         //TODO: rectangular for now because otherwise we stretch onto the rectangular base sprite.
         let possum = AnimatedEntity::new(render_state,50.0,
@@ -112,40 +110,41 @@ impl GameState
                 RenderableConfig::new([288,0],[48,48],0,-0.5),
                 RenderableConfig::new([336,0],[48,48],0,-0.5),
             ],
+
             true
         );
 
-        render_state.set_position_with_index(possum.get_transform_location(), starting_position);
-        render_state.set_scale_with_index(possum.get_transform_location(),glm::vec3(0.1,0.1,1.0));
+        let transform_loc = match possum.get_transform_location()
+        {
+            Some(t) => t,
+            None => {return None; }
+        };
 
-        possum
+        render_state.set_position_with_index(transform_loc, starting_position);
+        render_state.set_scale_with_index(transform_loc,glm::vec3(0.1,0.1,1.0));
+
+        Some(possum)
     }
 
     pub fn update(&mut self, render_state: &mut RenderState, input_state: &InputState, delta_time: f32)
     {
-        //TODO: process enqueued renderable requests
-        //TODO: process enqueued transform requests
-
-        let player = match &mut self.player
-        {
-            Some(p) => p,
-            None => { return; }
-        };
-
         let movement_direction = input_state.get_movement_direction();
-
-        Self::update_animated_entity(player,&movement_direction,render_state,delta_time);
 
         for p in &mut self.friendly_possums
         {
-            //TODO: use their own movement direction!
             Self::update_animated_entity(p,&movement_direction,render_state,delta_time);
         }
     }
 
     fn update_animated_entity(animated_entity: &mut AnimatedEntity, movement_direction: &glm::Vec2, render_state: &mut RenderState, delta_time: f32)
     {
-        let mut position = match render_state.get_position_with_index(animated_entity.get_transform_location())
+        let transform_loc = match animated_entity.get_transform_location()
+        {
+            Some(t) => t,
+            None => {return; }
+        };
+
+        let mut position = match render_state.get_position_with_index(transform_loc)
         {
             Some(pos) => pos,
             None => {return; }
@@ -164,7 +163,7 @@ impl GameState
         //"Gravity"
         let mut gravity_affected = false;
 
-        if(position.y > 100.0)
+        if position.y > 100.0
         {
             gravity_affected = true;
             position.y -= (delta_time / 5.0) * 10.0;
@@ -187,28 +186,17 @@ impl GameState
         //TODO: ignoring Y movement
         position.x += (delta_time / 5.0) * movement_direction.x;
 
-        render_state.set_position_with_index(animated_entity.get_transform_location(), position);
+        render_state.set_position_with_index(transform_loc, position);
     }
 
+    //TODO: for now, just sprites
     pub fn get_background_renderables(&self) -> &Vec<Sprite>
     {
-        //TODO: for now, just sprites
         &self.tiles
     }
 
-    pub fn get_player_renderables(&self) -> &Vec<Sprite>
+    pub fn get_actor_renderables(&self) -> &Vec<Sprite>
     {
-        let player = match &self.player
-        {
-            Some(p) => p,
-            None => { return &self.tiles; } //TODO: fix this
-        };
-
-        player.get_active_sprite()
-    }
-
-    pub fn get_npc_entities(&self) -> &Vec<AnimatedEntity>
-    {
-        &self.friendly_possums
+        &self.friendly_possums.get(0).unwrap().get_active_sprite()
     }
 }
