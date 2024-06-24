@@ -18,6 +18,11 @@ impl Transform
         }
     }
 
+    pub fn get_translation(&self) -> &glm::Vec3
+    {
+        &self.translation
+    }
+
     pub fn set_translation(&mut self, translation: glm::Vec3)
     {
         self.translation = translation;

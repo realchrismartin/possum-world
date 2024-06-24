@@ -34,3 +34,19 @@ pub fn world_position_to_screen_translation(position: &glm::Vec2, world_size: &g
 
     glm::vec3(x,y,0.0)
 }
+
+pub fn screen_translation_to_world_position(translation: &glm::Vec3, world_size: &glm::Vec2) -> glm::Vec2
+{
+    //Translation is -1 .. 1, -1 ... 1
+
+    let shifted_translation_x = translation.x + 1.0; //Range is now 0 .. 2
+    let shifted_translation_y = translation.y + 1.0; //Range is now 0 .. 2
+
+    let unit_x = world_size.x / 2.0; //Amount of world size per translation "unit"
+    let unit_y = world_size.y / 2.0;
+
+    let x_coord = shifted_translation_x * unit_x;
+    let y_coord = shifted_translation_y * unit_y;
+
+    glm::vec2(x_coord,y_coord)
+}

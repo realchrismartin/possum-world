@@ -262,6 +262,8 @@ impl AnimatedEntity
 
     pub fn get_active_sprite(&self) -> &Vec<Sprite>
     {
+        log(format!("Active: Range {} {}",self.active_sprite.get(0).unwrap().get_element_location().start,self.active_sprite.get(0).unwrap().get_element_location().end).as_str());
+
         &self.active_sprite
     }
 

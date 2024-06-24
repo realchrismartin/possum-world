@@ -79,6 +79,16 @@ impl TransformBuffer
         self.dirty_transforms.insert(index);
     }
 
+    pub fn get_translation(&self, index: u32) -> Option<&glm::Vec3>
+    {
+        if self.transforms.len() <= index as usize
+        {
+            return None;
+        }        
+
+        Some(self.transforms[index as usize].get_translation())
+    }
+
     pub fn set_rotation(&mut self, index: u32, rotation: f32)
     {
         if self.transforms.len() <= index as usize

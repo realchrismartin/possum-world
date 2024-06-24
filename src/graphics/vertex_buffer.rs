@@ -134,6 +134,8 @@ impl<T: Renderable> VertexBuffer<T>
 
     pub fn get_next_range(&self) -> Range<i32>
     {
+        //TODO: may be an issue here with providing too much range? 
+
         let u32_size = mem::size_of::<u32>();
 
         let starting_offset = self.current_index_count * u32_size;

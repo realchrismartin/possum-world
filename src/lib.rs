@@ -103,6 +103,11 @@ impl Game
 
         render_state.draw(self.game_state.get_background_renderables()); //TODO: just sprites for now.
         render_state.draw(self.game_state.get_player_renderables()); //TODO: just sprites for now.
+
+        for i in self.game_state.get_npc_entities()
+        {
+            render_state.draw(i.get_active_sprite());
+        }
     }
 
     pub fn process_keypress_event(&mut self, pressed: bool, code : &str)

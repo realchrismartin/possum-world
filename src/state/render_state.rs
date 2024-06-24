@@ -15,7 +15,7 @@ use std::any::Any;
 use crate::graphics::renderable::{Renderable,RenderableConfig};
 use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
-use crate::util::util::world_position_to_screen_translation;
+use crate::util::util::{world_position_to_screen_translation,screen_translation_to_world_position};
 use std::ops::Range;
 
 static WORLD_SIZE_X : f32 = 1000.0;
@@ -191,6 +191,17 @@ impl RenderState
     pub fn set_position_with_index(&mut self, transform_index: u32, position : glm::Vec2)
     {
         self.set_translation_with_index(transform_index, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X,WORLD_SIZE_Y)));
+    }
+
+    pub fn get_position_with_index(&self, transform_index: u32) -> Option<glm::Vec2>
+    {
+        let translation = match self.transform_buffer.get_translation(transform_index)
+        {
+            Some(t) => t,
+            None => {return None;}
+        };
+
+        Some(screen_translation_to_world_position(&translation,&glm::vec2(WORLD_SIZE_X,WORLD_SIZE_Y)))
     }
 
     fn set_translation_with_index(&mut self, transform_index: u32, translation: glm::Vec3)
