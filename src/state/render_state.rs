@@ -193,7 +193,7 @@ impl RenderState
         self.set_translation_with_index(transform_index, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X,WORLD_SIZE_Y)));
     }
 
-    pub fn set_translation_with_index(&mut self, transform_index: u32, translation: glm::Vec3)
+    fn set_translation_with_index(&mut self, transform_index: u32, translation: glm::Vec3)
     {
         self.transform_buffer.set_translation(transform_index, translation);
     }
@@ -215,7 +215,7 @@ impl RenderState
         self.set_translation(renderable, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X,WORLD_SIZE_Y)));
     }
 
-    pub fn set_translation<T: Renderable + 'static>(&mut self, renderable: &T, translation: glm::Vec3)
+    fn set_translation<T: Renderable + 'static>(&mut self, renderable: &T, translation: glm::Vec3)
     {
         self.transform_buffer.set_translation(renderable.get_transform_location(), translation);
     }
@@ -241,35 +241,9 @@ impl RenderState
         //Bind the UBO to the shader before rendering
         self.transform_buffer.bind_to_shader(&self.context, shader);
 
+        //Recalculate matrices that are marked dirty and need recalculating.
+        //Upload any matrices to the UBO that have changed.
         self.transform_buffer.recalculate_transforms_and_update_data(&self.context);
-
-        //TODO
-
-        //For any of the transforms that need to be recalculated, do it now.
-        //TODO: later, optimize so that we don't have to iterate over all transforms here.
-        /*
-        self.transform_buffer.recalculate_transforms_and_update_data();
-
-        //If the recalculation didn't require the buffer to change, do nothing.
-        if !self.transform_buffer.dirty()
-        {
-            return;
-        }
-
-        let shader = match &self.shader 
-        {
-            Some(shader) => shader,
-            None => {return}
-        };
-
-        //Unfortunately, we need to update all of the transform data if any one of the matrices changes (buffer becomes dirty)
-        //Optimize this later if we can.
-        let context = &self.context;
-        let m_location = context.get_uniform_location(shader.get_shader_program(),"m_matrices");
-        context.uniform_matrix4fv_with_f32_array(m_location.as_ref(),false,&self.transform_buffer.data().as_slice());
-
-        self.transform_buffer.set_clean();
-        */
     }
 
     pub fn submit_camera_uniforms(&mut self)
