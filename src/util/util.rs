@@ -32,7 +32,5 @@ pub fn world_position_to_screen_translation(position: &glm::Vec2, world_size: &g
     let x = x_pre - 1.0;
     let y = y_pre - 1.0;
 
-    log(format!("Position: {} {}, World Coords: {} {} ",x,y,position.x,position.y).as_str());
-
     glm::vec3(x,y,0.0)
 }

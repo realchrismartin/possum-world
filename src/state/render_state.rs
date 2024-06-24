@@ -248,8 +248,6 @@ impl RenderState
         let m_location = context.get_uniform_location(shader.get_shader_program(),"m_matrices");
         context.uniform_matrix4fv_with_f32_array(m_location.as_ref(),false,&self.transform_buffer.data().as_slice());
 
-        log(format!("This many uniforms uploaded: {}",&self.transform_buffer.data().len()).as_str());
-
         self.transform_buffer.set_clean();
     }
 

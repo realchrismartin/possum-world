@@ -40,8 +40,6 @@ impl AnimatedEntity
             }
         }
 
-        log("Got here first.");
-
         let mut active_sprites = Vec::new();
         let mut left_inactive_sprites = VecDeque::<Sprite>::new();
         let mut right_inactive_sprites = VecDeque::<Sprite>::new();

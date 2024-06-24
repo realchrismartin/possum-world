@@ -128,11 +128,9 @@ impl GameState
 
         if movement_direction.x > 0.0 && !player.get_facing_right()
         {
-            log("faced right");
             player.set_facing(true);
         } else if movement_direction.x < 0.0 && player.get_facing_right()
         {
-            log("faced left");
             player.set_facing(false);
         }
 
