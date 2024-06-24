@@ -10,7 +10,8 @@ pub struct GameState
 {
     player: Option<AnimatedEntity>,
     sprites: Vec<Sprite>,
-    player_position: glm::Vec2
+    player_position: glm::Vec2,
+    player_last_move_direction: u32,
 }
 
 impl GameState
@@ -21,28 +22,45 @@ impl GameState
         {
             player: None,
             sprites: Vec::new(),
-            player_position: glm::vec2(500.0,200.0)
+            player_position: glm::vec2(500.0,200.0),
+            player_last_move_direction: 0
         }
     }
 
     pub fn init(&mut self, render_state: &mut RenderState)
     {
         //TODO: rectangular for now because otherwise we stretch onto the rectangular base sprite.
-        let player = AnimatedEntity::new(render_state,50.0,vec![
-            RenderableConfig::new([0,0],[48,48],0,-0.5),
-            RenderableConfig::new([48,0],[48,48],0,-0.5),
-            RenderableConfig::new([96,0],[48,48],0,-0.5),
-            RenderableConfig::new([144,0],[48,48],0,-0.5),
-            RenderableConfig::new([192,0],[48,48],0,-0.5),
-            RenderableConfig::new([240,0],[48,48],0,-0.5),
-            RenderableConfig::new([288,0],[48,48],0,-0.5),
-            RenderableConfig::new([336,0],[48,48],0,-0.5),
-        ]);
+        /*
+        let player = AnimatedEntity::new(render_state,50.0,
+            
+            vec![
+                RenderableConfig::new([0,48],[48,48],0,-0.5),
+                RenderableConfig::new([48,48],[48,48],0,-0.5),
+                RenderableConfig::new([96,48],[48,48],0,-0.5),
+                RenderableConfig::new([144,48],[48,48],0,-0.5),
+                RenderableConfig::new([192,48],[48,48],0,-0.5),
+                RenderableConfig::new([240,48],[48,48],0,-0.5),
+                RenderableConfig::new([288,48],[48,48],0,-0.5),
+                RenderableConfig::new([336,48],[48,48],0,-0.5),
+            ],
+            vec![
+                RenderableConfig::new([0,0],[48,48],0,-0.5),
+                RenderableConfig::new([48,0],[48,48],0,-0.5),
+                RenderableConfig::new([96,0],[48,48],0,-0.5),
+                RenderableConfig::new([144,0],[48,48],0,-0.5),
+                RenderableConfig::new([192,0],[48,48],0,-0.5),
+                RenderableConfig::new([240,0],[48,48],0,-0.5),
+                RenderableConfig::new([288,0],[48,48],0,-0.5),
+                RenderableConfig::new([336,0],[48,48],0,-0.5),
+            ],
+            true
+        );
 
         render_state.set_position_with_index(player.get_transform_location(), self.player_position);
         render_state.set_scale_with_index(player.get_transform_location(),glm::vec3(0.1,0.1,1.0));
 
         self.player = Some(player);
+         */
 
         //Generate a random tile grid
         let mut rng = rand::thread_rng();
@@ -107,6 +125,14 @@ impl GameState
         {
             player.set_animating(false);
             return;
+        }
+
+        if movement_direction.x > 0.0 && self.player_last_move_direction <= 0
+        {
+            player.set_facing(true);
+        } else if movement_direction.x < 0.0 && self.player_last_move_direction > 0
+        {
+            player.set_facing(false);
         }
 
         player.set_animating(true);
