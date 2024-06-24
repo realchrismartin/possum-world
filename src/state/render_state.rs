@@ -59,6 +59,12 @@ impl RenderState
             Err(e) => {log_value(&e);return None;}
         };
 
+        let transform_buffer = match TransformBuffer::new(&web_context,"ModelMatrixBlock")
+        {
+            Some(buffer) => buffer,
+            None => { return None; }
+        };
+
         web_context.enable(WebGl2RenderingContext::BLEND);
         web_context.blend_func(WebGl2RenderingContext::SRC_ALPHA ,WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
         web_context.enable(WebGl2RenderingContext::DEPTH_TEST);
@@ -70,7 +76,7 @@ impl RenderState
             textures: HashMap::new(),
             camera: Camera::new(canvas.width() as f32,canvas.height() as f32),
             vertex_buffer_map: HashMap::new(),
-            transform_buffer: TransformBuffer::new()
+            transform_buffer: transform_buffer
         })
     }
 
@@ -224,10 +230,24 @@ impl RenderState
         self.transform_buffer.set_scale(renderable.get_transform_location(),scale);
     }
 
-    pub fn submit_transform_buffer_uniforms(&mut self)
+    pub fn bind_and_update_transform_buffer_data(&mut self)
     {
+        let shader = match &self.shader 
+        {
+            Some(shader) => shader,
+            None => {return}
+        };
+
+        //Bind the UBO to the shader before rendering
+        self.transform_buffer.bind_to_shader(&self.context, shader);
+
+        self.transform_buffer.recalculate_transforms_and_update_data(&self.context);
+
+        //TODO
+
         //For any of the transforms that need to be recalculated, do it now.
         //TODO: later, optimize so that we don't have to iterate over all transforms here.
+        /*
         self.transform_buffer.recalculate_transforms_and_update_data();
 
         //If the recalculation didn't require the buffer to change, do nothing.
@@ -249,6 +269,7 @@ impl RenderState
         context.uniform_matrix4fv_with_f32_array(m_location.as_ref(),false,&self.transform_buffer.data().as_slice());
 
         self.transform_buffer.set_clean();
+        */
     }
 
     pub fn submit_camera_uniforms(&mut self)
@@ -301,6 +322,7 @@ impl RenderState
 
             if !buffer.is_range_valid(&range)
             {
+                log(format!("Tried to draw an invalid range on a buffer: {} to {}",range.start,range.end).as_str());
                 continue;
             }
 

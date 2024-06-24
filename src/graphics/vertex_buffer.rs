@@ -6,9 +6,10 @@ use web_sys::js_sys::Float32Array;
 use web_sys::js_sys::Uint32Array;
 use std::mem;
 use std::ops::Range;
+use crate::util::logging::log;
 
-static MAX_VERTICES : usize = 25000;
-static MAX_INDICES : usize = 25000;
+static MAX_VERTICES : usize = 100000; //TODO: confirm
+static MAX_INDICES : usize = 100000;
 
 pub struct VertexBuffer<T>
 {
@@ -50,6 +51,12 @@ impl<T: Renderable> VertexBuffer<T>
 
         context.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,Some(&ebo)); 
         context.buffer_data_with_i32(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, (MAX_INDICES * std::mem::size_of::<u32>()) as i32, WebGl2RenderingContext::STATIC_DRAW);
+
+        let max_floats = context.get_parameter(WebGl2RenderingContext::MAX_ELEMENTS_VERTICES).unwrap().as_f64().unwrap() / mem::size_of::<f32>() as f64;
+        let max_indices = context.get_parameter(WebGl2RenderingContext::MAX_ELEMENTS_INDICES).unwrap().as_f64().unwrap();
+
+        log(format!("Max Floats in Vertex Buffer: {}",max_floats).as_str());
+        log(format!("Max Indices in Vertex Buffer: {}",max_indices).as_str());
 
         //Associate the VBO and set up vertex attributes
         //init_vertex_layout assumes the VAO we created above is bound
@@ -150,11 +157,13 @@ impl<T: Renderable> VertexBuffer<T>
 
         if new_total_vertices > MAX_VERTICES
         {
+            log("Tried to add vertices to a buffer that is already maxed out.");
             return;
         }
 
         if new_total_indices > MAX_INDICES
         {
+            log("Tried to add indices to a buffer that is already maxed out.");
             return;
         }
 

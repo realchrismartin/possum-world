@@ -1,32 +1,70 @@
+use web_sys::{WebGl2RenderingContext,WebGlBuffer};
 use crate::graphics::transform::Transform;
+use crate::graphics::shader::Shader;
+use std::collections::HashSet;
+use web_sys::js_sys::Float32Array;
+use std::mem;
+use crate::util::logging::log;
+
+static MAX_BUFFER_SIZE : usize = 16384; //1024 4x4 Matrices
+
 pub struct TransformBuffer
 {
+    uniform_name: String,
     transforms: Vec<Transform>,
-    transform_data: Vec<f32>,
-    buffer_dirty: bool,
-    next_available_index: u32 
+    ubo: WebGlBuffer,
+    next_available_index: u32,
+    dirty_transforms: HashSet<u32>
 }
 
 impl TransformBuffer
 {
-    pub fn new() -> Self
+    pub fn new(context: &WebGl2RenderingContext, uniform_name: &str) -> Option<Self>
     {
-        Self {
+        let buffer = match context.create_buffer()
+        {
+            Some(b) => b,
+            None => {return None;}
+        };
+
+        context.bind_buffer(WebGl2RenderingContext::UNIFORM_BUFFER,Some(&buffer));
+        context.buffer_data_with_i32(WebGl2RenderingContext::UNIFORM_BUFFER, (MAX_BUFFER_SIZE * std::mem::size_of::<f32>()) as i32, WebGl2RenderingContext::STATIC_DRAW);
+        context.bind_buffer(WebGl2RenderingContext::UNIFORM_BUFFER,None);
+
+        let max_matrices = context.get_parameter(WebGl2RenderingContext::MAX_UNIFORM_BLOCK_SIZE).unwrap().as_f64().unwrap() / mem::size_of::<glm::Mat4>() as f64;
+
+        log(format!("Max Matrices in UBO: {}",max_matrices).as_str());
+
+        Some(Self {
+            uniform_name: uniform_name.to_string(),
             transforms: Vec::new(),
-            transform_data: Vec::new(),
-            buffer_dirty: false,
-            next_available_index: 0
-        }
+            ubo: buffer,
+            next_available_index: 0,
+            dirty_transforms: HashSet::new()
+        })
     }
 
-    pub fn dirty(&self) -> bool
+    pub fn bind_to_shader(&self, context: &WebGl2RenderingContext, shader: &Shader)
     {
-        self.buffer_dirty
+        let block_index = context.get_uniform_block_index(shader.get_shader_program(), self.uniform_name.as_str());
+        context.uniform_block_binding(shader.get_shader_program(), block_index, 0);
+        context.bind_buffer_base(WebGl2RenderingContext::UNIFORM_BUFFER, 0, Some(&self.ubo));
     }
 
-    pub fn set_clean(&mut self)
+    pub fn unbind_from_shader(&self, context:&WebGl2RenderingContext)
     {
-        self.buffer_dirty = false;
+        //TODO: works?
+        context.bind_buffer_base(WebGl2RenderingContext::UNIFORM_BUFFER, 0, None);
+    }
+
+    pub fn bind(&self, context: &WebGl2RenderingContext)
+    {        
+       context.bind_buffer(WebGl2RenderingContext::UNIFORM_BUFFER, Some(&self.ubo));
+    }
+
+    pub fn unbind(context: &WebGl2RenderingContext)
+    {
+       context.bind_buffer(WebGl2RenderingContext::UNIFORM_BUFFER, None);
     }
 
     pub fn set_translation(&mut self, index: u32, translation: glm::Vec3)
@@ -37,6 +75,8 @@ impl TransformBuffer
         }        
 
         self.transforms[index as usize].set_translation(translation);
+
+        self.dirty_transforms.insert(index);
     }
 
     pub fn set_rotation(&mut self, index: u32, rotation: f32)
@@ -46,6 +86,8 @@ impl TransformBuffer
             return;
         }       
         self.transforms[index as usize].set_rotation(rotation);
+
+        self.dirty_transforms.insert(index);
     }
 
     pub fn set_scale(&mut self, index: u32, scale: glm::Vec3)
@@ -56,70 +98,52 @@ impl TransformBuffer
         }       
 
         self.transforms[index as usize].set_scale(scale);
+
+        self.dirty_transforms.insert(index);
     }
 
     //For each transform matrix, update the raw data if it needs to be updated.
-    pub fn recalculate_transforms_and_update_data(&mut self)
+    pub fn recalculate_transforms_and_update_data(&mut self, context: &WebGl2RenderingContext)
     {
-        let mut any_dirty = false;
-
-        let mut index = 0;
-        for transform in &mut self.transforms
+        for dirty_transform_index in &self.dirty_transforms
         {
-            if !transform.dirty()
+            if *dirty_transform_index >= self.transforms.len() as u32
             {
-                index += 1;
                 continue;
             }
 
-            if index >= self.transform_data.len() as u32
+            let transform = match self.transforms.get(*dirty_transform_index as usize)
             {
-                return; //This should not occur.
-            }
-
-            any_dirty = true;
+                Some(t) => t,
+                None => { continue; }
+            };
 
             let matrix = transform.calculate();
+            let offset = mem::size_of::<glm::Mat4>() * (*dirty_transform_index as usize);
 
-            let matrix_slice = matrix.as_slice();
-            let mut matrix_index = 0;
-
-            //Copy the data from the calculated matrix to the buffer.
-            //A 4x4 matrix has 16 floats
-            let offset = 16 * index;
-
-            for i in offset..offset+16
+            unsafe
             {
-                self.transform_data[i as usize] = matrix_slice[matrix_index];
-                matrix_index += 1;
+                let transform_data_view = Float32Array::view(matrix.as_slice());
+                
+                context.buffer_sub_data_with_i32_and_array_buffer_view(
+                    WebGl2RenderingContext::UNIFORM_BUFFER,
+                    offset as i32,
+                    &transform_data_view
+                );
             }
-
-            transform.set_clean();
-
-            index += 1;
         }
 
-        if any_dirty
-        {
-            self.buffer_dirty = true;
-        }
+        self.dirty_transforms.clear();
     }
 
     pub fn request_new_transform(&mut self) -> u32 
     {
         let mat_index = self.next_available_index;
         self.next_available_index += 1;
-        self.buffer_dirty = true;
 
         self.transforms.push(Transform::new());
-        self.transform_data.extend_from_slice(glm::Mat4::identity().as_slice()); //This works because a default Transform has an ID matrix.
+        self.dirty_transforms.insert(mat_index);
 
         mat_index
     }
-
-    pub fn data(&self) -> &Vec<f32>
-    {
-        &self.transform_data
-    }
-
 }

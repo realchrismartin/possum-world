@@ -11,8 +11,7 @@ pub struct GameState
 {
     player: Option<AnimatedEntity>,
     sprites: Vec<Sprite>,
-    player_position: glm::Vec2,
-    player_last_move_direction: u32,
+    player_position: glm::Vec2
 }
 
 impl GameState
@@ -23,8 +22,7 @@ impl GameState
         {
             player: None,
             sprites: Vec::new(),
-            player_position: glm::vec2(500.0,200.0),
-            player_last_move_direction: 0
+            player_position: glm::vec2(500.0,100.0)
         }
     }
 
@@ -65,8 +63,8 @@ impl GameState
         let mut rng = rand::thread_rng();
 
         //Since each position is the center of a tile, we offset the initial placement by a tile half width
-        let mut next_y_placement = 100.0;
-        let mut next_x_placement = 100.0;
+        let mut next_y_placement = 50.0;
+        let mut next_x_placement = 50.0;
 
         let use_sprites  = vec![
             RenderableConfig::new([0,0],[100,100],1,0.0), //ground
@@ -75,9 +73,9 @@ impl GameState
             RenderableConfig::new([300,0],[100,100],1,0.0), //background
         ];
 
-        for y in 0..5
+        for y in 0..10
         {
-            for x in 0..5
+            for x in 0..10
             {
 
                 let mut used_sprite_index = 0;
@@ -92,17 +90,18 @@ impl GameState
                     None => { return; }
                 };
 
-                render_state.set_scale(&tile,glm::vec3(0.2,0.2,1.0));
+                render_state.set_scale(&tile,glm::vec3(0.1,0.1,1.0));
                 render_state.set_position(&tile, glm::vec2(next_x_placement,next_y_placement));
                 self.sprites.push(tile);
 
-                next_x_placement += 200.0;
-
+                next_x_placement += 100.0;
             }
 
-            next_x_placement = 100.0; //Resetting with a half width offset
-            next_y_placement += 200.0;
+            next_x_placement = 50.0; //Resetting with a half width offset
+            next_y_placement += 100.0;
         }
+
+        log(format!("Added this many tiles: {}",self.sprites.len()).as_str());
     }
 
     pub fn update(&mut self, render_state: &mut RenderState, input_state: &InputState, delta_time: f32)
