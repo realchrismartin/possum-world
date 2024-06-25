@@ -118,6 +118,8 @@ impl AnimatedEntity
             active_sprites.push(active);
         }
 
+        log(format!("Entity initialized with {} left and {} right sprites and {} active",left_inactive_sprites.len(),right_inactive_sprites.len(),active_sprites.len()).as_str());
+
         Self
         {
             active_sprite: active_sprites,
@@ -185,6 +187,11 @@ impl AnimatedEntity
             self.active_sprite.push(new_active.unwrap());
         }
 
+        log(format!("The active sprite is now the one at range {}-{} with transform {}",self.active_sprite.get(0).unwrap().get_element_location().start,
+            self.active_sprite.get(0).unwrap().get_element_location().end,
+            self.active_sprite.get(0).unwrap().get_transform_location()
+        ).as_str());
+
     }
 
     pub fn step_animation(&mut self)
@@ -211,36 +218,40 @@ impl AnimatedEntity
             None => { return; }
         };
 
-        //To be safe.
-        self.active_sprite.clear();
-
-        //Put the active sprite in the inactive queue at the back
-        if self.facing_right
+        //Put the current active sprite in the correct queue
+        if self.facing_right == true
         {
             self.inactive_sprites_right.push_back(active_sprite);
-
-            //Pop the front of the queue
-            let new_active_sprite = match self.inactive_sprites_right.pop_front()
-            {
-                Some(sprite) => sprite,
-                None => { return; }
-            };
-
-            //Make it active
-            self.active_sprite.push(new_active_sprite);
         } else 
         {
             self.inactive_sprites_left.push_back(active_sprite);
+        }
 
-            //Pop the front of the queue
-            let new_active_sprite = match self.inactive_sprites_left.pop_front()
+        //Grab a sprite from the correct queue and make it active
+        if self.facing_right == true
+        {
+            let sprite = match self.inactive_sprites_right.pop_front()
             {
-                Some(sprite) => sprite,
-                None => { return; }
+                Some(s) => s,
+                None => {
+                    log("Something is wrong with animation stepping.");
+                    return;
+                }
             };
 
-            //Make it active
-            self.active_sprite.push(new_active_sprite);
+            self.active_sprite.push(sprite);
+        } else
+        {
+            let sprite = match self.inactive_sprites_left.pop_front()
+            {
+                Some(s) => s,
+                None => {
+                    log("Something is wrong with animation stepping.");
+                    return;
+                }
+            }; 
+
+            self.active_sprite.push(sprite);
         }
 
     }

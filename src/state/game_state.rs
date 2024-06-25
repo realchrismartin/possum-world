@@ -1,3 +1,4 @@
+use crate::graphics::transform;
 use crate::state::input_state::InputState;
 use crate::state::render_state::RenderState;
 
@@ -29,13 +30,25 @@ impl GameState
 
        let mut rng = rand::thread_rng();
 
-        let poss = match Self::add_possum(render_state,glm::vec2(500.0,500.0))
-        {
-            Some(p) => p,
-            None => { return; }
-        };
+       for i in 0..4
+       {
+            let mut y = rng.gen_range(300..500);
+            let mut x = rng.gen_range(50..900);
 
-        self.friendly_possums.push(poss);
+            if i == 0
+            {
+                x = 500;
+                y = 100;
+            }
+
+           let poss = match Self::add_possum(render_state,glm::vec2(x as f32,y as f32))
+           {
+                   Some(p) => p,
+                   None => { return; }
+           };
+
+           self.friendly_possums.push(poss);
+       }
 
        self.init_tile_grid(render_state);
     }
@@ -51,7 +64,7 @@ impl GameState
 
         let use_sprites  = vec![
             RenderableConfig::new([0,0],[100,100],1,0.0), //ground
-            RenderableConfig::new([100,0],[100,100],1,0.0), //background// TODO: unused
+            RenderableConfig::new([100,0],[100,100],1,0.0), //background
             RenderableConfig::new([200,0],[100,100],1,0.0), //background
             RenderableConfig::new([300,0],[100,100],1,0.0), //background
         ];
@@ -110,8 +123,7 @@ impl GameState
                 RenderableConfig::new([288,0],[48,48],0,-0.5),
                 RenderableConfig::new([336,0],[48,48],0,-0.5),
             ],
-
-            true
+            false
         );
 
         let transform_loc = match possum.get_transform_location()
@@ -138,6 +150,13 @@ impl GameState
 
     fn update_animated_entity(animated_entity: &mut AnimatedEntity, movement_direction: &glm::Vec2, render_state: &mut RenderState, delta_time: f32)
     {
+        //TODO: bug here, or elsewhere, that causes right-facing possums to be drawn wrong every other frame or so.
+        //Only affects the 2nd+ poss in the list, never the first
+        //Doesn't affect left facing
+        //Stops if we comment out update (specifically animation stepping.)
+        //Transforms are independent. Vertices appear to be independent. issue is probably in this file or in AnimatedEntity (latter more probable).
+        animated_entity.update(delta_time);
+
         let transform_loc = match animated_entity.get_transform_location()
         {
             Some(t) => t,
@@ -149,8 +168,6 @@ impl GameState
             Some(pos) => pos,
             None => {return; }
         };
-
-        animated_entity.update(delta_time);
 
         if movement_direction.x > 0.0 && !animated_entity.get_facing_right()
         {
@@ -180,6 +197,7 @@ impl GameState
             return;
         }
 
+        //TODO: is this the cause of my suffering?
         animated_entity.set_animating(true);
 
         //TODO: arbitrary speed/ distance
@@ -195,8 +213,8 @@ impl GameState
         &self.tiles
     }
 
-    pub fn get_actor_renderables(&self) -> &Vec<Sprite>
+    pub fn get_actor_renderables(&self) -> &Vec<AnimatedEntity>
     {
-        &self.friendly_possums.get(0).unwrap().get_active_sprite()
+        &self.friendly_possums
     }
 }

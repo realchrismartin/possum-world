@@ -104,7 +104,11 @@ impl Game
         render_state.bind_and_update_transform_buffer_data();
 
         render_state.draw(self.game_state.get_background_renderables()); //TODO: just sprites for now.
-        render_state.draw(self.game_state.get_actor_renderables());
+        
+        for i in self.game_state.get_actor_renderables()
+        {
+            render_state.draw(i.get_active_sprite());
+        }
     }
 
     pub fn process_keypress_event(&mut self, pressed: bool, code : &str)
