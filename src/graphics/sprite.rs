@@ -4,7 +4,6 @@ use crate::graphics::renderable::{Renderable, RenderableConfig};
 use crate::graphics::vertex_layout::{VertexLayout,VertexLayoutElement};
 use crate::util::util::get_rectangular_texture_coordinates;
 use std::ops::Range;
-use crate::util::logging::log;
 
 //Like all Renderables, a Sprite is a handle that points to locations on our buffers.
 //It doesn't hold vertex or index data. That data is generated once on upload to the GPU.
@@ -38,36 +37,26 @@ impl Renderable for Sprite
     fn get_vertices(&self, renderable_config: &RenderableConfig) -> Vec<f32>
     {
         //TODO: maybe later don't use self at all here
-
         let tex_coords = get_rectangular_texture_coordinates(renderable_config.get_texture_coordinates(), 
             renderable_config.get_size(), renderable_config.get_texture_dimensions());
 
-        log(format!("Tex coord! {} {} ",tex_coords[0][0],tex_coords[0][1]).as_str());
-        log(format!("Tex coord! {} {} ",tex_coords[1][0],tex_coords[1][1]).as_str());
-        log(format!("Tex coord! {} {} ",tex_coords[2][0],tex_coords[2][1]).as_str());
-        log(format!("Tex coord! {} {} ",tex_coords[3][0],tex_coords[3][1]).as_str());
-
         vec![
-            -1.0,1.0,
-            renderable_config.get_z(),
+            -1.0,1.0,0.0,
             self.transform_location as f32,
             tex_coords[0][0], tex_coords[0][1],
             renderable_config.get_texture_index() as f32,
 
-            -1.0,-1.0,
-            renderable_config.get_z(),
+            -1.0,-1.0,0.0,
             self.transform_location as f32,
             tex_coords[1][0], tex_coords[1][1],
             renderable_config.get_texture_index() as f32,
 
-            1.0,-1.0,
-            renderable_config.get_z(),
+            1.0,-1.0,0.0,
             self.transform_location as f32,
             tex_coords[2][0], tex_coords[2][1],
             renderable_config.get_texture_index() as f32,
 
-            1.0,1.0,
-            renderable_config.get_z(),
+            1.0,1.0,0.0,
             self.transform_location as f32,
             tex_coords[3][0], tex_coords[3][1],
             renderable_config.get_texture_index() as f32,

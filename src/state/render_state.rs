@@ -17,8 +17,8 @@ use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
 use crate::util::util::{world_position_to_screen_translation,screen_translation_to_world_position};
 use std::ops::Range;
-use std::mem;
 
+//TODO: move this
 static WORLD_SIZE_X : f32 = 1000.0;
 static WORLD_SIZE_Y : f32 = 1000.0;
 
@@ -183,16 +183,15 @@ impl RenderState
 
     pub fn clear_context(&self)
     {
-        &self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-        &self.context.clear(WebGl2RenderingContext::DEPTH_BUFFER_BIT);
+        let _ = &self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT);
     }
 
-    pub fn set_position_with_index(&mut self, transform_index: u32, position : glm::Vec2)
+    pub fn set_position_with_index(&mut self, transform_index: u32, position : glm::Vec3)
     {
         self.set_translation_with_index(transform_index, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X,WORLD_SIZE_Y)));
     }
 
-    pub fn get_position_with_index(&self, transform_index: u32) -> Option<glm::Vec2>
+    pub fn get_position_with_index(&self, transform_index: u32) -> Option<glm::Vec3>
     {
         let translation = match self.transform_buffer.get_translation(transform_index)
         {
@@ -220,7 +219,7 @@ impl RenderState
 
     //0,0 is the bottom left corner of the world
     //0,max_y is the top left corner
-    pub fn set_position<T: Renderable + 'static>(&mut self, renderable: &T, position : glm::Vec2)
+    pub fn set_position<T: Renderable + 'static>(&mut self, renderable: &T, position : glm::Vec3)
     {
         self.set_translation(renderable, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X,WORLD_SIZE_Y)));
     }

@@ -160,9 +160,6 @@ impl<T: Renderable> VertexBuffer<T>
         let vertex_offset = (mem::size_of::<f32>() * self.current_vertex_count) as i32;
         let index_offset = (mem::size_of::<u32>() * self.current_index_count) as i32;
 
-        //log(format!("Buffering {} vertices worth starting at offset {}",vertex_data.len() * mem::size_of::<f32>(),vertex_offset).as_str());
-        //log(format!("Buffering {} indices worth starting at offset {}",index_data.len() * mem::size_of::<u32>(),index_offset).as_str());
-
         //Create a new index data array to offset
         let new_indices : Vec<u32> = index_data.iter().map(|&x| x + (self.current_vertex_count as u32 / T::get_stride() as u32)).collect();
 

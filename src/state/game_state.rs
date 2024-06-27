@@ -30,10 +30,14 @@ impl GameState
 
        let mut rng = rand::thread_rng();
 
+       let mut z = -0.25;
+
        for i in 0..5
        {
             let mut y = rng.gen_range(300..500);
             let mut x = rng.gen_range(50..900);
+
+            z -= 0.1;
 
             if i == 0
             {
@@ -41,7 +45,7 @@ impl GameState
                 y = 100;
             }
 
-           let poss = match Self::add_possum(render_state,glm::vec2(x as f32,y as f32))
+           let poss = match Self::add_possum(render_state,glm::vec3(x as f32,y as f32,z as f32))
            {
                    Some(p) => p,
                    None => { return; }
@@ -63,10 +67,10 @@ impl GameState
         let mut next_x_placement = 50.0;
 
         let use_sprites  = vec![
-            RenderableConfig::new([0,0],[100,100],1,0.0), //ground
-            RenderableConfig::new([100,0],[100,100],1,0.0), //background
-            RenderableConfig::new([200,0],[100,100],1,0.0), //background
-            RenderableConfig::new([300,0],[100,100],1,0.0), //background
+            RenderableConfig::new([0,0],[100,100],1), //ground
+            RenderableConfig::new([100,0],[100,100],1), //background
+            RenderableConfig::new([200,0],[100,100],1), //background
+            RenderableConfig::new([300,0],[100,100],1), //background
         ];
 
         for y in 0..10
@@ -87,7 +91,7 @@ impl GameState
                 };
 
                 render_state.set_scale(&tile,glm::vec3(0.1,0.1,1.0));
-                render_state.set_position(&tile, glm::vec2(next_x_placement,next_y_placement));
+                render_state.set_position(&tile, glm::vec3(next_x_placement,next_y_placement,0.0));
                 self.tiles.push(tile);
 
                 next_x_placement += 100.0;
@@ -98,30 +102,30 @@ impl GameState
         }
     }
 
-    pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec2) -> Option<AnimatedEntity>
+    pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec3) -> Option<AnimatedEntity>
     {
         //TODO: rectangular for now because otherwise we stretch onto the rectangular base sprite.
         let possum = match AnimatedEntity::new(render_state,50.0,
             
             vec![
-                RenderableConfig::new([0,48],[48,48],0,-0.5),
-                RenderableConfig::new([48,48],[48,48],0,-0.5),
-                RenderableConfig::new([96,48],[48,48],0,-0.5),
-                RenderableConfig::new([144,48],[48,48],0,-0.5),
-                RenderableConfig::new([192,48],[48,48],0,-0.5),
-                RenderableConfig::new([240,48],[48,48],0,-0.5),
-                RenderableConfig::new([288,48],[48,48],0,-0.5),
-                RenderableConfig::new([336,48],[48,48],0,-0.5),
+                RenderableConfig::new([0,48],[48,48],0),
+                RenderableConfig::new([48,48],[48,48],0),
+                RenderableConfig::new([96,48],[48,48],0),
+                RenderableConfig::new([144,48],[48,48],0),
+                RenderableConfig::new([192,48],[48,48],0),
+                RenderableConfig::new([240,48],[48,48],0),
+                RenderableConfig::new([288,48],[48,48],0),
+                RenderableConfig::new([336,48],[48,48],0),
             ],
             vec![
-                RenderableConfig::new([0,0],[48,48],0,-0.5),
-                RenderableConfig::new([48,0],[48,48],0,-0.5),
-                RenderableConfig::new([96,0],[48,48],0,-0.5),
-                RenderableConfig::new([144,0],[48,48],0,-0.5),
-                RenderableConfig::new([192,0],[48,48],0,-0.5),
-                RenderableConfig::new([240,0],[48,48],0,-0.5),
-                RenderableConfig::new([288,0],[48,48],0,-0.5),
-                RenderableConfig::new([336,0],[48,48],0,-0.5),
+                RenderableConfig::new([0,0],[48,48],0),
+                RenderableConfig::new([48,0],[48,48],0),
+                RenderableConfig::new([96,0],[48,48],0),
+                RenderableConfig::new([144,0],[48,48],0),
+                RenderableConfig::new([192,0],[48,48],0),
+                RenderableConfig::new([240,0],[48,48],0),
+                RenderableConfig::new([288,0],[48,48],0),
+                RenderableConfig::new([336,0],[48,48],0),
             ],
             false
         )
@@ -144,11 +148,18 @@ impl GameState
 
     pub fn update(&mut self, render_state: &mut RenderState, input_state: &InputState, delta_time: f32)
     {
-        let movement_direction = input_state.get_movement_direction();
-
+        let mut index = 0;
         for p in &mut self.friendly_possums
         {
+            let mut movement_direction = glm::vec2(0.0,0.0);
+
+            if index == 0
+            {
+                movement_direction = input_state.get_movement_direction();
+            }
+
             Self::update_animated_entity(p,&movement_direction,render_state,delta_time);
+            index = index + 1;
         }
     }
 

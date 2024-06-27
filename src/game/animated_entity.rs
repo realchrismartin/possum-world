@@ -1,7 +1,6 @@
 use crate::state::render_state::RenderState;
 use crate::graphics::renderable::{Renderable,RenderableConfig};
 use crate::graphics::sprite::Sprite;
-use crate::util::logging::log;
 
 pub struct AnimatedEntity
 {
@@ -37,29 +36,23 @@ impl AnimatedEntity
 
         for config in &left_sprite_configs
         {
-            log("LEFT!");
             let sprite = match render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,transform)
             {
                 Some(s) => s,
                 None => { continue; }
             };
-
-            log(format!("Left range: {} to {}",sprite.get_element_location().as_ref().unwrap().start,sprite.get_element_location().as_ref().unwrap().end).as_str());
 
             left_sprites.push(sprite);
         }
 
         for config in &right_sprite_configs
         {
-            log("RIGHT!");
             let sprite = match render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,transform)
             {
                 Some(s) => s,
                 None => { continue; }
 
             };
-
-            log(format!("Right range: {} to {}",sprite.get_element_location().as_ref().unwrap().start,sprite.get_element_location().as_ref().unwrap().end).as_str());
 
             right_sprites.push(sprite);
         }
@@ -103,18 +96,15 @@ impl AnimatedEntity
         if self.facing_right && self.sprites_left.len() == 0
         {
             //Don't allow a flip if the other side has no sprites
-            log("Refused to flip");
             return; 
         }
 
         if !self.facing_right && self.sprites_right.len() == 0
         {
             //Don't allow a flip if the other side has no sprites
-            log("Refused to flip");
             return;
         }
 
-        log("Flipped!");
         self.facing_right = face_right;
         self.sprite_index = 0;
 
@@ -140,11 +130,9 @@ impl AnimatedEntity
         if self.facing_right
         {
             sprite_index = sprite_index % self.sprites_right.len();
-            log(format!("stepped right: {}",sprite_index).as_str());
         } else 
         {
             sprite_index = sprite_index % self.sprites_left.len();
-            log(format!("stepped left: {}",sprite_index).as_str());
         }
 
         self.sprite_index = sprite_index;

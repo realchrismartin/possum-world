@@ -9,21 +9,19 @@ pub struct RenderableConfig
     texture_coordinates: [i32;2],
     texture_dimensions: [i32;2], //TODO: storing this repeatedly/unnecessary
     size: [i32;2],
-    texture_index: u32,
-    z: f32
+    texture_index: u32
 }
 
 impl RenderableConfig
 {
-    pub fn new(tex_coordinates: [i32;2], sprite_size: [i32;2], tex_index: u32, z_ind: f32) -> Self 
+    pub fn new(tex_coordinates: [i32;2], sprite_size: [i32;2], tex_index: u32) -> Self 
     {
         Self
         {
             texture_coordinates :tex_coordinates,
             texture_dimensions: [1,1], //Updated later
             size: sprite_size,
-            texture_index: tex_index,
-            z: z_ind
+            texture_index: tex_index
         }
     }
 
@@ -52,10 +50,6 @@ impl RenderableConfig
         self.texture_dimensions = *dimensions;
     }
 
-    pub fn get_z(&self) -> f32
-    {
-        self.z
-    }
 }
 
 //A Renderable is:

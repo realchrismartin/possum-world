@@ -17,7 +17,7 @@ pub fn get_rectangular_texture_coordinates(top_left_pixel_coordinate: &[i32;2], 
     return [left_top,left_bottom,right_bottom,right_top];
 }
 
-pub fn world_position_to_screen_translation(position: &glm::Vec2, world_size: &glm::Vec2) -> glm::Vec3
+pub fn world_position_to_screen_translation(position: &glm::Vec3, world_size: &glm::Vec2) -> glm::Vec3
 {
     //Screen is -1.0 to 1.0 (NDCs). Width and height of the screen are de facto each 2.0
     //This is how much each position unit is worth in screen space:
@@ -32,10 +32,10 @@ pub fn world_position_to_screen_translation(position: &glm::Vec2, world_size: &g
     let x = x_pre - 1.0;
     let y = y_pre - 1.0;
 
-    glm::vec3(x,y,0.0)
+    glm::vec3(x,y,position.z) //Z is unmodified
 }
 
-pub fn screen_translation_to_world_position(translation: &glm::Vec3, world_size: &glm::Vec2) -> glm::Vec2
+pub fn screen_translation_to_world_position(translation: &glm::Vec3, world_size: &glm::Vec2) -> glm::Vec3
 {
     //Translation is -1 .. 1, -1 ... 1
 
@@ -48,5 +48,5 @@ pub fn screen_translation_to_world_position(translation: &glm::Vec3, world_size:
     let x_coord = shifted_translation_x * unit_x;
     let y_coord = shifted_translation_y * unit_y;
 
-    glm::vec2(x_coord,y_coord)
+    glm::vec3(x_coord,y_coord,translation.z)
 }
