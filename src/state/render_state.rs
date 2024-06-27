@@ -17,6 +17,7 @@ use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
 use crate::util::util::{world_position_to_screen_translation,screen_translation_to_world_position};
 use std::ops::Range;
+use std::mem;
 
 static WORLD_SIZE_X : f32 = 1000.0;
 static WORLD_SIZE_Y : f32 = 1000.0;
@@ -65,13 +66,10 @@ impl RenderState
             None => { return None; }
         };
 
-        //TODO
-        /*
         web_context.enable(WebGl2RenderingContext::BLEND);
         web_context.blend_func(WebGl2RenderingContext::SRC_ALPHA ,WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
         web_context.enable(WebGl2RenderingContext::DEPTH_TEST);
         web_context.clear_color(0.0, 0.0, 0.0, 1.0);
-         */
 
         Some(Self
         {

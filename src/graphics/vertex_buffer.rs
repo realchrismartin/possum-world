@@ -187,7 +187,7 @@ impl<T: Renderable> VertexBuffer<T>
         self.current_vertex_count = new_total_vertices;
         self.current_index_count = new_total_indices;
 
-        Some(Range::<i32>{ start: index_offset as i32, end: self.current_index_count as i32 * mem::size_of::<u32>() as i32})
+        Some(Range::<i32>{ start: index_offset as i32, end: index_offset + index_data.len() as i32})
 
     }
 }

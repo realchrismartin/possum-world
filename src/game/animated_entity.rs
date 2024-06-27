@@ -37,6 +37,7 @@ impl AnimatedEntity
 
         for config in &left_sprite_configs
         {
+            log("LEFT!");
             let sprite = match render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,transform)
             {
                 Some(s) => s,
@@ -50,13 +51,11 @@ impl AnimatedEntity
 
         for config in &right_sprite_configs
         {
+            log("RIGHT!");
             let sprite = match render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,transform)
             {
                 Some(s) => s,
-                None => { 
-                    
-                   log("Help!") ;
-                    continue; }
+                None => { continue; }
 
             };
 

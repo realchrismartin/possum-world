@@ -30,7 +30,7 @@ impl GameState
 
        let mut rng = rand::thread_rng();
 
-       for i in 0..1
+       for i in 0..5
        {
             let mut y = rng.gen_range(300..500);
             let mut x = rng.gen_range(50..900);
