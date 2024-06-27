@@ -30,7 +30,7 @@ impl GameState
 
        let mut rng = rand::thread_rng();
 
-       for i in 0..4
+       for i in 0..1
        {
             let mut y = rng.gen_range(300..500);
             let mut x = rng.gen_range(50..900);
@@ -101,7 +101,7 @@ impl GameState
     pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec2) -> Option<AnimatedEntity>
     {
         //TODO: rectangular for now because otherwise we stretch onto the rectangular base sprite.
-        let possum = AnimatedEntity::new(render_state,50.0,
+        let possum = match AnimatedEntity::new(render_state,50.0,
             
             vec![
                 RenderableConfig::new([0,48],[48,48],0,-0.5),
@@ -124,7 +124,11 @@ impl GameState
                 RenderableConfig::new([336,0],[48,48],0,-0.5),
             ],
             false
-        );
+        )
+        {
+            Some(p) => p,
+            None => { return None; }
+        };
 
         let transform_loc = match possum.get_transform_location()
         {

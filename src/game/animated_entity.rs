@@ -1,14 +1,13 @@
 use crate::state::render_state::RenderState;
-use crate::graphics::renderable::{Renderable, RenderableConfig};
+use crate::graphics::renderable::{Renderable,RenderableConfig};
 use crate::graphics::sprite::Sprite;
-use std::collections::VecDeque;
 use crate::util::logging::log;
 
 pub struct AnimatedEntity
 {
-    active_sprite: Vec<Sprite>,
-    inactive_sprites_left: VecDeque<Sprite>,
-    inactive_sprites_right: VecDeque<Sprite>,
+    sprite_index: usize,
+    sprites_left: Vec<Sprite>,
+    sprites_right: Vec<Sprite>,
     shared_transform_index: Option<u32>,
     animating: bool,
     facing_right: bool,
@@ -22,27 +21,16 @@ impl AnimatedEntity
         left_sprite_configs: Vec<RenderableConfig>,
         right_sprite_configs: Vec<RenderableConfig>,
         facing_right: bool
-    ) -> Self
+    ) -> Option<Self>
     {
         //No sprites? Nothing to set up.
         if left_sprite_configs.len() <= 0 && right_sprite_configs.len() <= 0
         {
-            return Self
-            {
-                active_sprite: Vec::new(),
-                inactive_sprites_left: VecDeque::new(),
-                inactive_sprites_right: VecDeque::new(),
-                shared_transform_index: None,
-                animating: false,
-                facing_right: true,
-                time_since_frame_change: 0.0,
-                time_per_frame: time_per_frame
-            }
+            return None;
         }
 
-        let mut active_sprites = Vec::new();
-        let mut left_inactive_sprites = VecDeque::<Sprite>::new();
-        let mut right_inactive_sprites = VecDeque::<Sprite>::new();
+        let mut left_sprites = Vec::<Sprite>::new();
+        let mut right_sprites = Vec::<Sprite>::new();
 
         //Create all of the sprites but only use one transform index.
         let transform = render_state.request_new_transform();
@@ -55,7 +43,9 @@ impl AnimatedEntity
                 None => { continue; }
             };
 
-            left_inactive_sprites.push_back(sprite);
+            log(format!("Left range: {} to {}",sprite.get_element_location().as_ref().unwrap().start,sprite.get_element_location().as_ref().unwrap().end).as_str());
+
+            left_sprites.push(sprite);
         }
 
         for config in &right_sprite_configs
@@ -63,74 +53,39 @@ impl AnimatedEntity
             let sprite = match render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,transform)
             {
                 Some(s) => s,
-                None => { continue; }
+                None => { 
+                    
+                   log("Help!") ;
+                    continue; }
+
             };
 
-            right_inactive_sprites.push_back(sprite);
+            log(format!("Right range: {} to {}",sprite.get_element_location().as_ref().unwrap().start,sprite.get_element_location().as_ref().unwrap().end).as_str());
+
+            right_sprites.push(sprite);
         }
 
-        //Now select an active sprite 
-
-        if facing_right
+        if facing_right && right_sprites.len() <= 0
         {
-            let active = match right_inactive_sprites.pop_front()
-            {
-                Some(sprite) => sprite,
-                None => {
-                    log("Tried to initialize a right facing sprite with no viable right facing configs");
-                    return Self
-                    {
-                        active_sprite: Vec::new(),
-                        inactive_sprites_left: VecDeque::new(),
-                        inactive_sprites_right: VecDeque::new(),
-                        shared_transform_index: None,
-                        animating: false,
-                        facing_right: true,
-                        time_since_frame_change: 0.0,
-                        time_per_frame: time_per_frame
-                    }
-                }
-            };
-
-            active_sprites.push(active);
-
-        } else 
-        {
-            let active = match left_inactive_sprites.pop_front()
-            {
-                Some(sprite) => sprite,
-                None => {
-                    log("Tried to initialize a left facing sprite with no viable left facing configs");
-                    return Self
-                    {
-                        active_sprite: Vec::new(),
-                        inactive_sprites_left: VecDeque::new(),
-                        inactive_sprites_right: VecDeque::new(),
-                        shared_transform_index: None,
-                        animating: false,
-                        facing_right: true,
-                        time_since_frame_change: 0.0,
-                        time_per_frame: time_per_frame
-                    }
-                }
-            };
-
-            active_sprites.push(active);
+            return None;
         }
 
-        log(format!("Entity initialized with {} left and {} right sprites and {} active",left_inactive_sprites.len(),right_inactive_sprites.len(),active_sprites.len()).as_str());
-
-        Self
+        if !facing_right && left_sprites.len() <= 0
         {
-            active_sprite: active_sprites,
-            inactive_sprites_left: left_inactive_sprites,
-            inactive_sprites_right: right_inactive_sprites,
+            return None;
+        }
+
+        Some(Self
+        {
+            sprite_index: 0,
+            sprites_left: left_sprites,
+            sprites_right: right_sprites,
             shared_transform_index: Some(transform),
             animating: false,
             time_since_frame_change: 0.0,
             time_per_frame,
             facing_right
-        }
+        })
     }
 
     pub fn get_facing_right(&self) -> bool
@@ -146,113 +101,54 @@ impl AnimatedEntity
             return;
         }
 
-        if self.facing_right && self.inactive_sprites_left.len() == 0
+        if self.facing_right && self.sprites_left.len() == 0
         {
             //Don't allow a flip if the other side has no sprites
             log("Refused to flip");
             return; 
         }
 
-        if !self.facing_right && self.inactive_sprites_right.len() == 0
+        if !self.facing_right && self.sprites_right.len() == 0
         {
             //Don't allow a flip if the other side has no sprites
             log("Refused to flip");
             return;
         }
 
-        //Return the active sprite back to the correct inactive queue
-        //Assumes there is only one active sprite = TODO
-        if self.facing_right && self.active_sprite.len() > 0
-        {
-           let active = self.active_sprite.pop(); //Front is the same as back
-           self.inactive_sprites_right.push_back(active.unwrap());
-        } else if !self.facing_right && self.active_sprite.len() > 0
-        {
-           let active = self.active_sprite.pop(); //Front is the same as back
-           self.inactive_sprites_left.push_back(active.unwrap());
-        }
-
-        self.active_sprite.clear(); //To be safe.
-
-        //Grab the next sprite from the new queue and make it active
+        log("Flipped!");
         self.facing_right = face_right;
-
-        if self.facing_right
-        {
-            let new_active = self.inactive_sprites_right.pop_front();
-            self.active_sprite.push(new_active.unwrap());
-        } else
-        {
-            let new_active = self.inactive_sprites_left.pop_front();
-            self.active_sprite.push(new_active.unwrap());
-        }
-
-        log(format!("The active sprite is now the one at range {}-{} with transform {}",self.active_sprite.get(0).unwrap().get_element_location().start,
-            self.active_sprite.get(0).unwrap().get_element_location().end,
-            self.active_sprite.get(0).unwrap().get_transform_location()
-        ).as_str());
+        self.sprite_index = 0;
 
     }
 
     pub fn step_animation(&mut self)
     {
-        if self.active_sprite.len() <= 0 || self.active_sprite.len() > 1
+        if self.facing_right && self.sprites_right.len() == 0
         {
             return;
         }
 
-        if self.facing_right && self.inactive_sprites_right.len() == 0
+        if !self.facing_right && self.sprites_left.len() == 0
         {
             return;
         }
 
-        if !self.facing_right && self.inactive_sprites_left.len() == 0
-        {
-            return;
-        }
+        let mut sprite_index = self.sprite_index;
 
-        //Pop the back. This is also the front. (we want the front item)
-        let active_sprite = match self.active_sprite.pop()
-        {
-            Some(sprite) => sprite,
-            None => { return; }
-        };
+        sprite_index += 1;
 
-        //Put the current active sprite in the correct queue
-        if self.facing_right == true
+
+        if self.facing_right
         {
-            self.inactive_sprites_right.push_back(active_sprite);
+            sprite_index = sprite_index % self.sprites_right.len();
+            log(format!("stepped right: {}",sprite_index).as_str());
         } else 
         {
-            self.inactive_sprites_left.push_back(active_sprite);
+            sprite_index = sprite_index % self.sprites_left.len();
+            log(format!("stepped left: {}",sprite_index).as_str());
         }
 
-        //Grab a sprite from the correct queue and make it active
-        if self.facing_right == true
-        {
-            let sprite = match self.inactive_sprites_right.pop_front()
-            {
-                Some(s) => s,
-                None => {
-                    log("Something is wrong with animation stepping.");
-                    return;
-                }
-            };
-
-            self.active_sprite.push(sprite);
-        } else
-        {
-            let sprite = match self.inactive_sprites_left.pop_front()
-            {
-                Some(s) => s,
-                None => {
-                    log("Something is wrong with animation stepping.");
-                    return;
-                }
-            }; 
-
-            self.active_sprite.push(sprite);
-        }
+        self.sprite_index = sprite_index;
 
     }
 
@@ -277,9 +173,14 @@ impl AnimatedEntity
         self.animating = state;
     }
 
-    pub fn get_active_sprite(&self) -> &Vec<Sprite>
+    pub fn get_active_sprite(&self) -> Option<&Sprite>
     {
-        &self.active_sprite
+        if self.facing_right
+        {
+            return self.sprites_right.get(self.sprite_index);
+        }
+        
+        self.sprites_left.get(self.sprite_index)
     }
 
     pub fn get_transform_location(&self) -> Option<u32>

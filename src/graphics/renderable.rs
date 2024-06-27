@@ -64,7 +64,7 @@ impl RenderableConfig
 // Using this data, the renderer can set up a buffer for a renderable type and hold the data, passing back a lightweight handle that knows where the data is.
 pub trait Renderable
 {
-    fn new(element_location: Range<i32>, transform_location: u32) -> Self;
+    fn new(transform_location: u32) -> Self;
 
     fn init_vertex_layout(context: &WebGl2RenderingContext)
     {
@@ -110,10 +110,12 @@ pub trait Renderable
     fn get_vertex_layout() -> VertexLayout;
 
     //Get the location of this renderable on its buffer
-    fn get_element_location(&self) -> &Range<i32>;
+    fn get_element_location(&self) -> &Option<Range<i32>>;
 
     //Get the location of this renderable's transform on its buffer
     fn get_transform_location(&self) -> u32;
+
+    fn set_element_location(&mut self, range: Range<i32>);
 
     fn get_draw_type() -> u32;
 }

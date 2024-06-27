@@ -107,7 +107,14 @@ impl Game
         
         for i in self.game_state.get_actor_renderables()
         {
-            render_state.draw(i.get_active_sprite());
+            let sprite = match i.get_active_sprite()
+            {
+                Some(s) => s,
+                None => { continue; }
+            };
+
+            log(format!("Drawing range: {} to {}",sprite.get_element_location().as_ref().unwrap().start,sprite.get_element_location().as_ref().unwrap().end).as_str());
+            render_state.draw_expensive(sprite);
         }
     }
 

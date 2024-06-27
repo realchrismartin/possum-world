@@ -65,9 +65,13 @@ impl RenderState
             None => { return None; }
         };
 
+        //TODO
+        /*
         web_context.enable(WebGl2RenderingContext::BLEND);
         web_context.blend_func(WebGl2RenderingContext::SRC_ALPHA ,WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
         web_context.enable(WebGl2RenderingContext::DEPTH_TEST);
+        web_context.clear_color(0.0, 0.0, 0.0, 1.0);
+         */
 
         Some(Self
         {
@@ -96,17 +100,10 @@ impl RenderState
 
     fn request_new_renderable_impl<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, existing_transform: Option<u32>) -> Option<T>
     {
+        log("REQ");
         let texture_dimensions = match self.get_texture(renderable_config.get_texture_index())
         {
             Some(t) => t.get_dimensions(),
-            None => { return None; }
-        };
-
-        //Get the space on the buffer that the new data will take up.
-        //NB: this relies on the property that any given instance of a specific Renderable always has the same # of indices.
-        let element_location = match self.get_next_range_on_buffer::<T>()
-        {
-            Some(range) => range,
             None => { return None; }
         };
 
@@ -123,10 +120,16 @@ impl RenderState
         };
 
         //Create a renderable
-        let renderable = T::new(element_location, transform_location);
+        let mut renderable = T::new(transform_location);
 
         //immediately submit its data to the buffer. This will only be done once.
-        self.submit_data(&renderable,&copied_renderable_config);
+        let range = match self.submit_data(&renderable,&copied_renderable_config)
+        {
+            Some(r) => r,
+            None => { return None }
+        };
+
+        renderable.set_element_location(range);
 
         //Return the renderable. The owner of the renderable can later submit it to be drawn, so we will know which buffer to use.
         Some(renderable)
@@ -182,11 +185,8 @@ impl RenderState
 
     pub fn clear_context(&self)
     {
-        let context = &self.context;
-
-        context.clear_color(0.0, 0.0, 0.0, 1.0);
-        context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-        context.clear(WebGl2RenderingContext::DEPTH_BUFFER_BIT);
+        &self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+        &self.context.clear(WebGl2RenderingContext::DEPTH_BUFFER_BIT);
     }
 
     pub fn set_position_with_index(&mut self, transform_index: u32, position : glm::Vec2)
@@ -297,7 +297,11 @@ impl RenderState
 
         for renderable in renderables
         {
-            let range = renderable.get_element_location();
+            let range = match renderable.get_element_location()
+            {
+                Some(r) => r,
+                None => { continue; }
+            };
 
             let count = range.end - range.start;
 
@@ -314,6 +318,41 @@ impl RenderState
 
             self.context.draw_elements_with_i32(T::get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,range.start);
         }
+
+        VertexBuffer::<T>::unbind(&self.context);
+    }
+
+    //TODO: perhaps remove later
+    pub fn draw_expensive<T: Renderable + 'static>(&self, renderable: &T)
+    {
+        let buffer = match Self::get_const_mapped_buffer::<T>(&self.vertex_buffer_map)
+        {
+            Some(buffer) => buffer,
+            None => {return}
+        };
+
+        buffer.bind(&self.context);
+
+        let range = match renderable.get_element_location()
+        {
+            Some(r) => r,
+            None => { return; }
+        };
+
+        let count = range.end - range.start;
+
+        if count < 0 
+        {
+            return;
+        }
+
+        if !buffer.is_range_valid(&range)
+        {
+            log(format!("Tried to draw an invalid range on a buffer: {} to {}",range.start,range.end).as_str());
+            return;
+        }
+
+        self.context.draw_elements_with_i32(T::get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,range.start);
 
         VertexBuffer::<T>::unbind(&self.context);
     }
@@ -346,25 +385,7 @@ impl RenderState
         self.vertex_buffer_map.insert(type_id,Box::new(buffer));
     }
 
-    fn get_next_range_on_buffer<T: Renderable + 'static>(&mut self) -> Option<Range<i32>>
-    {
-        let type_id = TypeId::of::<T>();
-        if !self.vertex_buffer_map.contains_key(&type_id)
-        {
-            //Lazily initialize our buffer here.
-            self.init_buffer::<T>();
-        }
-
-        let buffer = match Self::get_const_mapped_buffer::<T>(&mut self.vertex_buffer_map)
-        {
-            Some(buffer) => buffer,
-            None => {return None; }
-        };
-
-        Some(buffer.get_next_range())
-    }
-
-    fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T, renderable_config: &RenderableConfig)
+    fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T, renderable_config: &RenderableConfig) -> Option<Range<i32>>
     {
         let type_id = TypeId::of::<T>();
         if !self.vertex_buffer_map.contains_key(&type_id)
@@ -377,14 +398,14 @@ impl RenderState
         let buffer = match Self::get_mapped_buffer::<T>(&mut self.vertex_buffer_map)
         {
             Some(buffer) => buffer,
-            None => {
-                log("returned");
-                return; }
+            None => { return None; }
         };
 
         buffer.bind(&self.context);
-        buffer.buffer_data(&self.context,&renderable,&renderable_config);
+        let range = buffer.buffer_data(&self.context,&renderable,&renderable_config);
         VertexBuffer::<T>::unbind(&self.context);
+        
+        range
     }
 
     fn get_const_mapped_buffer<T: Renderable + 'static>(vertex_buffer_map: &HashMap<TypeId,Box<dyn Any>>) -> Option<&VertexBuffer<T>>

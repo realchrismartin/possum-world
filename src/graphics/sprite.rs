@@ -9,17 +9,17 @@ use std::ops::Range;
 //It doesn't hold vertex or index data. That data is generated once on upload to the GPU.
 pub struct Sprite
 {
-    element_location: Range<i32>,
+    element_location: Option<Range<i32>>,
     transform_location: u32,
 }
 
 impl Renderable for Sprite
 {
-    fn new(element_location: Range<i32>, transform_location: u32) -> Self 
+    fn new(transform_location: u32) -> Self 
     {
         Self 
         {
-            element_location,
+            element_location: None,
             transform_location,
         }
     }
@@ -73,9 +73,14 @@ impl Renderable for Sprite
         vec![0,1,2,2,3,0]
     }
 
-    fn get_element_location(&self) -> &Range<i32> 
+    fn get_element_location(&self) -> &Option<Range<i32>>
     {
       &self.element_location  
+    }
+
+    fn set_element_location(&mut self, loc: Range<i32>) 
+    {
+        self.element_location = Some(loc);
     }
 
     fn get_transform_location(&self) -> u32 
