@@ -1,6 +1,7 @@
 use crate::state::render_state::RenderState;
 use crate::graphics::renderable::{Renderable,RenderableConfig};
 use crate::graphics::sprite::Sprite;
+use crate::util::logging::log;
 
 pub struct AnimatedEntity
 {
@@ -107,7 +108,6 @@ impl AnimatedEntity
 
         self.facing_right = face_right;
         self.sprite_index = 0;
-
     }
 
     pub fn step_animation(&mut self)

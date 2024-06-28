@@ -113,7 +113,6 @@ impl Game
                 None => { continue; }
             };
 
-            log(format!("Drawing range: {} to {}",sprite.get_element_location().as_ref().unwrap().start,sprite.get_element_location().as_ref().unwrap().end).as_str());
             render_state.draw_expensive(sprite);
         }
     }

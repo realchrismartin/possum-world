@@ -104,6 +104,11 @@ impl GameState
 
     pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec3) -> Option<AnimatedEntity>
     {
+
+        let mut rng = rand::thread_rng();
+
+        let facing = rng.gen_range(0..2) > 0;
+
         //TODO: rectangular for now because otherwise we stretch onto the rectangular base sprite.
         let possum = match AnimatedEntity::new(render_state,50.0,
             
@@ -127,7 +132,7 @@ impl GameState
                 RenderableConfig::new([288,0],[48,48],0),
                 RenderableConfig::new([336,0],[48,48],0),
             ],
-            false
+            facing
         )
         {
             Some(p) => p,
@@ -148,14 +153,46 @@ impl GameState
 
     pub fn update(&mut self, render_state: &mut RenderState, input_state: &InputState, delta_time: f32)
     {
+        let mut rng = rand::thread_rng();
+
         let mut index = 0;
         for p in &mut self.friendly_possums
         {
             let mut movement_direction = glm::vec2(0.0,0.0);
-
-            if index == 0
+            
+            //Rudimentary AI
+            if index > 0
             {
-                movement_direction = input_state.get_movement_direction();
+                let t = match p.get_transform_location()
+                {
+                    Some(t) => t,
+                    None => {continue;}
+                };
+
+                let pos = match render_state.get_position_with_index(t)
+                {
+                    Some(p) => p,
+                    None => { continue; }
+                };
+
+                if pos.x > 950.0 && p.get_facing_right()
+                {
+                    p.set_facing(false);
+                } else if pos.x < 50.0 && !p.get_facing_right() 
+                {
+                    p.set_facing(true);
+                }
+
+                if p.get_facing_right() 
+                {
+                    movement_direction = glm::vec2(1.0,0.0);
+                } else
+                {
+                    movement_direction = glm::vec2(-1.0,0.0);
+                }
+            } else 
+            {
+                movement_direction = input_state.get_movement_direction();     
             }
 
             Self::update_animated_entity(p,&movement_direction,render_state,delta_time);
@@ -165,11 +202,6 @@ impl GameState
 
     fn update_animated_entity(animated_entity: &mut AnimatedEntity, movement_direction: &glm::Vec2, render_state: &mut RenderState, delta_time: f32)
     {
-        //TODO: bug here, or elsewhere, that causes right-facing possums to be drawn wrong every other frame or so.
-        //Only affects the 2nd+ poss in the list, never the first
-        //Doesn't affect left facing
-        //Stops if we comment out update (specifically animation stepping.)
-        //Transforms are independent. Vertices appear to be independent. issue is probably in this file or in AnimatedEntity (latter more probable).
         animated_entity.update(delta_time);
 
         let transform_loc = match animated_entity.get_transform_location()
