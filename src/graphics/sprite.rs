@@ -7,6 +7,7 @@ use std::ops::Range;
 
 //Like all Renderables, a Sprite is a handle that points to locations on our buffers.
 //It doesn't hold vertex or index data. That data is generated once on upload to the GPU.
+#[derive(Clone)]
 pub struct Sprite
 {
     element_location: Option<Range<i32>>,

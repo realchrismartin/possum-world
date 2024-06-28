@@ -103,18 +103,11 @@ impl Game
         render_state.submit_camera_uniforms(); 
         render_state.bind_and_update_transform_buffer_data();
 
-        render_state.draw(self.game_state.get_background_renderables()); //TODO: just sprites for now.
-        
-        for i in self.game_state.get_actor_renderables()
-        {
-            let sprite = match i.get_active_sprite()
-            {
-                Some(s) => s,
-                None => { continue; }
-            };
+        //Copy data into a batch to be drawn
+        let batch = self.game_state.get_renderable_batch();
 
-            render_state.draw_expensive(sprite);
-        }
+        //Draw everything in the batch.
+        batch.draw(&render_state);
     }
 
     pub fn process_keypress_event(&mut self, pressed: bool, code : &str)

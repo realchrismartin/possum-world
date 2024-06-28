@@ -1,8 +1,6 @@
 use crate::state::render_state::RenderState;
 use crate::graphics::renderable::{Renderable,RenderableConfig};
 use crate::graphics::sprite::Sprite;
-use crate::util::logging::log;
-
 pub struct AnimatedEntity
 {
     sprite_index: usize,
@@ -160,13 +158,13 @@ impl AnimatedEntity
         self.animating = state;
     }
 
-    pub fn get_active_sprite(&self) -> Option<&Sprite>
+    pub fn get_renderable(&self) -> Option<&Sprite>
     {
         if self.facing_right
         {
             return self.sprites_right.get(self.sprite_index);
         }
-        
+
         self.sprites_left.get(self.sprite_index)
     }
 

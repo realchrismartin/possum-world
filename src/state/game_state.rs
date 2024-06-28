@@ -1,4 +1,4 @@
-use crate::graphics::transform;
+use crate::graphics::draw_batch::DrawBatch;
 use crate::state::input_state::InputState;
 use crate::state::render_state::RenderState;
 
@@ -6,12 +6,11 @@ use crate::graphics::renderable::RenderableConfig;
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
 use rand::Rng;
-use crate::util::logging::log;
 
 pub struct GameState
 {
     friendly_possums: Vec<AnimatedEntity>,
-    tiles: Vec<Sprite>
+    tiles: Vec<Sprite>,
 }
 
 impl GameState
@@ -198,6 +197,29 @@ impl GameState
             Self::update_animated_entity(p,&movement_direction,render_state,delta_time);
             index = index + 1;
         }
+    }
+
+    pub fn get_renderable_batch(&mut self) -> DrawBatch
+    {
+        let mut batch = DrawBatch::new();
+
+        for i in &self.tiles
+        {
+           batch.add_sprite(i);
+        }
+
+        for p in &self.friendly_possums
+        {
+            let r = match p.get_renderable()
+            {
+                Some(re) => re,
+                None => {continue; }
+            };
+
+           batch.add_sprite(r);
+        }
+
+        batch
     }
 
     fn update_animated_entity(animated_entity: &mut AnimatedEntity, movement_direction: &glm::Vec2, render_state: &mut RenderState, delta_time: f32)

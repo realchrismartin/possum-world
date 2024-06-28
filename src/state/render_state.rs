@@ -319,41 +319,6 @@ impl RenderState
         VertexBuffer::<T>::unbind(&self.context);
     }
 
-    //TODO: perhaps remove later
-    pub fn draw_expensive<T: Renderable + 'static>(&self, renderable: &T)
-    {
-        let buffer = match Self::get_const_mapped_buffer::<T>(&self.vertex_buffer_map)
-        {
-            Some(buffer) => buffer,
-            None => {return}
-        };
-
-        buffer.bind(&self.context);
-
-        let range = match renderable.get_element_location()
-        {
-            Some(r) => r,
-            None => { return; }
-        };
-
-        let count = range.end - range.start;
-
-        if count < 0 
-        {
-            return;
-        }
-
-        if !buffer.is_range_valid(&range)
-        {
-            log(format!("Tried to draw an invalid range on a buffer: {} to {}",range.start,range.end).as_str());
-            return;
-        }
-
-        self.context.draw_elements_with_i32(T::get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,range.start);
-
-        VertexBuffer::<T>::unbind(&self.context);
-    }
-
     fn get_texture(&self, index: u32) -> Option<&Texture>
     {
         if !self.textures.contains_key(&index)

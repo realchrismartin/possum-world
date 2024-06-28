@@ -58,9 +58,9 @@ impl RenderableConfig
 // Using this data, the renderer can set up a buffer for a renderable type and hold the data, passing back a lightweight handle that knows where the data is.
 pub trait Renderable
 {
-    fn new(transform_location: u32) -> Self;
+    fn new(transform_location: u32) -> Self where Self: Sized;
 
-    fn init_vertex_layout(context: &WebGl2RenderingContext)
+    fn init_vertex_layout(context: &WebGl2RenderingContext) where Self: Sized
     {
         let vertex_layout = Self::get_vertex_layout();
 
@@ -87,7 +87,7 @@ pub trait Renderable
         }
     }
 
-    fn get_stride() -> i32
+    fn get_stride() -> i32 where Self: Sized
     {
         //TODO: this is an overly expensive vector-creation to produce this value.
         Self::get_vertex_layout().get_elements().iter().map(|element| element.size ).sum::<i32>()
@@ -98,10 +98,10 @@ pub trait Renderable
 
     //Given a renderable config, generate indices for this renderable
     //This has to always be the same for any given Renderable type (ie consistent for that type)
-    fn get_indices() -> Vec<u32>;
+    fn get_indices() -> Vec<u32> where Self: Sized;
 
     //Generate the vertex layout for this renderable
-    fn get_vertex_layout() -> VertexLayout;
+    fn get_vertex_layout() -> VertexLayout where Self: Sized;
 
     //Get the location of this renderable on its buffer
     fn get_element_location(&self) -> &Option<Range<i32>>;
@@ -111,5 +111,5 @@ pub trait Renderable
 
     fn set_element_location(&mut self, range: Range<i32>);
 
-    fn get_draw_type() -> u32;
+    fn get_draw_type() -> u32 where Self: Sized;
 }
