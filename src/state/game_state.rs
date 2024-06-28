@@ -244,7 +244,6 @@ impl GameState
             return;
         }
 
-        //TODO: is this the cause of my suffering?
         animated_entity.set_animating(true);
 
         //TODO: arbitrary speed/ distance
@@ -254,7 +253,6 @@ impl GameState
         render_state.set_position_with_index(transform_loc, position);
     }
 
-    //TODO: for now, just sprites
     pub fn get_background_renderables(&self) -> &Vec<Sprite>
     {
         &self.tiles
