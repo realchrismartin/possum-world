@@ -5,7 +5,7 @@ export function init(textures,shader_sources)
     
     let setCanvasSizeFn = () => 
     {
-        let container = document.getElementById("container");
+        let container = document.getElementById("canvas-container");
         let canvas = document.getElementById("canvas");
 
         canvas.height = container.clientHeight; // "1000"; // document.documentElement.clientHeight; 
