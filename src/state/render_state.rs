@@ -19,8 +19,8 @@ use crate::util::util::{world_position_to_screen_translation,screen_translation_
 use std::ops::Range;
 
 //TODO: move this
-static WORLD_SIZE_X : f32 = 1000.0;
-static WORLD_SIZE_Y : f32 = 1000.0;
+pub const WORLD_SIZE_X : i32 = 1000;
+pub const WORLD_SIZE_Y : i32 = 1000;
 
 pub struct RenderState
 {
@@ -188,7 +188,7 @@ impl RenderState
 
     pub fn set_position_with_index(&mut self, transform_index: u32, position : glm::Vec3)
     {
-        self.set_translation_with_index(transform_index, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X,WORLD_SIZE_Y)));
+        self.set_translation_with_index(transform_index, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X as f32, WORLD_SIZE_Y as f32)));
     }
 
     pub fn get_position_with_index(&self, transform_index: u32) -> Option<glm::Vec3>
@@ -199,7 +199,7 @@ impl RenderState
             None => {return None;}
         };
 
-        Some(screen_translation_to_world_position(&translation,&glm::vec2(WORLD_SIZE_X,WORLD_SIZE_Y)))
+        Some(screen_translation_to_world_position(&translation,&glm::vec2(WORLD_SIZE_X as f32,WORLD_SIZE_Y as f32)))
     }
 
     fn set_translation_with_index(&mut self, transform_index: u32, translation: glm::Vec3)
@@ -221,7 +221,7 @@ impl RenderState
     //0,max_y is the top left corner
     pub fn set_position<T: Renderable + 'static>(&mut self, renderable: &T, position : glm::Vec3)
     {
-        self.set_translation(renderable, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X,WORLD_SIZE_Y)));
+        self.set_translation(renderable, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X as f32,WORLD_SIZE_Y as f32)));
     }
 
     fn set_translation<T: Renderable + 'static>(&mut self, renderable: &T, translation: glm::Vec3)

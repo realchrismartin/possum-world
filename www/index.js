@@ -26,7 +26,21 @@ export function init(textures,shader_sources)
     {
         game.process_keypress_event(false,event.code);
     });
-    
+
+    canvas.addEventListener("mousedown",(event) =>
+    {
+        game.process_click_event(true,event.offsetX,event.offsetY);
+    });
+
+    canvas.addEventListener("mousemove",(event) =>
+    {
+        game.process_mouse_move_event(event.offsetX,event.offsetY);
+    });
+
+    addEventListener("mouseup", (event) => 
+    {
+        game.process_click_event(false,event.offsetX,event.offsetY);
+    });
     
     //Load shader
     //TODO: allow loading more than one shader

@@ -6,6 +6,7 @@ use crate::graphics::renderable::RenderableConfig;
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
 use rand::Rng;
+use crate::util::logging::log;
 
 pub struct GameState
 {
@@ -31,6 +32,8 @@ impl GameState
 
        let mut z = -0.25;
 
+       let mut player = false;
+
        for i in 0..5
        {
             let mut y = rng.gen_range(300..500);
@@ -42,15 +45,18 @@ impl GameState
             {
                 x = 500;
                 y = 100;
+                player = true;
             }
 
-           let poss = match Self::add_possum(render_state,glm::vec3(x as f32,y as f32,z as f32))
+           let poss = match Self::add_possum(render_state,glm::vec3(x as f32,y as f32,z as f32),player)
            {
                    Some(p) => p,
                    None => { return; }
            };
 
            self.friendly_possums.push(poss);
+
+           player = false;
        }
 
        self.init_tile_grid(render_state);
@@ -101,7 +107,7 @@ impl GameState
         }
     }
 
-    pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec3) -> Option<AnimatedEntity>
+    pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec3, player: bool) -> Option<AnimatedEntity>
     {
 
         let mut rng = rand::thread_rng();
@@ -145,12 +151,19 @@ impl GameState
         };
 
         render_state.set_position_with_index(transform_loc, starting_position);
-        render_state.set_scale_with_index(transform_loc,glm::vec3(0.1,0.1,1.0));
+        
+        if player
+        {
+            render_state.set_scale_with_index(transform_loc,glm::vec3(0.4,0.4,1.0));
+        } else 
+        {
+            render_state.set_scale_with_index(transform_loc,glm::vec3(0.1,0.1,1.0));
+        }
 
         Some(possum)
     }
 
-    pub fn update(&mut self, render_state: &mut RenderState, input_state: &InputState, delta_time: f32)
+    pub fn update(&mut self, render_state: &mut RenderState, input_state: &mut InputState, delta_time: f32)
     {
         let mut rng = rand::thread_rng();
 
@@ -158,6 +171,7 @@ impl GameState
         for p in &mut self.friendly_possums
         {
             let mut movement_direction = glm::vec2(0.0,0.0);
+            let mut jumping = false;
             
             //Rudimentary AI
             if index > 0
@@ -192,6 +206,25 @@ impl GameState
             } else 
             {
                 movement_direction = input_state.get_movement_direction();     
+
+                let mut clicked = false;
+
+                while input_state.has_next_click()
+                {
+                    let click = match input_state.get_next_click()
+                    {
+
+                        Some(c) => c,
+                        None => { continue; }
+                    };
+
+                    clicked = true;
+                }
+                
+                if clicked
+                {
+                    movement_direction += glm::vec2(0.0,1.0);
+                }
             }
 
             Self::update_animated_entity(p,&movement_direction,render_state,delta_time);
@@ -244,6 +277,12 @@ impl GameState
         } else if movement_direction.x < 0.0 && animated_entity.get_facing_right()
         {
             animated_entity.set_facing(false);
+        }
+
+        //Vertical movement
+        if movement_direction.y > 0.0
+        {
+            position.y += (delta_time / 5.0) * 200.0;
         }
 
         //"Gravity"

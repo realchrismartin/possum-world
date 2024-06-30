@@ -18,6 +18,7 @@ use web_sys::{Document, HtmlImageElement};
 use state::game_state::GameState;
 use state::input_state::InputState;
 use state::render_state::RenderState;
+use crate::state::render_state;
 use util::logging::log;
 
 #[wasm_bindgen]
@@ -88,7 +89,7 @@ impl Game
             None => { return; }
         };
 
-        self.game_state.update(render_state, &self.input_state, delta_time);
+        self.game_state.update(render_state, &mut self.input_state, delta_time);
     }
 
     pub fn render(&mut self)
@@ -113,5 +114,15 @@ impl Game
     pub fn process_keypress_event(&mut self, pressed: bool, code : &str)
     {
         self.input_state.process_input(pressed,code);
+    }
+
+    pub fn process_click_event(&mut self, start_or_end: bool, x: i32, y: i32)
+    {
+        self.input_state.process_click(start_or_end,x,render_state::WORLD_SIZE_Y - y);
+    }
+
+    pub fn process_mouse_move_event(&mut self, x: i32, y: i32)
+    {
+        self.input_state.process_mouse_move(x,render_state::WORLD_SIZE_Y - y);
     }
 }
