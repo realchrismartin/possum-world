@@ -2,17 +2,23 @@ import {Game} from "possum_world"
 
 export function init(textures,shader_sources)
 {
-    let canvas = document.getElementById("canvas");
-
-    //TODO
-    canvas.height = "1000"; // document.documentElement.clientHeight; 
-    canvas.width = "1000"; //document.documentElement.clientWidth;
-
-    addEventListener("resize",(event) => {
+    
+    let setCanvasSizeFn = () => 
+    {
+        let container = document.getElementById("canvas-container");
         let canvas = document.getElementById("canvas");
-        //canvas.height = document.documentElement.clientHeight; 
-        //canvas.width = document.documentElement.clientWidth;
+
+        canvas.height = container.clientHeight; // "1000"; // document.documentElement.clientHeight; 
+        canvas.width = container.clientWidth; // "1000"; //document.documentElement.clientWidth;
+    };
+
+    addEventListener("resize",(event) =>
+    {
+        setCanvasSizeFn();
     });
+
+    //Set the canvas size initially once
+    setCanvasSizeFn();
 
     const game = Game.new(document);
 
