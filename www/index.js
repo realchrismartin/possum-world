@@ -32,9 +32,30 @@ export function init(textures,shader_sources)
         game.process_click_event(true,event.offsetX,event.offsetY);
     });
 
+    canvas.addEventListener("touchstart",(event) => 
+    {
+        event.preventDefault();
+        game.process_click_event(true,event.offsetX,event.offsetY);
+        event.stopPropagation();
+    });
+
     canvas.addEventListener("mousemove",(event) =>
     {
         game.process_mouse_move_event(event.offsetX,event.offsetY);
+    });
+
+    canvas.addEventListener("touchmove",(event) =>
+    {
+        event.preventDefault();
+        game.process_mouse_move_event(event.offsetX,event.offsetY);
+        event.stopPropagation();
+    });
+
+    addEventListener("touchend", (event) => 
+    {
+        event.preventDefault();
+        game.process_click_event(false,event.offsetX,event.offsetY);
+        event.stopPropagation();
     });
 
     addEventListener("mouseup", (event) => 
