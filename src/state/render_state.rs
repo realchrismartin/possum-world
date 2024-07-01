@@ -18,10 +18,6 @@ use crate::graphics::transform_buffer::TransformBuffer;
 use crate::util::util::{world_position_to_screen_translation,screen_translation_to_world_position};
 use std::ops::Range;
 
-//TODO: move this
-pub const WORLD_SIZE_X : i32 = 1000;
-pub const WORLD_SIZE_Y : i32 = 1000;
-
 pub struct RenderState
 {
     context: WebGl2RenderingContext,
@@ -70,6 +66,7 @@ impl RenderState
         web_context.blend_func(WebGl2RenderingContext::SRC_ALPHA ,WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
         web_context.enable(WebGl2RenderingContext::DEPTH_TEST);
         web_context.clear_color(0.0, 0.0, 0.0, 1.0);
+        web_context.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
 
         Some(Self
         {
@@ -187,7 +184,8 @@ impl RenderState
 
     pub fn set_position_with_index(&mut self, transform_index: u32, position : glm::Vec3)
     {
-        self.set_translation_with_index(transform_index, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X as f32, WORLD_SIZE_Y as f32)));
+        self.set_translation_with_index(transform_index, world_position_to_screen_translation(&position,
+            &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)));
     }
 
     pub fn get_position_with_index(&self, transform_index: u32) -> Option<glm::Vec3>
@@ -198,7 +196,8 @@ impl RenderState
             None => {return None;}
         };
 
-        Some(screen_translation_to_world_position(&translation,&glm::vec2(WORLD_SIZE_X as f32,WORLD_SIZE_Y as f32)))
+        Some(screen_translation_to_world_position(&translation,
+            &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)))
     }
 
     fn set_translation_with_index(&mut self, transform_index: u32, translation: glm::Vec3)
@@ -220,7 +219,8 @@ impl RenderState
     //0,max_y is the top left corner
     pub fn set_position<T: Renderable + 'static>(&mut self, renderable: &T, position : glm::Vec3)
     {
-        self.set_translation(renderable, world_position_to_screen_translation(&position,&glm::vec2(WORLD_SIZE_X as f32,WORLD_SIZE_Y as f32)));
+        self.set_translation(renderable, world_position_to_screen_translation(&position,
+            &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)));
     }
 
     fn set_translation<T: Renderable + 'static>(&mut self, renderable: &T, translation: glm::Vec3)
@@ -405,5 +405,21 @@ impl RenderState
         };
 
         return (&mut *boxed_buffer).downcast_mut::<VertexBuffer<T>>()
+    }
+
+    pub fn set_canvas_dimensions(&mut self, x: u32, y: u32)
+    {
+        self.context.viewport(0, 0, x as i32, y as i32);
+        self.camera.set_canvas_dimensions(x, y);
+    }
+
+    pub fn get_world_size_x(&self) -> u32
+    {
+        self.camera.get_canvas_width()
+    }
+
+    pub fn get_world_size_y(&self) -> u32
+    {
+        self.camera.get_canvas_height()
     }
 }

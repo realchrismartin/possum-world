@@ -2,12 +2,6 @@ import {Game} from "possum_world"
 
 export function init(textures,shader_sources)
 {
-    //TODO: reudndant
-    let container = document.getElementById("canvas-container");
-    let canvas = document.getElementById("canvas");
-    canvas.height = container.clientHeight;
-    canvas.width = container.clientWidth; 
-
     const game = Game.new(document);
 
     let setCanvasSizeFn = (game_object) => 
@@ -18,10 +12,10 @@ export function init(textures,shader_sources)
         canvas.height = container.clientHeight;
         canvas.width = container.clientWidth; 
 
-        game.set_world_size(canvas.clientHeight,canvas.clientWidth);
+        game.set_canvas_dimensions(container.clientWidth,container.clientHeight);
     };
 
-    addEventListener("resize",(event) =>
+    window.addEventListener("resize",(event) =>
     {
         setCanvasSizeFn(game);
     });

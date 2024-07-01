@@ -1,5 +1,3 @@
-use crate::util::logging::log;
-
 //Given a top left corner, the dimensions of a rectangle, and the dimensions of a texture, get a set of 4 texture coordinates for the rectangle's extents
 pub fn get_rectangular_texture_coordinates(top_left_pixel_coordinate: &[i32;2], dimensions: &[i32;2], tex_dimensions: &[i32;2]) -> [[f32;2];4]
 {

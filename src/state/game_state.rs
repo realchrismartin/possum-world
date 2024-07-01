@@ -5,6 +5,7 @@ use crate::state::render_state::RenderState;
 use crate::graphics::renderable::RenderableConfig;
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
+use glm::scale;
 use rand::Rng;
 use crate::util::logging::log;
 
@@ -12,6 +13,9 @@ pub struct GameState
 {
     friendly_possums: Vec<AnimatedEntity>,
     tiles: Vec<Sprite>,
+    tile_count_x: u32,
+    tile_count_y: u32,
+    floor_y: u32
 }
 
 impl GameState
@@ -21,8 +25,64 @@ impl GameState
         Self
         {
             friendly_possums: Vec::new(),
-            tiles: Vec::new()
+            tiles: Vec::new(),
+            tile_count_x: 10,
+            tile_count_y: 10,
+            floor_y: 100
         }
+    }
+
+    pub fn set_world_size(&mut self, render_state: &mut RenderState)
+    {
+        let world_size_x = render_state.get_world_size_x();
+        let world_size_y = render_state.get_world_size_y();
+
+        let x_placement_offset = world_size_x / self.tile_count_x;
+        let y_placement_offset = world_size_y / self.tile_count_y;
+
+        //Since each position is the center of a tile, we offset the initial placement by a tile half width
+        let mut next_x_placement =  x_placement_offset as f32 / 2.0;
+        let mut next_y_placement = y_placement_offset as f32 / 2.0;
+
+        //Scale of 1.0 fills the screen (see sprite.rs default vertices) as long as we have a square viewport.
+        //We want a scale that will make the tile match the tile size
+        //TODO: possibly address this issue with scaling later to make scale make more sense.
+
+        let scale_x = 1.0 / self.tile_count_x as f32;
+        let scale_y = 1.0 / self.tile_count_y as f32;
+
+        //Tiles start at the bottom left and grow right -> up
+        let mut index = 0;
+        let z = 2.0; //For tiles
+        for tile in &self.tiles
+        {
+            render_state.set_position(tile, glm::vec3(next_x_placement as f32,next_y_placement as f32, z));
+            render_state.set_scale(tile, glm::vec3(scale_x,scale_y,1.0));
+
+            next_x_placement += x_placement_offset as f32;
+
+            if index != 0 && index % self.tile_count_x == 0
+            {
+                next_y_placement += y_placement_offset as f32;
+                next_x_placement = x_placement_offset as f32 / 2.0;
+            }
+
+            index += 1;
+        }
+
+        for possum in &self.friendly_possums
+        {
+            let transform_loc = match possum.get_transform_location()
+            {
+                Some(t) => t,
+                None => {continue; }
+            };
+
+            render_state.set_scale_with_index(transform_loc, glm::vec3(scale_x,scale_y,1.0));
+        }
+
+        self.floor_y = y_placement_offset;
+
     }
 
     pub fn init(&mut self, render_state: &mut RenderState)
@@ -30,46 +90,35 @@ impl GameState
 
        let mut rng = rand::thread_rng();
 
-       let mut z = -0.25;
+       let mut z = 2.0;
 
-       let mut player = false;
+       let world_size_x = render_state.get_world_size_x();
 
        for i in 0..5
        {
-            let mut y = rng.gen_range(300..500);
-            let mut x = rng.gen_range(50..900);
+            //TODO: hardcoded
+            let y = 200;
+            let x = rng.gen_range(0..world_size_x); 
 
-            z -= 0.1;
+           z -= 0.1;
 
-            if i == 0
-            {
-                x = 500;
-                y = 100;
-                player = true;
-            }
-
-           let poss = match Self::add_possum(render_state,glm::vec3(x as f32,y as f32,z as f32),player)
+           let poss = match Self::add_possum(render_state,glm::vec3(x as f32,y as f32,z as f32))
            {
                    Some(p) => p,
                    None => { return; }
            };
 
            self.friendly_possums.push(poss);
-
-           player = false;
        }
 
        self.init_tile_grid(render_state);
+       self.set_world_size(render_state);
     }
 
     pub fn init_tile_grid(&mut self, render_state: &mut RenderState)
     {
         //Generate a random tile grid
         let mut rng = rand::thread_rng();
-
-        //Since each position is the center of a tile, we offset the initial placement by a tile half width
-        let mut next_y_placement = 50.0;
-        let mut next_x_placement = 50.0;
 
         let use_sprites  = vec![
             RenderableConfig::new([0,0],[100,100],1), //ground
@@ -78,38 +127,28 @@ impl GameState
             RenderableConfig::new([300,0],[100,100],1), //background
         ];
 
-        for y in 0..10
+        for i in 0..(self.tile_count_y * self.tile_count_x) +1
         {
-            for x in 0..10
+            let mut used_sprite_index = 0;
+
+            if i > self.tile_count_x
             {
-
-                let mut used_sprite_index = 0;
-                if y > 0
-                {
-                    used_sprite_index = rng.gen_range(1..4);
-                }
-
-                let tile = match render_state.request_new_renderable::<Sprite>(use_sprites.get(used_sprite_index).unwrap())
-                {
-                    Some(s) => s,
-                    None => { return; }
-                };
-
-                render_state.set_scale(&tile,glm::vec3(0.1,0.1,1.0));
-                render_state.set_position(&tile, glm::vec3(next_x_placement,next_y_placement,0.0));
-                self.tiles.push(tile);
-
-                next_x_placement += 100.0;
+                used_sprite_index = rng.gen_range(1..4);
             }
 
-            next_x_placement = 50.0; //Resetting with a half width offset
-            next_y_placement += 100.0;
+            let tile = match render_state.request_new_renderable::<Sprite>(use_sprites.get(used_sprite_index).unwrap())
+            {
+                Some(s) => s,
+                None => { return; }
+            };
+
+            self.tiles.push(tile);
         }
+
     }
 
-    pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec3, player: bool) -> Option<AnimatedEntity>
+    pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec3) -> Option<AnimatedEntity>
     {
-
         let mut rng = rand::thread_rng();
 
         let facing = rng.gen_range(0..2) > 0;
@@ -151,14 +190,6 @@ impl GameState
         };
 
         render_state.set_position_with_index(transform_loc, starting_position);
-        
-        if player
-        {
-            render_state.set_scale_with_index(transform_loc,glm::vec3(0.4,0.4,1.0));
-        } else 
-        {
-            render_state.set_scale_with_index(transform_loc,glm::vec3(0.1,0.1,1.0));
-        }
 
         Some(possum)
     }
@@ -166,6 +197,8 @@ impl GameState
     pub fn update(&mut self, render_state: &mut RenderState, input_state: &mut InputState, delta_time: f32)
     {
         let mut rng = rand::thread_rng();
+
+        let x_bound = render_state.get_world_size_x();
 
         let mut index = 0;
         for p in &mut self.friendly_possums
@@ -188,10 +221,10 @@ impl GameState
                     None => { continue; }
                 };
 
-                if pos.x > 950.0 && p.get_facing_right()
+                if pos.x > x_bound as f32 && p.get_facing_right()
                 {
                     p.set_facing(false);
-                } else if pos.x < 50.0 && !p.get_facing_right() 
+                } else if pos.x < 0.0 && !p.get_facing_right() 
                 {
                     p.set_facing(true);
                 }
@@ -227,7 +260,7 @@ impl GameState
                 }
             }
 
-            Self::update_animated_entity(p,&movement_direction,render_state,delta_time);
+            Self::update_animated_entity(p,&movement_direction,render_state,delta_time, self.floor_y);
             index = index + 1;
         }
     }
@@ -255,7 +288,7 @@ impl GameState
         batch
     }
 
-    fn update_animated_entity(animated_entity: &mut AnimatedEntity, movement_direction: &glm::Vec2, render_state: &mut RenderState, delta_time: f32)
+    fn update_animated_entity(animated_entity: &mut AnimatedEntity, movement_direction: &glm::Vec2, render_state: &mut RenderState, delta_time: f32, floor_y: u32)
     {
         animated_entity.update(delta_time);
 
@@ -288,14 +321,14 @@ impl GameState
         //"Gravity"
         let mut gravity_affected = false;
 
-        if position.y > 100.0
+        if position.y > floor_y as f32
         {
             gravity_affected = true;
             position.y -= (delta_time / 5.0) * 10.0;
 
-            if position.y < 100.0
+            if position.y < floor_y as f32
             {
-                position.y = 100.0;
+                position.y = floor_y as f32;
             }
         }
 
@@ -312,15 +345,5 @@ impl GameState
         position.x += (delta_time / 5.0) * movement_direction.x;
 
         render_state.set_position_with_index(transform_loc, position);
-    }
-
-    pub fn get_background_renderables(&self) -> &Vec<Sprite>
-    {
-        &self.tiles
-    }
-
-    pub fn get_actor_renderables(&self) -> &Vec<AnimatedEntity>
-    {
-        &self.friendly_possums
     }
 }

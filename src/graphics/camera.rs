@@ -1,4 +1,5 @@
 use nalgebra_glm::TMat4;
+use crate::util::logging::log;
 
 pub struct Camera
 {
@@ -13,6 +14,8 @@ impl Camera
 {
     pub fn new(canvas_width : u32, canvas_height : u32) -> Self
     {
+        log(format!("Initial canvas size (Camera) {} {}",canvas_width,canvas_height).as_str());
+
         Self
         {
             view_matrix: glm::Mat4::identity(), 
@@ -26,7 +29,7 @@ impl Camera
     fn update_view_matrix(&mut self)
     {
         let eye = glm::vec3(0.0,0.0,0.0);
-        let target = glm::vec3(0.0,0.0,-5.0);
+        let target = glm::vec3(0.0,0.0,-1.0);
         let up_vector = glm::vec3(0.0,1.0,0.0);
 
         self.view_matrix = glm::look_at(&eye,&target,&up_vector);
@@ -34,12 +37,16 @@ impl Camera
 
     fn update_projection_matrix(&mut self)
     {
-        let left = -1.0; 
-        let right = 1.0;
         let bottom = -1.0;
         let top = 1.0;
-        let near = 5.0;
-        let far = -5.0;
+        let near = 0.1;
+        let far = 20.0;
+
+        let aspect_ratio = self.canvas_width as f32 / self.canvas_height as f32;
+        let left = -aspect_ratio;
+        let right = aspect_ratio;
+
+        log(format!("New aspect ratio: {} with w: {} and h: {}",aspect_ratio,self.canvas_width,self.canvas_height).as_str());
 
         self.projection_matrix = glm::ortho(left,right,bottom,top,near,far);
     }
