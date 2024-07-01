@@ -42,12 +42,6 @@ impl Game
         }
     }
 
-    pub fn init_renderer(&mut self, document: &Document)
-    {
-        self.render_state = RenderState::new(document);
-
-    }
-    
     pub fn load_shader(&mut self, vert_shader: &str, frag_shader: &str)
     {
         let render_state = match &mut self.render_state
@@ -124,5 +118,10 @@ impl Game
     pub fn process_mouse_move_event(&mut self, x: i32, y: i32)
     {
         self.input_state.process_mouse_move(x,render_state::WORLD_SIZE_Y - y);
+    }
+
+    pub fn set_world_size(&mut self, x: u32, y: u32)
+    {
+        log(format!("SEtting  {} {} ",x,y).as_str());
     }
 }

@@ -5,21 +5,21 @@ pub struct Camera
     view_matrix: TMat4<f32>,
     projection_matrix: TMat4<f32>,
     dirty : bool,
-    canvas_width : f32,
-    canvas_height : f32
+    canvas_width : u32,
+    canvas_height : u32
 }
 
 impl Camera
 {
-    pub fn new(canvas_width : f32, canvas_height : f32) -> Self
+    pub fn new(canvas_width : u32, canvas_height : u32) -> Self
     {
         Self
         {
             view_matrix: glm::Mat4::identity(), 
             projection_matrix: glm::Mat4::identity(),
             dirty: true,
-            canvas_width: canvas_width, //TODO: may change
-            canvas_height: canvas_height
+            canvas_width,
+            canvas_height
         }
     }
 
@@ -59,6 +59,23 @@ impl Camera
         self.update_view_matrix();
         self.update_projection_matrix();
         self.dirty = false;
+    }
+
+    pub fn get_canvas_width(&self) -> u32
+    {
+        self.canvas_width
+    }
+
+    pub fn get_canvas_height(&self) -> u32
+    {
+        self.canvas_height
+    }
+
+    pub fn set_canvas_dimensions(&mut self, x: u32, y: u32)
+    {
+        self.canvas_width = x;
+        self.canvas_height = y;
+        self.dirty = true;
     }
 
 }

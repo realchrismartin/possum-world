@@ -76,7 +76,7 @@ impl RenderState
             context: web_context,
             shader: None::<Shader>,
             textures: HashMap::new(),
-            camera: Camera::new(canvas.width() as f32,canvas.height() as f32),
+            camera: Camera::new(canvas.width(),canvas.height()),
             vertex_buffer_map: HashMap::new(),
             transform_buffer: transform_buffer
         })
@@ -98,7 +98,6 @@ impl RenderState
 
     fn request_new_renderable_impl<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, existing_transform: Option<u32>) -> Option<T>
     {
-        log("REQ");
         let texture_dimensions = match self.get_texture(renderable_config.get_texture_index())
         {
             Some(t) => t.get_dimensions(),

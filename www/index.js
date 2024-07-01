@@ -2,25 +2,31 @@ import {Game} from "possum_world"
 
 export function init(textures,shader_sources)
 {
-    
-    let setCanvasSizeFn = () => 
+    //TODO: reudndant
+    let container = document.getElementById("canvas-container");
+    let canvas = document.getElementById("canvas");
+    canvas.height = container.clientHeight;
+    canvas.width = container.clientWidth; 
+
+    const game = Game.new(document);
+
+    let setCanvasSizeFn = (game_object) => 
     {
         let container = document.getElementById("canvas-container");
         let canvas = document.getElementById("canvas");
 
-        canvas.height = container.clientHeight; // "1000"; // document.documentElement.clientHeight; 
-        canvas.width = container.clientWidth; // "1000"; //document.documentElement.clientWidth;
+        canvas.height = container.clientHeight;
+        canvas.width = container.clientWidth; 
+
+        game.set_world_size(canvas.clientHeight,canvas.clientWidth);
     };
 
     addEventListener("resize",(event) =>
     {
-        setCanvasSizeFn();
+        setCanvasSizeFn(game);
     });
 
-    //Set the canvas size initially once
-    setCanvasSizeFn();
-
-    const game = Game.new(document);
+    setCanvasSizeFn(game);
 
     //Attach event listeners for keypresses
     addEventListener("keydown",(event) => 
