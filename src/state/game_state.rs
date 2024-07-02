@@ -70,6 +70,9 @@ impl GameState
             index += 1;
         }
 
+        //TODO: this doesn't need to be here because scaling doesn't depend on the screen size
+
+        let mut first = true;
         for possum in &self.friendly_possums
         {
             let transform_loc = match possum.get_transform_location()
@@ -78,7 +81,14 @@ impl GameState
                 None => {continue; }
             };
 
-            render_state.set_scale_with_index(transform_loc, glm::vec3(scale_x,scale_y,1.0));
+            if !first
+            {
+                render_state.set_scale_with_index(transform_loc, glm::vec3(scale_x,scale_y,1.0));
+            } else {
+                render_state.set_scale_with_index(transform_loc, glm::vec3(0.3,0.3,1.0));
+            }
+
+            first = false;
         }
 
         self.floor_y = y_placement_offset;
@@ -238,7 +248,17 @@ impl GameState
                 }
             } else 
             {
-                movement_direction = input_state.get_movement_direction();     
+                if input_state.get_current_mouse_location().is_active()
+                {
+                    let x = render_state.get_world_size_x();                    
+
+                    if input_state.get_current_mouse_location().get_x_coordinate() > (x/2) as i32
+                    {
+                        movement_direction = glm::vec2(1.0,0.0);
+                    } else {
+                        movement_direction = glm::vec2(-1.0,0.0);
+                    }
+                }
 
                 let mut clicked = false;
 

@@ -112,14 +112,24 @@ impl Game
 
     pub fn process_click_event(&mut self, start_or_end: bool, x: i32, y: i32)
     {
-        //TODO
-        //self.input_state.process_click(start_or_end,x,render_state::WORLD_SIZE_Y - y);
+        let render_state = match &mut self.render_state
+        {
+            Some(r) => {r}
+            None => { return; }
+        };
+
+        self.input_state.process_click(start_or_end,x,render_state.get_world_size_y() as i32 - y);
     }
 
     pub fn process_mouse_move_event(&mut self, x: i32, y: i32)
     {
-        //TODO
-        //self.input_state.process_mouse_move(x,render_state::WORLD_SIZE_Y - y);
+        let render_state = match &mut self.render_state
+        {
+            Some(r) => {r}
+            None => { return; }
+        };
+
+        self.input_state.process_mouse_move(x,render_state.get_world_size_y() as i32 - y);
     }
 
     pub fn set_canvas_dimensions(&mut self, x: u32, y: u32)

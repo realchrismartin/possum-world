@@ -130,46 +130,6 @@ impl InputState
         false
     }
 
-    pub fn get_movement_direction(&self) -> glm::Vec2
-    {
-        let mut res = glm::vec2(0.0,0.0);
-
-        if self.last_mouse_location.active
-        {
-            if self.last_mouse_location.get_x_coordinate() < 500 //TODO hardcoding
-            {
-                res += glm::vec2(-1.0,0.0);
-            } else 
-            {
-                res += glm::vec2(1.0,0.0);
-            }
-        }
-
-        /*
-        if self.is_pressed(KeyPress::W)
-        {
-            res += glm::vec2(0.0,1.0);
-        }
-
-        if self.is_pressed(KeyPress::S)
-        {
-            res += glm::vec2(0.0,-1.0);
-        }
-
-        if self.is_pressed(KeyPress::A)
-        {
-            res += glm::vec2(-1.0,0.0);
-        }
-
-        if self.is_pressed(KeyPress::D)
-        {
-            res += glm::vec2(1.0,0.0);
-        }
-         */
-
-        res
-    }
-
     pub fn process_click(&mut self, start_or_end_click: bool, x: i32, y: i32)
     {
         //Started click
