@@ -410,6 +410,10 @@ impl RenderState
     pub fn set_canvas_dimensions(&mut self, x: u32, y: u32)
     {
         self.context.viewport(0, 0, x as i32, y as i32);
+
+        let viewport = self.context.get_parameter(WebGl2RenderingContext::VIEWPORT).unwrap();
+        log_value(&viewport);
+
         self.camera.set_canvas_dimensions(x, y);
     }
 

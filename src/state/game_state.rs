@@ -23,7 +23,7 @@ impl GameState
         {
             friendly_possums: Vec::new(),
             tiles: Vec::new(),
-            floor_y: 100.0
+            floor_y: 64.0
         }
     }
 
@@ -40,20 +40,18 @@ impl GameState
         let world_size_x = render_state.get_world_size_x(); //In pixels
         let world_size_y = render_state.get_world_size_y();
 
-        //The default sprite size for a tile is 100x100
+        //The default sprite size for a tile is 64x64
         //Determine how many tiles we need
-        let tile_count_x = world_size_x / 100;
-        let tile_count_y = world_size_y / 100;
+        //TODO: not precise.
+        let tile_count_x = world_size_x / 64;
+        let tile_count_y = world_size_y / 64;
 
         log(format!("Resize requires tiles: {}x{}",tile_count_x,tile_count_y).as_str());
 
         //Scale of 1.0 fills the screen (see sprite.rs default vertices) as long as we have a square viewport.
         //We want a scale that will make the tile match the tile size
-        //TODO: possibly address this issue with scaling later to make scale make more sense.
         let scale_x = 1.0 / tile_count_x as f32;
         let scale_y = 1.0 / tile_count_y as f32;
-
-        log(format!("Scale: {} {}",scale_x,scale_y).as_str());
 
         let x_placement_offset = world_size_x as f32 / tile_count_x as f32;
         let y_placement_offset = world_size_y as f32 / tile_count_y as f32;
@@ -66,10 +64,8 @@ impl GameState
         let mut rng = rand::thread_rng();
 
         let use_sprites  = vec![
-            RenderableConfig::new([0,0],[100,100],1), //ground
-            RenderableConfig::new([100,0],[100,100],1), //background
-            RenderableConfig::new([200,0],[100,100],1), //background
-            RenderableConfig::new([300,0],[100,100],1), //background
+            RenderableConfig::new([2,2],[64,64],1), //ground
+            RenderableConfig::new([68,2],[64,64],1), //background
         ];
 
         for i in 0..(tile_count_y * tile_count_x) +1
@@ -78,7 +74,7 @@ impl GameState
 
             if i > tile_count_x
             {
-                used_sprite_index = rng.gen_range(1..4);
+                used_sprite_index = 1;
             }
 
             let tile = match render_state.request_new_renderable::<Sprite>(use_sprites.get(used_sprite_index).unwrap())
@@ -96,9 +92,6 @@ impl GameState
         for tile in &self.tiles
         {
             render_state.set_position(tile, glm::vec3(next_x_placement as f32,next_y_placement as f32, z));
-            //render_state.set_position(tile, glm::vec3(0.0 as f32, 0.0 as f32, z));
-            
-            //TODO
             render_state.set_scale(tile, glm::vec3(scale_x,scale_y,1.0));
 
             next_x_placement += x_placement_offset as f32;
@@ -111,6 +104,8 @@ impl GameState
 
             index += 1;
         }
+
+        self.floor_y = y_placement_offset;
 
        //Possums
        let mut rng = rand::thread_rng();
@@ -143,19 +138,16 @@ impl GameState
                 None => {continue; }
             };
 
-            /*
             if !first
             {
                 render_state.set_scale_with_index(transform_loc, glm::vec3(scale_x,scale_y,1.0));
             } else {
-                render_state.set_scale_with_index(transform_loc, glm::vec3(0.3,0.3,1.0));
+                //Barry is larger than the other posses
+                render_state.set_scale_with_index(transform_loc, glm::vec3(scale_x * 2.0,scale_y * 2.0,1.0));
             }
-             */
 
             first = false;
         }
-
-        self.floor_y = y_placement_offset;
 
     }
 
@@ -174,24 +166,24 @@ impl GameState
         let possum = match AnimatedEntity::new(render_state,50.0,
             
             vec![
-                RenderableConfig::new([0,48],[48,48],0),
-                RenderableConfig::new([48,48],[48,48],0),
-                RenderableConfig::new([96,48],[48,48],0),
-                RenderableConfig::new([144,48],[48,48],0),
-                RenderableConfig::new([192,48],[48,48],0),
-                RenderableConfig::new([240,48],[48,48],0),
-                RenderableConfig::new([288,48],[48,48],0),
-                RenderableConfig::new([336,48],[48,48],0),
+                RenderableConfig::new([2,50],[50,50],0),
+                RenderableConfig::new([52,50],[50,50],0),
+                RenderableConfig::new([102,50],[50,50],0),
+                RenderableConfig::new([152,50],[50,50],0),
+                RenderableConfig::new([202,50],[50,50],0),
+                RenderableConfig::new([252,50],[50,50],0),
+                RenderableConfig::new([302,50],[50,50],0),
+                RenderableConfig::new([352,50],[50,50],0),
             ],
             vec![
-                RenderableConfig::new([0,0],[48,48],0),
-                RenderableConfig::new([48,0],[48,48],0),
-                RenderableConfig::new([96,0],[48,48],0),
-                RenderableConfig::new([144,0],[48,48],0),
-                RenderableConfig::new([192,0],[48,48],0),
-                RenderableConfig::new([240,0],[48,48],0),
-                RenderableConfig::new([288,0],[48,48],0),
-                RenderableConfig::new([336,0],[48,48],0),
+                RenderableConfig::new([2,0],[50,50],0),
+                RenderableConfig::new([52,0],[50,50],0),
+                RenderableConfig::new([102,0],[50,50],0),
+                RenderableConfig::new([152,0],[50,50],0),
+                RenderableConfig::new([202,0],[50,50],0),
+                RenderableConfig::new([252,0],[50,50],0),
+                RenderableConfig::new([302,0],[50,50],0),
+                RenderableConfig::new([352,0],[50,50],0),
             ],
             facing
         )

@@ -18,8 +18,6 @@ use web_sys::{Document, HtmlImageElement};
 use state::game_state::GameState;
 use state::input_state::InputState;
 use state::render_state::RenderState;
-use crate::state::render_state;
-use util::logging::log;
 
 #[wasm_bindgen]
 pub struct Game

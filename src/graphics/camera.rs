@@ -35,14 +35,18 @@ impl Camera
 
     fn update_projection_matrix(&mut self)
     {
-        let bottom = -1.0;
-        let top = 1.0;
+
         let near = 0.1;
         let far = 20.0;
 
+        //TODO: AR is unused.
+
         let aspect_ratio = self.canvas_width as f32 / self.canvas_height as f32;
-        let left = -aspect_ratio;
-        let right = aspect_ratio;
+
+        let left = -1.0;
+        let right = 1.0;
+        let bottom = -1.0;
+        let top = 1.0;
 
         log(format!("New aspect ratio: {} with w: {} and h: {}",aspect_ratio,self.canvas_width,self.canvas_height).as_str());
 
@@ -61,6 +65,7 @@ impl Camera
 
     pub fn recalculate(&mut self)
     {
+        log("Recalc");
         self.update_view_matrix();
         self.update_projection_matrix();
         self.dirty = false;

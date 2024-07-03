@@ -9,10 +9,14 @@ export function init(textures,shader_sources)
         let container = document.getElementById("canvas-container");
         let canvas = document.getElementById("canvas");
 
-        canvas.height = container.clientHeight;
-        canvas.width = container.clientWidth; 
+         //Ensure the canvas is sized according to powers of 2 to prevent visual artifacts
+         let x = Math.pow(2, parseInt(Math.log(container.clientWidth) / Math.log(2), 10));
+         let y = Math.pow(2, parseInt(Math.log(container.clientHeight) / Math.log(2), 10));
 
-        game_object.set_canvas_dimensions(container.clientWidth,container.clientHeight);
+        canvas.width = x; 
+        canvas.height = y; 
+
+        game_object.set_canvas_dimensions(x,y);
     };
 
     addEventListener("resize",(event) =>
