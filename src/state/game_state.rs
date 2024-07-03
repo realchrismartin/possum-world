@@ -245,6 +245,7 @@ impl GameState
                 }
             } else 
             {
+                //Set the move direction based on where the mouse is
                 if input_state.get_current_mouse_location().is_active()
                 {
                     let x = render_state.get_world_size_x();                    
@@ -257,6 +258,8 @@ impl GameState
                     }
                 }
 
+                //TODO: remove this
+                /*
                 let mut clicked = false;
 
                 while input_state.has_next_click()
@@ -275,6 +278,7 @@ impl GameState
                 {
                     movement_direction += glm::vec2(0.0,1.0);
                 }
+                 */
             }
 
             Self::update_animated_entity(p,&movement_direction,render_state,delta_time, self.floor_y);
