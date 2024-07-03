@@ -5,9 +5,7 @@ use crate::state::render_state::RenderState;
 use crate::graphics::renderable::RenderableConfig;
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
-use glm::scale;
 use rand::Rng;
-use crate::util::logging::log;
 
 pub struct GameState
 {
@@ -214,7 +212,6 @@ impl GameState
         for p in &mut self.friendly_possums
         {
             let mut movement_direction = glm::vec2(0.0,0.0);
-            let mut jumping = false;
             
             //Rudimentary AI
             if index > 0

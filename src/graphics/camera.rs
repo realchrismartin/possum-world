@@ -14,8 +14,6 @@ impl Camera
 {
     pub fn new(canvas_width : u32, canvas_height : u32) -> Self
     {
-        log(format!("Initial canvas size (Camera) {} {}",canvas_width,canvas_height).as_str());
-
         Self
         {
             view_matrix: glm::Mat4::identity(), 
@@ -80,6 +78,8 @@ impl Camera
 
     pub fn set_canvas_dimensions(&mut self, x: u32, y: u32)
     {
+        log(format!("Canvas size set to: {} {}",x,y).as_str());
+
         self.canvas_width = x;
         self.canvas_height = y;
         self.dirty = true;
