@@ -15,7 +15,7 @@ export function init(textures,shader_sources)
         game.set_canvas_dimensions(container.clientWidth,container.clientHeight);
     };
 
-    window.addEventListener("resize",(event) =>
+    addEventListener("resize",(event) =>
     {
         setCanvasSizeFn(game);
     });
