@@ -83,7 +83,7 @@ impl<T: Renderable> VertexBuffer<T>
         context.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, None);
     }
 
-    pub fn clear_data(&mut self)
+    pub fn clear(&mut self)
     {
         //TODO: overwrite data, or don't.
         self.current_index_count = 0;

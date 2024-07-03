@@ -422,4 +422,21 @@ impl RenderState
     {
         self.camera.get_canvas_height()
     }
+
+    pub fn clear_buffer<T: Renderable + 'static>(&mut self)
+    {
+        let buffer = match Self::get_mapped_buffer::<T>(&mut self.vertex_buffer_map)
+        {
+            Some(buffer) => buffer,
+            None => {return}
+        };
+
+        buffer.clear();
+    }
+
+    pub fn clear_transform_buffer(&mut self)
+    {
+        self.transform_buffer.clear();
+    }
+
 }

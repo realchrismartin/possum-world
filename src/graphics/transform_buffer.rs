@@ -156,4 +156,12 @@ impl TransformBuffer
 
         mat_index
     }
+
+    pub fn clear(&mut self)
+    {
+        //TODO: clear data or don't
+        self.next_available_index = 0;
+        self.dirty_transforms.clear();
+        self.transforms.clear();
+    }
 }

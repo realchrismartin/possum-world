@@ -12,7 +12,7 @@ export function init(textures,shader_sources)
         canvas.height = container.clientHeight;
         canvas.width = container.clientWidth; 
 
-        game.set_canvas_dimensions(container.clientWidth,container.clientHeight);
+        game_object.set_canvas_dimensions(container.clientWidth,container.clientHeight);
     };
 
     addEventListener("resize",(event) =>
