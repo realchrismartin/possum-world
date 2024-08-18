@@ -6,9 +6,8 @@
   2D Rust & WebGL Browser Game!
   </p>
 
+  ![screenshot](img/preview.gif)
 </div>
-
-![screenshot](img/preview.gif)
 
 # Table of Contents
 
