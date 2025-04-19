@@ -139,6 +139,6 @@ impl Game
         };
 
         render_state.set_canvas_dimensions(x,y);
-        self.game_state.set_world_size(render_state);
+        self.game_state.init(render_state);
     }
 }

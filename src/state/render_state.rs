@@ -215,6 +215,17 @@ impl RenderState
         self.transform_buffer.set_scale(transform_index,scale);
     }
 
+    pub fn get_scale_with_index(&self, transform_index: u32) -> Option<&glm::Vec3>
+    {
+        let scale = match self.transform_buffer.get_scale(transform_index)
+        {
+            Some(t) => t,
+            None => {return None;}
+        };
+
+        Some(scale)
+    }
+
     //0,0 is the bottom left corner of the world
     //0,max_y is the top left corner
     pub fn set_position<T: Renderable + 'static>(&mut self, renderable: &T, position : glm::Vec3)

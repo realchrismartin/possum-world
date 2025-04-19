@@ -112,6 +112,16 @@ impl TransformBuffer
         self.dirty_transforms.insert(index);
     }
 
+    pub fn get_scale(&self, index: u32) -> Option<&glm::Vec3>
+    {
+        if self.transforms.len() <= index as usize
+        {
+            return None;
+        }        
+
+        Some(self.transforms[index as usize].get_scale())
+    }
+
     //For each transform matrix, update the raw data if it needs to be updated.
     pub fn recalculate_transforms_and_update_data(&mut self, context: &WebGl2RenderingContext)
     {

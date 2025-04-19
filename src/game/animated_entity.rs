@@ -173,4 +173,30 @@ impl AnimatedEntity
         self.shared_transform_index
     }
 
+    pub fn get_scaled_size(&self, render_state: &RenderState) -> Option<glm::Vec3>
+    {
+        let index = match self.get_transform_location()
+        {
+            Some(s) => s,
+            None => { return None; }
+        };
+
+        let sprite = match self.get_renderable()
+        {
+            Some(s) => s,
+            None => { return None; }
+        };
+
+        let scale = match render_state.get_scale_with_index(index)
+        {
+            Some(s) => s,
+            None => { return None; }
+        };
+
+        let world_size_x = render_state.get_world_size_x() as f32;
+        let world_size_y = render_state.get_world_size_y() as f32;
+
+        //NB: assumes default sprite is 0 ... 1 on all axes
+        Some(glm::vec3(world_size_x * scale.x, world_size_y * scale.y, 1.0))
+    }
 }

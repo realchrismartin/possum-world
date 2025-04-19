@@ -11,7 +11,7 @@ use std::ops::Range;
 pub struct Sprite
 {
     element_location: Option<Range<i32>>,
-    transform_location: u32,
+    transform_location: u32
 }
 
 impl Renderable for Sprite

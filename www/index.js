@@ -10,8 +10,9 @@ export function init(textures,shader_sources)
         let canvas = document.getElementById("canvas");
 
         //Ensure the canvas is sized according to multiples of 100 to prevent visual artifacts
-        let x = Math.round(container.clientWidth / 100) * 100;
-        let y = Math.round(container.clientHeight / 100) * 100;
+        //We add 100 to each axis so that the whole viewport is always filled.
+        let x = (Math.round(container.clientWidth / 100) * 100) + 100;
+        let y = (Math.round(container.clientHeight / 100) * 100) + 100;
 
         canvas.width = x; 
         canvas.height = y; 

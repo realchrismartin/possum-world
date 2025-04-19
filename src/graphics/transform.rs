@@ -23,6 +23,11 @@ impl Transform
         &self.translation
     }
 
+    pub fn get_scale(&self) -> &glm::Vec3
+    {
+        &self.scale
+    }
+
     pub fn set_translation(&mut self, translation: glm::Vec3)
     {
         self.translation = translation;

@@ -23,11 +23,11 @@ impl GameState
         {
             friendly_possums: Vec::new(),
             tiles: Vec::new(),
-            floor_y: 64.0
+            floor_y: 200.0
         }
     }
 
-    pub fn set_world_size(&mut self, render_state: &mut RenderState)
+    pub fn init(&mut self, render_state: &mut RenderState)
     {
         self.friendly_possums.clear();
         self.tiles.clear();
@@ -41,7 +41,7 @@ impl GameState
         let world_size_y = render_state.get_world_size_y();
 
         //The default sprite size for a tile is 100 x 100
-        //Determine how many tiles we need
+        //Determine how many tiles we need to cover the canvas
         //TODO: not precise.
         let tile_count_x = world_size_x / 100;
         let tile_count_y = world_size_y / 100;
@@ -53,8 +53,12 @@ impl GameState
         let scale_x = 1.0 / tile_count_x as f32;
         let scale_y = 1.0 / tile_count_y as f32;
 
-        let x_placement_offset = world_size_x as f32 / tile_count_x as f32;
-        let y_placement_offset = world_size_y as f32 / tile_count_y as f32;
+        log(format!("Using scale {}x{}",scale_x,scale_y).as_str());
+
+        let x_placement_offset = 100 as f32; //world_size_x as f32 / tile_count_x as f32;
+        let y_placement_offset = 100 as f32; //world_size_y as f32 / tile_count_y as f32;
+
+        log(format!("Using placement offset {}x{}",x_placement_offset,y_placement_offset).as_str());
 
         //Since each position is the center of a tile, we offset the initial placement by a tile half width
         let mut next_x_placement =  x_placement_offset / 2.0;
@@ -66,16 +70,22 @@ impl GameState
         let use_sprites  = vec![
             RenderableConfig::new([2,2],[100,100],1), //ground
             RenderableConfig::new([105,2],[100,100],1), //background
+            RenderableConfig::new([207,2],[100,100],1), //underground
         ];
 
         for i in 0..(tile_count_y * tile_count_x) +1
         {
-            let mut used_sprite_index = 0;
+            let mut used_sprite_index = 2; //start with ground
 
-            if i > tile_count_x
+            if i > (tile_count_x * 2)
             {
+                //Start using sky once we've created two layers of ground
                 used_sprite_index = 1;
             }
+            else if i > tile_count_x
+            {
+                used_sprite_index = 0; //Use top layer
+            } 
 
             let tile = match render_state.request_new_renderable::<Sprite>(use_sprites.get(used_sprite_index).unwrap())
             {
@@ -105,8 +115,6 @@ impl GameState
             index += 1;
         }
 
-        self.floor_y = y_placement_offset;
-
        //Possums
        let mut rng = rand::thread_rng();
        let mut z = 2.0;
@@ -115,7 +123,7 @@ impl GameState
         for i in 0..5
         {
                 //TODO: hardcoded
-                let y = 50;
+                let y = 300;
                 let x = rng.gen_range(0..world_size_x); 
 
             z -= 0.1;
@@ -151,18 +159,13 @@ impl GameState
 
     }
 
-    pub fn init(&mut self, render_state: &mut RenderState)
-    {
-       self.set_world_size(render_state);
-    }
-
     pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec3) -> Option<AnimatedEntity>
     {
         let mut rng = rand::thread_rng();
 
         let facing = rng.gen_range(0..2) > 0;
 
-        //TODO: rectangular for now because otherwise we stretch onto the rectangular base sprite.
+        //TODO: square for now because otherwise we stretch onto the square base sprite.
         let possum = match AnimatedEntity::new(render_state,50.0,
             
             vec![
@@ -340,17 +343,28 @@ impl GameState
             position.y += (delta_time / 5.0) * 200.0;
         }
 
+        let size = match animated_entity.get_scaled_size(render_state) 
+        {
+            Some(s) => s,
+            None => {return;}
+        };
+
+        //TODO: need a more accurate size to make this work.
+        let mut bottom_position = position.y - (size.y / 2.0);
+
         //"Gravity"
         let mut gravity_affected = false;
 
-        if position.y > floor_y
+        let adjusted_floor_y = floor_y + (size.y / 2.0);
+
+        if position.y > adjusted_floor_y
         {
             gravity_affected = true;
             position.y -= (delta_time / 5.0) * 10.0;
 
-            if position.y < floor_y
+            if position.y < adjusted_floor_y
             {
-                position.y = floor_y;
+                position.y = adjusted_floor_y;
             }
         }
 
