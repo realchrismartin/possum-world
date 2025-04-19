@@ -42,3 +42,5 @@ wasm-bindgen-test = "0.3.34"
 [profile.release]
 # Tell `rustc` to optimize for small code size.
 opt-level = "s"
+# Fix issue with webpack (Internal failure: parseVec could not cast the value)
+strip = true
