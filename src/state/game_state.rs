@@ -40,7 +40,7 @@ impl GameState
         let world_size_x = render_state.get_world_size_x(); //In pixels
         let world_size_y = render_state.get_world_size_y();
 
-        //The default sprite size for a tile is 64x64
+        //The default sprite size for a tile is 100 x 100
         //Determine how many tiles we need
         //TODO: not precise.
         let tile_count_x = world_size_x / 100;
@@ -115,7 +115,7 @@ impl GameState
         for i in 0..5
         {
                 //TODO: hardcoded
-                let y = 200;
+                let y = 50;
                 let x = rng.gen_range(0..world_size_x); 
 
             z -= 0.1;
@@ -166,24 +166,24 @@ impl GameState
         let possum = match AnimatedEntity::new(render_state,50.0,
             
             vec![
-                RenderableConfig::new([2,50],[50,50],0),
-                RenderableConfig::new([52,50],[50,50],0),
-                RenderableConfig::new([102,50],[50,50],0),
-                RenderableConfig::new([152,50],[50,50],0),
-                RenderableConfig::new([202,50],[50,50],0),
-                RenderableConfig::new([252,50],[50,50],0),
-                RenderableConfig::new([302,50],[50,50],0),
-                RenderableConfig::new([352,50],[50,50],0),
+                RenderableConfig::new([2,62],[58,58],0),
+                RenderableConfig::new([62,62],[58,58],0),
+                RenderableConfig::new([122,62],[58,58],0),
+                RenderableConfig::new([182,62],[58,58],0),
+                RenderableConfig::new([242,62],[58,58],0),
+                RenderableConfig::new([302,62],[58,58],0),
+                RenderableConfig::new([362,62],[58,58],0),
+                RenderableConfig::new([422,62],[58,58],0),
             ],
             vec![
-                RenderableConfig::new([2,0],[50,50],0),
-                RenderableConfig::new([52,0],[50,50],0),
-                RenderableConfig::new([102,0],[50,50],0),
-                RenderableConfig::new([152,0],[50,50],0),
-                RenderableConfig::new([202,0],[50,50],0),
-                RenderableConfig::new([252,0],[50,50],0),
-                RenderableConfig::new([302,0],[50,50],0),
-                RenderableConfig::new([352,0],[50,50],0),
+                RenderableConfig::new([2,2],[58,58],0),
+                RenderableConfig::new([62,2],[58,58],0),
+                RenderableConfig::new([122,2],[58,58],0),
+                RenderableConfig::new([182,2],[58,58],0),
+                RenderableConfig::new([242,2],[58,58],0),
+                RenderableConfig::new([302,2],[58,58],0),
+                RenderableConfig::new([362,2],[58,58],0),
+                RenderableConfig::new([422,2],[58,58],0),
             ],
             facing
         )
