@@ -9,9 +9,9 @@ export function init(textures,shader_sources)
         let container = document.getElementById("canvas-container");
         let canvas = document.getElementById("canvas");
 
-         //Ensure the canvas is sized according to powers of 2 to prevent visual artifacts
-         let x = Math.pow(2, parseInt(Math.log(container.clientWidth) / Math.log(2), 10));
-         let y = Math.pow(2, parseInt(Math.log(container.clientHeight) / Math.log(2), 10));
+        //Ensure the canvas is sized according to multiples of 100 to prevent visual artifacts
+        let x = Math.round(container.clientWidth / 100) * 100;
+        let y = Math.round(container.clientHeight / 100) * 100;
 
         canvas.width = x; 
         canvas.height = y; 

@@ -43,8 +43,8 @@ impl GameState
         //The default sprite size for a tile is 64x64
         //Determine how many tiles we need
         //TODO: not precise.
-        let tile_count_x = world_size_x / 64;
-        let tile_count_y = world_size_y / 64;
+        let tile_count_x = world_size_x / 100;
+        let tile_count_y = world_size_y / 100;
 
         log(format!("Resize requires tiles: {}x{}",tile_count_x,tile_count_y).as_str());
 
@@ -64,8 +64,8 @@ impl GameState
         let mut rng = rand::thread_rng();
 
         let use_sprites  = vec![
-            RenderableConfig::new([2,2],[64,64],1), //ground
-            RenderableConfig::new([68,2],[64,64],1), //background
+            RenderableConfig::new([2,2],[100,100],1), //ground
+            RenderableConfig::new([105,2],[100,100],1), //background
         ];
 
         for i in 0..(tile_count_y * tile_count_x) +1
