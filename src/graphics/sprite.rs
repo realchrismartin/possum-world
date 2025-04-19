@@ -37,27 +37,46 @@ impl Renderable for Sprite
 
     fn get_vertices(&self, renderable_config: &RenderableConfig) -> Vec<f32>
     {
+        let size = renderable_config.get_size(); //pixels
+
         //TODO: maybe later don't use self at all here
         let tex_coords = get_rectangular_texture_coordinates(renderable_config.get_texture_coordinates(), 
-            renderable_config.get_size(), renderable_config.get_texture_dimensions());
+            size, renderable_config.get_texture_dimensions());
+
+        //"Fit" the rectangle within the 2x2 box
+
+        let mut y_axis = 1.0;
+        let mut x_axis = 1.0;
+
+        if size[0] > size[1]
+        {
+            //X is bigger than y
+            //X == 1.0, y is less than 1
+            y_axis = size[1] as f32 / size[0] as f32;
+        } else
+        {
+            //Y is bigger than x
+            //Y == 1.0, X is less than 1
+            x_axis = size[0] as f32 / size[1] as f32;
+        }
 
         vec![
-            -1.0,1.0,0.0,
+            -x_axis,y_axis,0.0,
             self.transform_location as f32,
             tex_coords[0][0], tex_coords[0][1],
             renderable_config.get_texture_index() as f32,
 
-            -1.0,-1.0,0.0,
+            -x_axis,-y_axis,0.0,
             self.transform_location as f32,
             tex_coords[1][0], tex_coords[1][1],
             renderable_config.get_texture_index() as f32,
 
-            1.0,-1.0,0.0,
+            x_axis,-y_axis,0.0,
             self.transform_location as f32,
             tex_coords[2][0], tex_coords[2][1],
             renderable_config.get_texture_index() as f32,
 
-            1.0,1.0,0.0,
+            x_axis,y_axis,0.0,
             self.transform_location as f32,
             tex_coords[3][0], tex_coords[3][1],
             renderable_config.get_texture_index() as f32,

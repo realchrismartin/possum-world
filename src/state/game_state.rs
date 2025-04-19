@@ -55,8 +55,8 @@ impl GameState
 
         log(format!("Using scale {}x{}",scale_x,scale_y).as_str());
 
-        let x_placement_offset = 100 as f32; //world_size_x as f32 / tile_count_x as f32;
-        let y_placement_offset = 100 as f32; //world_size_y as f32 / tile_count_y as f32;
+        let x_placement_offset = 100 as f32;
+        let y_placement_offset = 100 as f32; 
 
         log(format!("Using placement offset {}x{}",x_placement_offset,y_placement_offset).as_str());
 
@@ -123,7 +123,7 @@ impl GameState
         for i in 0..5
         {
                 //TODO: hardcoded
-                let y = 300;
+                let y = 600;
                 let x = rng.gen_range(0..world_size_x); 
 
             z -= 0.1;
@@ -165,28 +165,27 @@ impl GameState
 
         let facing = rng.gen_range(0..2) > 0;
 
-        //TODO: square for now because otherwise we stretch onto the square base sprite.
         let possum = match AnimatedEntity::new(render_state,50.0,
             
             vec![
-                RenderableConfig::new([2,62],[58,58],0),
-                RenderableConfig::new([62,62],[58,58],0),
-                RenderableConfig::new([122,62],[58,58],0),
-                RenderableConfig::new([182,62],[58,58],0),
-                RenderableConfig::new([242,62],[58,58],0),
-                RenderableConfig::new([302,62],[58,58],0),
-                RenderableConfig::new([362,62],[58,58],0),
-                RenderableConfig::new([422,62],[58,58],0),
+                RenderableConfig::new([2,81],[58,18],0),
+                RenderableConfig::new([62,81],[58,18],0),
+                RenderableConfig::new([122,81],[58,18],0),
+                RenderableConfig::new([182,81],[58,18],0),
+                RenderableConfig::new([242,81],[58,18],0),
+                RenderableConfig::new([302,81],[58,18],0),
+                RenderableConfig::new([362,81],[58,18],0),
+                RenderableConfig::new([422,81],[58,18],0),
             ],
             vec![
-                RenderableConfig::new([2,2],[58,58],0),
-                RenderableConfig::new([62,2],[58,58],0),
-                RenderableConfig::new([122,2],[58,58],0),
-                RenderableConfig::new([182,2],[58,58],0),
-                RenderableConfig::new([242,2],[58,58],0),
-                RenderableConfig::new([302,2],[58,58],0),
-                RenderableConfig::new([362,2],[58,58],0),
-                RenderableConfig::new([422,2],[58,58],0),
+                RenderableConfig::new([2,21],[58,18],0),
+                RenderableConfig::new([62,21],[58,18],0),
+                RenderableConfig::new([122,21],[58,18],0),
+                RenderableConfig::new([182,21],[58,18],0),
+                RenderableConfig::new([242,21],[58,18],0),
+                RenderableConfig::new([302,21],[58,18],0),
+                RenderableConfig::new([362,21],[58,18],0),
+                RenderableConfig::new([422,21],[58,18],0),
             ],
             facing
         )
@@ -285,7 +284,7 @@ impl GameState
                  */
             }
 
-            Self::update_animated_entity(p,&movement_direction,render_state,delta_time, self.floor_y);
+            Self::update_animated_entity(p,&movement_direction,render_state,delta_time,self.floor_y);
             index = index + 1;
         }
     }
@@ -349,15 +348,12 @@ impl GameState
             None => {return;}
         };
 
-        //TODO: need a more accurate size to make this work.
-        let mut bottom_position = position.y - (size.y / 2.0);
-
         //"Gravity"
         let mut gravity_affected = false;
 
         let adjusted_floor_y = floor_y + (size.y / 2.0);
 
-        if position.y > adjusted_floor_y
+        if position.y >= adjusted_floor_y
         {
             gravity_affected = true;
             position.y -= (delta_time / 5.0) * 10.0;
@@ -368,13 +364,16 @@ impl GameState
             }
         }
 
-        if !gravity_affected && movement_direction.x == 0.0 && movement_direction.y == 0.0
+        //TODO: this is bugged somehow, player poss isn't falling properly, but more likely this has to do with scaling.
+        //Scaling up the small posses makes this happen to them too
+        //Once a poss moves, they get unstuck..
+        if (!gravity_affected) && movement_direction.x == 0.0 && movement_direction.y == 0.0
         {
             animated_entity.set_animating(false);
-            return;
+        } else
+        {
+            animated_entity.set_animating(true);
         }
-
-        animated_entity.set_animating(true);
 
         //TODO: arbitrary speed/ distance
         //TODO: ignoring Y movement
