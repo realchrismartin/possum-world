@@ -37,7 +37,6 @@ impl AnimatedEntity
         {
             let maybe_sprite = match shared_transform_uid
             {
-                //TODO!
                 Some(u) => render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,u),
                 None => render_state.request_new_renderable::<Sprite>(&config)
             };

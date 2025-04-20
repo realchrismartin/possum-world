@@ -117,8 +117,6 @@ impl GameState
         let logo_pos = glm::vec3((world_size_x as f32 / 2.0) - 50.0, (world_size_y as f32 / 1.2) + 50.0, 1.9);
         let logo_scale = glm::vec3(1.0,1.0,1.0);
 
-        log(format!("logo pos: {} x {} ",logo_pos.x,logo_pos.y).as_str());
-
         render_state.set_scale(logo.get_uid(), logo_scale);
         render_state.set_position(logo.get_uid(), logo_pos);
         self.texts.push(logo);
@@ -313,7 +311,7 @@ impl GameState
             let i = match p.get_renderable()
             {
                 Some(re) => re,
-                None => {continue; }
+                None => { continue; }
             };
 
            batch.add(i);

@@ -121,7 +121,7 @@ impl RenderState
         {
             Some(t) => {
                 //An existing UID was provided, use this UID to find an existing transform index to use.
-                self.transform_buffer.reuse_existing_transform_index(t)
+                self.transform_buffer.reuse_existing_transform_index(&new_uid,&t)
             },
             None => {
                 //No UID was provided - we need a new transform. Use the new UID to generate it.
@@ -134,6 +134,7 @@ impl RenderState
 
         Some(T::new(self.next_uid,*copied_renderable_config.get_size()))
     }
+
     //TODO: later move this
     pub fn set_shader(&mut self, vertex_source :&str, frag_source: &str)
     {

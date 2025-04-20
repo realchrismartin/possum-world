@@ -191,20 +191,19 @@ impl TransformBuffer
         self.dirty_transforms.clear();
     }
 
-    pub fn reuse_existing_transform_index(&mut self, uid: &u32) -> u32 
+    pub fn reuse_existing_transform_index(&mut self, uid: &u32, uid_to_reuse_transform_from: &u32) -> u32 
     {
-        let index = match self.uid_to_index_map.get(uid)
+        let index = match self.uid_to_index_map.get(uid_to_reuse_transform_from)
         {
-            Some(i) => {
-                i.clone()
-            },
+            Some(i) => *i,
             None => { 
-                log(format!("Failed to find an existing transform for uid {}, returning a new one.",uid).as_str());
                 self.request_new_transform_index(uid)
             }
         };
 
-        index
+        self.uid_to_index_map.insert(uid.clone(),index.clone());
+
+        index.clone()
     }
 
     pub fn request_new_transform_index(&mut self, uid: &u32) -> u32 
