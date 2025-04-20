@@ -2,7 +2,7 @@ use crate::graphics::draw_batch::DrawBatch;
 use crate::state::input_state::InputState;
 use crate::state::render_state::RenderState;
 
-use crate::graphics::renderable::RenderableConfig;
+use crate::graphics::renderable::{Renderable,RenderableConfig};
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
 use rand::Rng;
@@ -12,6 +12,7 @@ pub struct GameState
 {
     friendly_possums: Vec<AnimatedEntity>,
     tiles: Vec<Sprite>,
+    texts: Vec<Sprite>,
     floor_y: f32
 }
 
@@ -23,6 +24,7 @@ impl GameState
         {
             friendly_possums: Vec::new(),
             tiles: Vec::new(),
+            texts: Vec::new(),
             floor_y: 200.0
         }
     }
@@ -31,16 +33,19 @@ impl GameState
     {
         self.friendly_possums.clear();
         self.tiles.clear();
+        self.texts.clear();
 
         //When we resize, we need to clear all of the existing sprite buffers in the render state
         //TODO: update so that we don't have to do this
         render_state.clear_buffer::<Sprite>();
         render_state.clear_transform_buffer();
 
+        let world_size_x = render_state.get_world_size_x();
+        let world_size_y = render_state.get_world_size_y();
         //The default sprite size for a tile is 100 x 100
         //Determine how many tiles we need to cover the canvas
-        let tile_count_x = render_state.get_world_size_x() / 100;
-        let tile_count_y = render_state.get_world_size_y() / 100;
+        let tile_count_x =  world_size_x / 100;
+        let tile_count_y = world_size_y / 100;
 
         log(format!("Resize requires tiles: {}x{}",tile_count_x,tile_count_y).as_str());
 
@@ -103,12 +108,28 @@ impl GameState
             index += 1;
         }
 
+        let logo = match render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([309,2],[368,31],1))
+        {
+            Some(s) => s,
+            None => { return; }
+        };
+
+        //NB: 50.0 is from the extra 100 we add as padding to the canvas in index js
+        //This gives us roughly the center of the canvas - won't be exact because the 100 is used for overflow (variably)
+        let logo_pos = glm::vec3((world_size_x as f32 / 2.0) - 50.0, (world_size_y as f32 / 1.2) + 50.0, 1.9);
+        let logo_scale = glm::vec3(1.0,1.0,1.0);
+
+        log(format!("logo pos: {} x {} ",logo_pos.x,logo_pos.y).as_str());
+
+        render_state.set_scale(&logo, logo_scale);
+        render_state.set_position(&logo, logo_pos);
+        self.texts.push(logo);
+
        //Possums
        let mut rng = rand::thread_rng();
        let mut z = 2.0;
-       let world_size_x = render_state.get_world_size_x();
 
-        for i in 0..5
+        for i in 0..30
         {
                 //TODO: hardcoded
                 let y = 300;
@@ -145,7 +166,6 @@ impl GameState
 
             first = false;
         }
-
     }
 
     pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec3) -> Option<AnimatedEntity>
@@ -283,6 +303,11 @@ impl GameState
         let mut batch = DrawBatch::new();
 
         for i in &self.tiles
+        {
+           batch.add_sprite(i);
+        }
+
+        for i in &self.texts
         {
            batch.add_sprite(i);
         }
