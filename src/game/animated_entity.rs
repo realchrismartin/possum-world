@@ -7,7 +7,6 @@ pub struct AnimatedEntity
     sprite_index: usize,
     sprites_left: Vec<Sprite>,
     sprites_right: Vec<Sprite>,
-    shared_transform_index: Option<u32>,
     animating: bool,
     facing_right: bool,
     time_since_frame_change: f32,
@@ -17,8 +16,8 @@ pub struct AnimatedEntity
 impl AnimatedEntity
 {
     pub fn new(render_state: &mut RenderState, time_per_frame: f32,
-        left_sprite_configs: Vec<RenderableConfig>,
-        right_sprite_configs: Vec<RenderableConfig>,
+        left_sprite_configs: &Vec<RenderableConfig>,
+        right_sprite_configs: &Vec<RenderableConfig>,
         facing_right: bool
     ) -> Option<Self>
     {
@@ -31,28 +30,43 @@ impl AnimatedEntity
         let mut left_sprites = Vec::<Sprite>::new();
         let mut right_sprites = Vec::<Sprite>::new();
 
-        //Create all of the sprites but only use one transform index.
-        let transform = render_state.request_new_transform();
+        let mut shared_transform_uid : Option<u32> = None;
 
-        for config in &left_sprite_configs
+        //Create all of the sprites but only use one transform index.
+        for config in left_sprite_configs
         {
-            let sprite = match render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,transform)
+            let maybe_sprite = match shared_transform_uid
+            {
+                //TODO!
+                Some(u) => render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,u),
+                None => render_state.request_new_renderable::<Sprite>(&config)
+            };
+
+            let sprite = match maybe_sprite
             {
                 Some(s) => s,
-                None => { continue; }
+                None => {continue;}
             };
+
+            shared_transform_uid = Some(*sprite.get_uid());
             left_sprites.push(sprite);
         }
 
-        for config in &right_sprite_configs
+        for config in right_sprite_configs
         {
-            let sprite = match render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,transform)
+            let maybe_sprite = match shared_transform_uid
             {
-                Some(s) => s,
-                None => { continue; }
-
+                Some(u) => render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,u),
+                None => render_state.request_new_renderable::<Sprite>(&config)
             };
 
+            let sprite = match maybe_sprite
+            {
+                Some(s) => s,
+                None => {continue;}
+            };
+
+            shared_transform_uid = Some(*sprite.get_uid());
             right_sprites.push(sprite);
         }
 
@@ -71,7 +85,6 @@ impl AnimatedEntity
             sprite_index: 0,
             sprites_left: left_sprites,
             sprites_right: right_sprites,
-            shared_transform_index: Some(transform),
             animating: false,
             time_since_frame_change: 0.0,
             time_per_frame,
@@ -168,26 +181,41 @@ impl AnimatedEntity
         self.sprites_left.get(self.sprite_index)
     }
 
-    pub fn get_transform_location(&self) -> Option<u32>
+    pub fn get_renderable_uid_clone(&self) -> Option<u32>
     {
-        self.shared_transform_index
+        if self.facing_right
+        {
+            match self.sprites_right.get(self.sprite_index)
+            {
+                Some(s) => {
+                    return Some(s.get_uid().clone());
+                },
+                None => {
+                    return None;
+                }
+            }
+        }
+
+        match self.sprites_left.get(self.sprite_index)
+        {
+            Some(s) => {
+                return Some(s.get_uid().clone());
+            },
+            None => {
+                return None;
+            }
+        }
     }
 
     pub fn get_scaled_size(&self, render_state: &RenderState) -> Option<glm::Vec3>
     {
-        let index = match self.get_transform_location()
-        {
-            Some(s) => s,
-            None => { return None; }
-        };
-
-        let scale = match render_state.get_scale_with_index(index)
-        {
-            Some(s) => s,
-            None => { return None; }
-        };
-
         let sprite = match self.get_renderable()
+        {
+            Some(s) => s,
+            None => { return None; }
+        };
+
+        let scale = match render_state.get_scale(sprite.get_uid())
         {
             Some(s) => s,
             None => { return None; }

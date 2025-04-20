@@ -9,7 +9,7 @@ pub struct RenderableConfig
     texture_dimensions: [i32;2], //TODO: storing this repeatedly/unnecessary
     size: [i32;2],
     world_size_ratio: [f32;2],
-    texture_index: u32
+    texture_index: u32,
 }
 
 impl RenderableConfig
@@ -68,7 +68,7 @@ impl RenderableConfig
 // Using this data, the renderer can set up a buffer for a renderable type and hold the data, passing back a lightweight handle that knows where the data is.
 pub trait Renderable
 {
-    fn new(uid: u32, transform_location: u32, size: [i32;2]) -> Self where Self: Sized;
+    fn new(uid: u32, size: [i32;2]) -> Self where Self: Sized;
 
     fn init_vertex_layout(context: &WebGl2RenderingContext) where Self: Sized
     {
@@ -103,18 +103,15 @@ pub trait Renderable
         Self::get_vertex_layout().get_elements().iter().map(|element| element.size ).sum::<i32>()
     }
 
-    //Given a renderable config, generate vertices for this renderable
-    fn get_vertices(&self, renderable_config: &RenderableConfig) -> Vec<f32>;
+    //Given a renderable config, statically generate vertices for this renderable
+    fn get_vertices(renderable_config: &RenderableConfig, transform_index: u32) -> Vec<f32> where Self: Sized;
 
-    //Given a renderable config, generate indices for this renderable
+    //Given a renderable config, statically generate indices for this renderable
     //This has to always be the same for any given Renderable type (ie consistent for that type)
     fn get_indices() -> Vec<u32> where Self: Sized;
 
     //Generate the vertex layout for this renderable
     fn get_vertex_layout() -> VertexLayout where Self: Sized;
-
-    //Get the location of this renderable's transform on its buffer
-    fn get_transform_location(&self) -> u32;
 
     fn get_draw_type() -> u32 where Self: Sized;
 

@@ -2,6 +2,7 @@ use web_sys::{WebGl2RenderingContext,WebGlBuffer};
 use crate::graphics::transform::Transform;
 use crate::graphics::shader::Shader;
 use std::collections::HashSet;
+use std::collections::HashMap;
 use web_sys::js_sys::Float32Array;
 use std::mem;
 use crate::util::logging::log;
@@ -14,7 +15,8 @@ pub struct TransformBuffer
     transforms: Vec<Transform>,
     ubo: WebGlBuffer,
     next_available_index: u32,
-    dirty_transforms: HashSet<u32>
+    dirty_transforms: HashSet<u32>,
+    uid_to_index_map: HashMap<u32,u32>
 }
 
 impl TransformBuffer
@@ -40,7 +42,8 @@ impl TransformBuffer
             transforms: Vec::new(),
             ubo: buffer,
             next_available_index: 0,
-            dirty_transforms: HashSet::new()
+            dirty_transforms: HashSet::new(),
+            uid_to_index_map: HashMap::new()
         })
     }
 
@@ -67,59 +70,91 @@ impl TransformBuffer
        context.bind_buffer(WebGl2RenderingContext::UNIFORM_BUFFER, None);
     }
 
-    pub fn set_translation(&mut self, index: u32, translation: glm::Vec3)
+    pub fn set_translation(&mut self, uid: &u32, translation: glm::Vec3)
     {
-        if self.transforms.len() <= index as usize
+        let index = match self.uid_to_index_map.get(uid)
+        {
+            Some(i) => i,
+            None => { return; }
+        };
+
+        if self.transforms.len() <= *index as usize
         {
             return;
         }        
 
-        self.transforms[index as usize].set_translation(translation);
+        self.transforms[*index as usize].set_translation(translation);
 
-        self.dirty_transforms.insert(index);
+        self.dirty_transforms.insert(*index);
     }
 
-    pub fn get_translation(&self, index: u32) -> Option<&glm::Vec3>
+    pub fn get_translation(&self, uid: &u32) -> Option<&glm::Vec3>
     {
-        if self.transforms.len() <= index as usize
+        let index = match self.uid_to_index_map.get(uid)
+        {
+            Some(i) => i,
+            None => { return None; }
+        };
+
+        if self.transforms.len() <= *index as usize
         {
             return None;
         }        
 
-        Some(self.transforms[index as usize].get_translation())
+        Some(self.transforms[*index as usize].get_translation())
     }
 
-    pub fn set_rotation(&mut self, index: u32, rotation: f32)
+    pub fn set_rotation(&mut self, uid: &u32, rotation: f32)
     {
-        if self.transforms.len() <= index as usize
+        let index = match self.uid_to_index_map.get(uid)
+        {
+            Some(i) => i,
+            None => { return; }
+        };
+
+
+        if self.transforms.len() <= *index as usize
         {
             return;
         }       
-        self.transforms[index as usize].set_rotation(rotation);
+        self.transforms[*index as usize].set_rotation(rotation);
 
-        self.dirty_transforms.insert(index);
+        self.dirty_transforms.insert(index.clone());
     }
 
-    pub fn set_scale(&mut self, index: u32, scale: glm::Vec3)
+    pub fn set_scale(&mut self, uid: &u32, scale: glm::Vec3)
     {
-        if self.transforms.len() <= index as usize
+        let index = match self.uid_to_index_map.get(uid)
+        {
+            Some(i) => i,
+            None => { return; }
+        };
+
+
+        if self.transforms.len() <= *index as usize
         {
             return;
         }       
 
-        self.transforms[index as usize].set_scale(scale);
+        self.transforms[*index as usize].set_scale(scale);
 
-        self.dirty_transforms.insert(index);
+        self.dirty_transforms.insert(index.clone());
     }
 
-    pub fn get_scale(&self, index: u32) -> Option<&glm::Vec3>
+    pub fn get_scale(&self, uid: &u32) -> Option<&glm::Vec3>
     {
-        if self.transforms.len() <= index as usize
+        let index = match self.uid_to_index_map.get(uid)
+        {
+            Some(i) => i,
+            None => { return None; }
+        };
+
+        if self.transforms.len() <= *index as usize
         {
             return None;
         }        
 
-        Some(self.transforms[index as usize].get_scale())
+        Some(self.transforms[*index as usize].get_scale())
     }
 
     //For each transform matrix, update the raw data if it needs to be updated.
@@ -156,13 +191,31 @@ impl TransformBuffer
         self.dirty_transforms.clear();
     }
 
-    pub fn request_new_transform(&mut self) -> u32 
+    pub fn reuse_existing_transform_index(&mut self, uid: &u32) -> u32 
     {
+        let index = match self.uid_to_index_map.get(uid)
+        {
+            Some(i) => {
+                i.clone()
+            },
+            None => { 
+                log(format!("Failed to find an existing transform for uid {}, returning a new one.",uid).as_str());
+                self.request_new_transform_index(uid)
+            }
+        };
+
+        index
+    }
+
+    pub fn request_new_transform_index(&mut self, uid: &u32) -> u32 
+    {
+        //UID isn't in map, make a new transform
         let mat_index = self.next_available_index;
         self.next_available_index += 1;
 
         self.transforms.push(Transform::new());
         self.dirty_transforms.insert(mat_index);
+        self.uid_to_index_map.insert(uid.clone(),mat_index);
 
         mat_index
     }
@@ -173,5 +226,6 @@ impl TransformBuffer
         self.next_available_index = 0;
         self.dirty_transforms.clear();
         self.transforms.clear();
+        self.uid_to_index_map.clear();
     }
 }

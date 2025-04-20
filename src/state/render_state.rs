@@ -81,21 +81,17 @@ impl RenderState
         })
     }
 
-    pub fn request_new_transform(&mut self) -> u32
+    pub fn request_new_renderable_with_existing_transform<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, reuse_existing_transform_for_uid: u32) -> Option<T>
     {
-        self.transform_buffer.request_new_transform()
-    }
-    pub fn request_new_renderable_with_existing_transform<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, existing_transform: u32) -> Option<T>
-    {
-        self.request_new_renderable_impl(renderable_config,Some(existing_transform))
+        self.request_new_renderable_impl(renderable_config,&Some(reuse_existing_transform_for_uid))
     }
 
     pub fn request_new_renderable<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig) -> Option<T>
     {
-        self.request_new_renderable_impl(renderable_config,None)
+        self.request_new_renderable_impl(renderable_config,&None::<u32>)
     }
 
-    fn request_new_renderable_impl<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, existing_transform: Option<u32>) -> Option<T>
+    fn request_new_renderable_impl<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, reuse_existing_transform_for_uid: &Option<u32>) -> Option<T>
     {
         let texture_dimensions = match self.get_texture(renderable_config.get_texture_index())
         {
@@ -114,24 +110,30 @@ impl RenderState
         copied_renderable_config.set_texture_dimensions(&texture_dimensions);
         copied_renderable_config.set_world_size_ratio(&world_size);
 
-        //If an existing transform is requested, use it, otherwise:
-        //Request a transform from the buffer. It lives there in RAM. The buffer will handle moving the data over to uniforms.
-        let transform_location = match existing_transform
-        {
-            Some(transform) => transform,
-            None => self.transform_buffer.request_new_transform()
-        };
-
-        //Create a renderable
-        let mut renderable = T::new(self.next_uid,transform_location,*copied_renderable_config.get_size());
-
-        //immediately submit its data to the buffer. This will only be done once.
-        self.submit_data(&renderable,&copied_renderable_config);
         self.next_uid += 1;
 
-        Some(renderable)
-    }
+        let new_uid = self.next_uid.clone();
 
+        //If an existing transform is requested, use it, otherwise:
+        //Request a transform from the buffer. It lives there in RAM. The buffer will handle moving the data over to uniforms.
+
+        let transform_index = match reuse_existing_transform_for_uid
+        {
+            Some(t) => {
+                //An existing UID was provided, use this UID to find an existing transform index to use.
+                self.transform_buffer.reuse_existing_transform_index(t)
+            },
+            None => {
+                //No UID was provided - we need a new transform. Use the new UID to generate it.
+                self.transform_buffer.request_new_transform_index(&new_uid)
+            }
+        };
+
+        //immediately submit data to the buffer. This will only be done once.
+        self.submit_data::<T>(&new_uid, &T::get_vertices(&copied_renderable_config, transform_index));
+
+        Some(T::new(self.next_uid,*copied_renderable_config.get_size()))
+    }
     //TODO: later move this
     pub fn set_shader(&mut self, vertex_source :&str, frag_source: &str)
     {
@@ -185,15 +187,17 @@ impl RenderState
         let _ = &self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT);
     }
 
-    pub fn set_position_with_index(&mut self, transform_index: u32, position : glm::Vec3)
+    //0,0 is the bottom left corner of the world
+    //0,max_y is the top left corner
+    pub fn set_position(&mut self, uid: &u32, position: glm::Vec3)
     {
-        self.transform_buffer.set_translation(transform_index, world_position_to_screen_translation(&position,
+        self.transform_buffer.set_translation(uid, world_position_to_screen_translation(&position,
             &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)));
     }
 
-    pub fn get_position_with_index(&self, transform_index: u32) -> Option<glm::Vec3>
+    pub fn get_position(&self, uid: &u32) -> Option<glm::Vec3>
     {
-        let translation = match self.transform_buffer.get_translation(transform_index)
+        let translation = match self.transform_buffer.get_translation(uid)
         {
             Some(t) => t,
             None => {return None;}
@@ -203,43 +207,22 @@ impl RenderState
             &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)))
     }
 
-    pub fn set_rotation_with_index(&mut self, transform_index: u32, rotation: f32)
+    /*
+    //NB: unused for now
+    pub fn set_rotation(&mut self, uid: u32, rotation: f32)
     {
-        self.transform_buffer.set_rotation(transform_index, rotation);
+        self.transform_buffer.set_rotation(uid, rotation);
+    }
+    */
+
+    pub fn set_scale(&mut self, uid: &u32, scale: glm::Vec3)
+    {
+        self.transform_buffer.set_scale(uid,scale)
     }
 
-    pub fn set_scale_with_index(&mut self, transform_index: u32, scale: glm::Vec3)
+    pub fn get_scale(&self, uid: &u32) -> Option<&glm::Vec3>
     {
-        self.transform_buffer.set_scale(transform_index,scale);
-    }
-
-    pub fn get_scale_with_index(&self, transform_index: u32) -> Option<&glm::Vec3>
-    {
-        let scale = match self.transform_buffer.get_scale(transform_index)
-        {
-            Some(t) => t,
-            None => {return None;}
-        };
-
-        Some(scale)
-    }
-
-    //0,0 is the bottom left corner of the world
-    //0,max_y is the top left corner
-    pub fn set_position<T: Renderable + 'static>(&mut self, renderable: &T, position : glm::Vec3)
-    {
-        self.transform_buffer.set_translation(renderable.get_transform_location(), world_position_to_screen_translation(&position,
-            &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)));
-    }
-
-    pub fn set_rotation<T: Renderable + 'static>(&mut self, renderable: &T, rotation: f32)
-    {
-        self.transform_buffer.set_rotation(renderable.get_transform_location(), rotation);
-    }
-
-    pub fn set_scale<T: Renderable + 'static>(&mut self, renderable: &T, scale: glm::Vec3)
-    {
-        self.transform_buffer.set_scale(renderable.get_transform_location(),scale);
+        self.transform_buffer.get_scale(uid)
     }
 
     pub fn bind_and_update_transform_buffer_data(&mut self)
@@ -345,7 +328,7 @@ impl RenderState
         self.vertex_buffer_map.insert(type_id,Box::new(buffer));
     }
 
-    fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T, renderable_config: &RenderableConfig)
+    fn submit_data<T: Renderable + 'static>(&mut self,uid: &u32, vertices: &Vec<f32>)
     {
         let type_id = TypeId::of::<T>();
         if !self.vertex_buffer_map.contains_key(&type_id)
@@ -362,7 +345,7 @@ impl RenderState
         };
 
         buffer.bind(&self.context);
-        buffer.buffer_data(&self.context,&renderable,&renderable_config);
+        buffer.buffer_data(&self.context,uid,vertices);
         VertexBuffer::<T>::unbind(&self.context);
     }
 

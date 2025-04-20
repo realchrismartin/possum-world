@@ -58,9 +58,7 @@ impl GameState
         let mut next_x_placement =  x_placement_offset / 2.0;
         let mut next_y_placement = y_placement_offset / 2.0;
 
-        //Generate a random tile grid
-        let mut rng = rand::thread_rng();
-
+        //Generate tile grid
         let use_sprites  = vec![
             RenderableConfig::new([2,2],[100,100],1), //ground
             RenderableConfig::new([105,2],[100,100],1), //background
@@ -95,7 +93,7 @@ impl GameState
         let z = 2.0; //For tiles
         for tile in &self.tiles
         {
-            render_state.set_position(tile, glm::vec3(next_x_placement as f32,next_y_placement as f32, z));
+            render_state.set_position(tile.get_uid(), glm::vec3(next_x_placement as f32,next_y_placement as f32, z));
 
             next_x_placement += x_placement_offset as f32;
 
@@ -121,15 +119,15 @@ impl GameState
 
         log(format!("logo pos: {} x {} ",logo_pos.x,logo_pos.y).as_str());
 
-        render_state.set_scale(&logo, logo_scale);
-        render_state.set_position(&logo, logo_pos);
+        render_state.set_scale(logo.get_uid(), logo_scale);
+        render_state.set_position(logo.get_uid(), logo_pos);
         self.texts.push(logo);
 
        //Possums
        let mut rng = rand::thread_rng();
        let mut z = 2.0;
 
-        for i in 0..30
+        for _i in 0..30
         {
                 //TODO: hardcoded
                 let y = 300;
@@ -149,7 +147,7 @@ impl GameState
         let mut first = true;
         for possum in &self.friendly_possums
         {
-            let transform_loc = match possum.get_transform_location()
+            let s = match possum.get_renderable()
             {
                 Some(t) => t,
                 None => {continue; }
@@ -158,10 +156,10 @@ impl GameState
             if first
             {
                 //Barry is larger than the other posses
-                render_state.set_scale_with_index(transform_loc, glm::vec3(3.0,3.0,1.0));
+                render_state.set_scale(s.get_uid(), glm::vec3(3.0,3.0,1.0));
             } else
             {
-                render_state.set_scale_with_index(transform_loc, glm::vec3(2.0,2.0,1.0));
+                render_state.set_scale(s.get_uid(), glm::vec3(2.0,2.0,1.0));
             }
 
             first = false;
@@ -176,7 +174,7 @@ impl GameState
 
         let possum = match AnimatedEntity::new(render_state,50.0,
             
-            vec![
+            &vec![
                 RenderableConfig::new([2,81],[58,18],0),
                 RenderableConfig::new([62,81],[58,18],0),
                 RenderableConfig::new([122,81],[58,18],0),
@@ -186,7 +184,7 @@ impl GameState
                 RenderableConfig::new([362,81],[58,18],0),
                 RenderableConfig::new([422,81],[58,18],0),
             ],
-            vec![
+            &vec![
                 RenderableConfig::new([2,21],[58,18],0),
                 RenderableConfig::new([62,21],[58,18],0),
                 RenderableConfig::new([122,21],[58,18],0),
@@ -203,21 +201,19 @@ impl GameState
             None => { return None; }
         };
 
-        let transform_loc = match possum.get_transform_location()
+        let s = match possum.get_renderable()
         {
             Some(t) => t,
             None => {return None; }
         };
 
-        render_state.set_position_with_index(transform_loc, starting_position);
+        render_state.set_position(s.get_uid(),starting_position);
 
         Some(possum)
     }
 
     pub fn update(&mut self, render_state: &mut RenderState, input_state: &mut InputState, delta_time: f32)
     {
-        let mut rng = rand::thread_rng();
-
         let x_bound = render_state.get_world_size_x();
 
         let mut index = 0;
@@ -228,13 +224,13 @@ impl GameState
             //Rudimentary AI
             if index > 0
             {
-                let t = match p.get_transform_location()
+                let s = match p.get_renderable()
                 {
-                    Some(t) => t,
+                    Some(s) => s,
                     None => {continue;}
                 };
 
-                let pos = match render_state.get_position_with_index(t)
+                let pos = match render_state.get_position(s.get_uid())
                 {
                     Some(p) => p,
                     None => { continue; }
@@ -330,13 +326,13 @@ impl GameState
     {
         animated_entity.update(delta_time);
 
-        let transform_loc = match animated_entity.get_transform_location()
+        let uid = match animated_entity.get_renderable_uid_clone()
         {
             Some(t) => t,
             None => {return; }
         };
 
-        let mut position = match render_state.get_position_with_index(transform_loc)
+        let mut position = match render_state.get_position(&uid)
         {
             Some(pos) => pos,
             None => {return; }
@@ -390,6 +386,6 @@ impl GameState
         //TODO: ignoring Y movement
         position.x += (delta_time / 5.0) * movement_direction.x;
 
-        render_state.set_position_with_index(transform_loc, position);
+        render_state.set_position(&uid,position);
     }
 }
