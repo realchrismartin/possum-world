@@ -40,6 +40,8 @@ impl GameState
         let world_size_x = render_state.get_world_size_x(); //In pixels
         let world_size_y = render_state.get_world_size_y();
 
+        let world_size = [world_size_x as f32, world_size_y as f32];
+
         //The default sprite size for a tile is 100 x 100
         //Determine how many tiles we need to cover the canvas
         //TODO: not precise.
@@ -68,9 +70,9 @@ impl GameState
         let mut rng = rand::thread_rng();
 
         let use_sprites  = vec![
-            RenderableConfig::new([2,2],[100,100],1), //ground
-            RenderableConfig::new([105,2],[100,100],1), //background
-            RenderableConfig::new([207,2],[100,100],1), //underground
+            RenderableConfig::new([2,2],[100,100],world_size,1), //ground
+            RenderableConfig::new([105,2],[100,100],world_size,1), //background
+            RenderableConfig::new([207,2],[100,100],world_size,1), //underground
         ];
 
         for i in 0..(tile_count_y * tile_count_x) +1
@@ -102,7 +104,7 @@ impl GameState
         for tile in &self.tiles
         {
             render_state.set_position(tile, glm::vec3(next_x_placement as f32,next_y_placement as f32, z));
-            render_state.set_scale(tile, glm::vec3(scale_x,scale_y,1.0));
+            //render_state.set_scale(tile, glm::vec3(scale_x,scale_y,1.0));
 
             next_x_placement += x_placement_offset as f32;
 
@@ -146,12 +148,13 @@ impl GameState
                 None => {continue; }
             };
 
+            //render_state.set_scale_with_index(transform_loc, glm::vec3(scale_x * 2.0,scale_y * 2.0 ,1.0));
+
             if !first
             {
-                render_state.set_scale_with_index(transform_loc, glm::vec3(scale_x,scale_y,1.0));
             } else {
                 //Barry is larger than the other posses
-                render_state.set_scale_with_index(transform_loc, glm::vec3(scale_x * 2.0,scale_y * 2.0,1.0));
+                //render_state.set_scale_with_index(transform_loc, glm::vec3(scale_x * 2.0,scale_y * 2.0,1.0));
             }
 
             first = false;
@@ -165,27 +168,31 @@ impl GameState
 
         let facing = rng.gen_range(0..2) > 0;
 
+        let world_size_x = render_state.get_world_size_x(); //In pixels
+        let world_size_y = render_state.get_world_size_y();
+        let world_size = [world_size_x as f32, world_size_y as f32];
+
         let possum = match AnimatedEntity::new(render_state,50.0,
             
             vec![
-                RenderableConfig::new([2,81],[58,18],0),
-                RenderableConfig::new([62,81],[58,18],0),
-                RenderableConfig::new([122,81],[58,18],0),
-                RenderableConfig::new([182,81],[58,18],0),
-                RenderableConfig::new([242,81],[58,18],0),
-                RenderableConfig::new([302,81],[58,18],0),
-                RenderableConfig::new([362,81],[58,18],0),
-                RenderableConfig::new([422,81],[58,18],0),
+                RenderableConfig::new([2,81],[58,18],world_size,0),
+                RenderableConfig::new([62,81],[58,18],world_size,0),
+                RenderableConfig::new([122,81],[58,18],world_size,0),
+                RenderableConfig::new([182,81],[58,18],world_size,0),
+                RenderableConfig::new([242,81],[58,18],world_size,0),
+                RenderableConfig::new([302,81],[58,18],world_size,0),
+                RenderableConfig::new([362,81],[58,18],world_size,0),
+                RenderableConfig::new([422,81],[58,18],world_size,0),
             ],
             vec![
-                RenderableConfig::new([2,21],[58,18],0),
-                RenderableConfig::new([62,21],[58,18],0),
-                RenderableConfig::new([122,21],[58,18],0),
-                RenderableConfig::new([182,21],[58,18],0),
-                RenderableConfig::new([242,21],[58,18],0),
-                RenderableConfig::new([302,21],[58,18],0),
-                RenderableConfig::new([362,21],[58,18],0),
-                RenderableConfig::new([422,21],[58,18],0),
+                RenderableConfig::new([2,21],[58,18],world_size,0),
+                RenderableConfig::new([62,21],[58,18],world_size,0),
+                RenderableConfig::new([122,21],[58,18],world_size,0),
+                RenderableConfig::new([182,21],[58,18],world_size,0),
+                RenderableConfig::new([242,21],[58,18],world_size,0),
+                RenderableConfig::new([302,21],[58,18],world_size,0),
+                RenderableConfig::new([362,21],[58,18],world_size,0),
+                RenderableConfig::new([422,21],[58,18],world_size,0),
             ],
             facing
         )
@@ -239,6 +246,7 @@ impl GameState
                     p.set_facing(true);
                 }
 
+                /*
                 if p.get_facing_right() 
                 {
                     movement_direction = glm::vec2(1.0,0.0);
@@ -246,6 +254,7 @@ impl GameState
                 {
                     movement_direction = glm::vec2(-1.0,0.0);
                 }
+                */
             } else 
             {
                 //Set the move direction based on where the mouse is

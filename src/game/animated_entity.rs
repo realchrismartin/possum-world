@@ -1,7 +1,6 @@
 use crate::state::render_state::RenderState;
-use crate::graphics::renderable::{Renderable,RenderableConfig};
+use crate::graphics::renderable::RenderableConfig;
 use crate::graphics::sprite::Sprite;
-use crate::util::logging::log;
 
 pub struct AnimatedEntity
 {
@@ -188,16 +187,6 @@ impl AnimatedEntity
         self.shared_transform_index
     }
 
-    fn get_current_sprite_size(&self) -> &[i32]
-    {
-        if self.facing_right
-        {
-            return &self.sprites_right_sizes[self.sprite_index..self.sprite_index+1]
-        }
-
-        return &self.sprites_left_sizes[self.sprite_index..self.sprite_index+1]
-    }
-
     pub fn get_scaled_size(&self, render_state: &RenderState) -> Option<glm::Vec3>
     {
         let index = match self.get_transform_location()
@@ -212,9 +201,16 @@ impl AnimatedEntity
             None => { return None; }
         };
 
-        let size_x = self.sprites_right_sizes[self.sprite_index] as f32;
-        let size_y = self.sprites_right_sizes[self.sprite_index+1] as f32;
+        let mut size_x = self.sprites_right_sizes[self.sprite_index] as f32;
+        let mut size_y = self.sprites_right_sizes[self.sprite_index+1] as f32;
 
+        if !self.facing_right
+        {
+            size_x = self.sprites_left_sizes[self.sprite_index] as f32;
+            size_y = self.sprites_left_sizes[self.sprite_index+1] as f32;
+        }
+
+        /*
         let world_size_x = render_state.get_world_size_x() as f32;
         let world_size_y = render_state.get_world_size_y() as f32;
 
@@ -223,13 +219,14 @@ impl AnimatedEntity
         let mut current_pixel_size_y = world_size_y * scale.y;
 
         //Use the sizes to infer the dimensions of the sprite on the canvas
-        if(size_x > size_y) 
+        if size_x > size_y
         {
             //X is 1.0 (exact view width), y is less than that
             current_pixel_size_x = world_size_x * scale.x;
             current_pixel_size_y = (size_y / size_x) * world_size_y * scale.y
         }
+        */
 
-        Some(glm::vec3(current_pixel_size_x, current_pixel_size_y, 1.0))
+        Some(glm::vec3(size_x * scale.x, size_y * scale.y, 1.0))
     }
 }

@@ -9,20 +9,27 @@ pub struct RenderableConfig
     texture_coordinates: [i32;2],
     texture_dimensions: [i32;2], //TODO: storing this repeatedly/unnecessary
     size: [i32;2],
+    world_size_ratio: [f32;2],
     texture_index: u32
 }
 
 impl RenderableConfig
 {
-    pub fn new(tex_coordinates: [i32;2], sprite_size: [i32;2], tex_index: u32) -> Self 
+    pub fn new(tex_coordinates: [i32;2], sprite_size: [i32;2], current_world_size: [f32;2], tex_index: u32) -> Self 
     {
         Self
         {
             texture_coordinates :tex_coordinates,
             texture_dimensions: [1,1], //Updated later
             size: sprite_size,
+            world_size_ratio: Self::calculate_world_size_ratio(&sprite_size,&current_world_size),
             texture_index: tex_index
         }
+    }
+
+    fn calculate_world_size_ratio(sprite_size: &[i32;2], current_world_size: &[f32;2]) -> [f32;2]
+    {
+        [sprite_size[0] as f32 / current_world_size[0],sprite_size[1] as f32 / current_world_size[1]]
     }
 
     pub fn get_texture_index(&self) -> u32
@@ -43,6 +50,11 @@ impl RenderableConfig
     pub fn get_texture_dimensions(&self) -> &[i32;2]
     {
         &&self.texture_dimensions
+    }
+
+    pub fn get_world_size_ratio(&self) -> &[f32;2]
+    {
+        &&self.world_size_ratio
     }
 
     pub fn set_texture_dimensions(&mut self, dimensions: &[i32;2])

@@ -43,22 +43,9 @@ impl Renderable for Sprite
         let tex_coords = get_rectangular_texture_coordinates(renderable_config.get_texture_coordinates(), 
             size, renderable_config.get_texture_dimensions());
 
-        //"Fit" the rectangle within the 2x2 box
-
-        let mut y_axis = 1.0;
-        let mut x_axis = 1.0;
-
-        if size[0] > size[1]
-        {
-            //X is bigger than y
-            //X == 1.0, y is less than 1
-            y_axis = size[1] as f32 / size[0] as f32;
-        } else
-        {
-            //Y is bigger than x
-            //Y == 1.0, X is less than 1
-            x_axis = size[0] as f32 / size[1] as f32;
-        }
+        //Local are set according to how big the sprite should be in comparison to the world size.
+        let mut x_axis = renderable_config.get_world_size_ratio()[0];
+        let mut y_axis = renderable_config.get_world_size_ratio()[1];
 
         vec![
             -x_axis,y_axis,0.0,
