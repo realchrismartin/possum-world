@@ -17,7 +17,6 @@ use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
 use crate::util::util::{world_position_to_screen_translation,screen_translation_to_world_position};
 use crate::graphics::draw_batch::DrawBatch;
-use std::ops::Range;
 
 pub struct RenderState
 {
@@ -26,7 +25,8 @@ pub struct RenderState
     textures: HashMap<u32,Texture>, 
     camera: Camera,
     vertex_buffer_map: HashMap<TypeId,Box<dyn Any>>,
-    transform_buffer: TransformBuffer
+    transform_buffer: TransformBuffer,
+    next_uid: u32
 }
 
 impl RenderState
@@ -76,7 +76,8 @@ impl RenderState
             textures: HashMap::new(),
             camera: Camera::new(canvas.width(),canvas.height()),
             vertex_buffer_map: HashMap::new(),
-            transform_buffer: transform_buffer
+            transform_buffer: transform_buffer,
+            next_uid: 0
         })
     }
 
@@ -122,19 +123,12 @@ impl RenderState
         };
 
         //Create a renderable
-        let mut renderable = T::new(transform_location,*copied_renderable_config.get_size());
+        let mut renderable = T::new(self.next_uid,transform_location,*copied_renderable_config.get_size());
 
         //immediately submit its data to the buffer. This will only be done once.
-        let range = match self.submit_data(&renderable,&copied_renderable_config)
-        {
-            Some(r) => r,
-            None => { return None }
-        };
+        self.submit_data(&renderable,&copied_renderable_config);
+        self.next_uid += 1;
 
-        //Set mutable properties of the renderable that aren't known at creation time
-        renderable.set_element_location(range);
-
-        //Return the renderable. The owner of the renderable can later submit it to be drawn, so we will know which buffer to use.
         Some(renderable)
     }
 
@@ -311,19 +305,19 @@ impl RenderState
 
         buffer.bind(&self.context);
 
-        for range in draw_batch.get_ranges()
+        for uid in draw_batch.get_uids()
         {
+            let range = match buffer.get_draw_range_for_uid(&uid)
+            {
+                Some(r) => r,
+                None => {continue;}
+            };
 
             let count = range.end - range.start;
 
             if count < 0 
             {
-                continue;
-            }
-
-            if !buffer.is_range_valid(&range)
-            {
-                log(format!("Tried to draw an invalid range on a buffer: {} to {}",range.start,range.end).as_str());
+                //NB: already checked by buffer
                 continue;
             }
 
@@ -361,7 +355,7 @@ impl RenderState
         self.vertex_buffer_map.insert(type_id,Box::new(buffer));
     }
 
-    fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T, renderable_config: &RenderableConfig) -> Option<Range<i32>>
+    fn submit_data<T: Renderable + 'static>(&mut self,renderable : &T, renderable_config: &RenderableConfig)
     {
         let type_id = TypeId::of::<T>();
         if !self.vertex_buffer_map.contains_key(&type_id)
@@ -374,14 +368,12 @@ impl RenderState
         let buffer = match Self::get_mapped_buffer::<T>(&mut self.vertex_buffer_map)
         {
             Some(buffer) => buffer,
-            None => { return None; }
+            None => { return; }
         };
 
         buffer.bind(&self.context);
-        let range = buffer.buffer_data(&self.context,&renderable,&renderable_config);
+        buffer.buffer_data(&self.context,&renderable,&renderable_config);
         VertexBuffer::<T>::unbind(&self.context);
-        
-        range
     }
 
     fn get_const_mapped_buffer<T: Renderable + 'static>(vertex_buffer_map: &HashMap<TypeId,Box<dyn Any>>) -> Option<&VertexBuffer<T>>

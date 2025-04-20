@@ -1,6 +1,5 @@
 use web_sys::WebGl2RenderingContext;
 use crate::graphics::vertex_layout::VertexLayout;
-use std::ops::Range;
 
 //This struct may contain more data than is needed for any given Renderable. TODO: address?
 #[derive(Clone)]
@@ -69,7 +68,7 @@ impl RenderableConfig
 // Using this data, the renderer can set up a buffer for a renderable type and hold the data, passing back a lightweight handle that knows where the data is.
 pub trait Renderable
 {
-    fn new(transform_location: u32, size: [i32;2]) -> Self where Self: Sized;
+    fn new(uid: u32, transform_location: u32, size: [i32;2]) -> Self where Self: Sized;
 
     fn init_vertex_layout(context: &WebGl2RenderingContext) where Self: Sized
     {
@@ -114,15 +113,12 @@ pub trait Renderable
     //Generate the vertex layout for this renderable
     fn get_vertex_layout() -> VertexLayout where Self: Sized;
 
-    //Get the location of this renderable on its buffer
-    fn get_element_location(&self) -> &Option<Range<i32>>;
-
     //Get the location of this renderable's transform on its buffer
     fn get_transform_location(&self) -> u32;
-
-    fn set_element_location(&mut self, range: Range<i32>);
 
     fn get_draw_type() -> u32 where Self: Sized;
 
     fn get_size(&self) -> &[i32;2];
+
+    fn get_uid(&self) -> &u32;
 }

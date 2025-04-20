@@ -1,11 +1,10 @@
 use crate::graphics::renderable::Renderable;
 use std::marker::PhantomData;
-use std::ops::Range;
 
 pub struct DrawBatch<T>
 {
     _phantom: PhantomData<T>, //Hint that we will use the type T later
-    ranges: Vec<Range<i32>>
+    uids: Vec<u32>
 }
 
 impl<T: Renderable> DrawBatch<T>
@@ -15,23 +14,17 @@ impl<T: Renderable> DrawBatch<T>
         Self 
         {
             _phantom: PhantomData,
-            ranges: Vec::new()
+            uids: Vec::new()
         }
     }
 
     pub fn add(&mut self, renderable: &dyn Renderable)
     {
-        let range = match renderable.get_element_location()
-        {
-            Some(r) => r,
-            None => { return; }
-        };
-
-        self.ranges.push(range.clone());
+        self.uids.push(renderable.get_uid().clone());
     }
 
-    pub fn get_ranges(&self) -> &Vec<Range<i32>>
+    pub fn get_uids(&self) -> &Vec<u32>
     {
-        &self.ranges
+        &self.uids
     }
 }

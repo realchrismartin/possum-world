@@ -3,27 +3,26 @@ use web_sys::WebGl2RenderingContext;
 use crate::graphics::renderable::{Renderable, RenderableConfig};
 use crate::graphics::vertex_layout::{VertexLayout,VertexLayoutElement};
 use crate::util::util::get_rectangular_texture_coordinates;
-use std::ops::Range;
 
 //Like all Renderables, a Sprite is a handle that points to locations on our buffers.
 //It doesn't hold vertex or index data. That data is generated once on upload to the GPU.
 #[derive(Clone)]
 pub struct Sprite
 {
-    element_location: Option<Range<i32>>,
     transform_location: u32,
-    size: [i32;2]
+    size: [i32;2],
+    uid: u32
 }
 
 impl Renderable for Sprite
 {
-    fn new(transform_location: u32, size: [i32;2]) -> Self 
+    fn new(uid: u32, transform_location: u32, size: [i32;2]) -> Self 
     {
         Self 
         {
-            element_location: None,
             transform_location,
-            size: size
+            size: size,
+            uid: uid
         }
     }
 
@@ -77,16 +76,6 @@ impl Renderable for Sprite
         vec![0,1,2,2,3,0]
     }
 
-    fn get_element_location(&self) -> &Option<Range<i32>>
-    {
-      &self.element_location  
-    }
-
-    fn set_element_location(&mut self, loc: Range<i32>) 
-    {
-        self.element_location = Some(loc);
-    }
-
     fn get_size(&self) -> &[i32;2]
     {
         &self.size
@@ -100,5 +89,10 @@ impl Renderable for Sprite
     fn get_draw_type() -> u32
     {
         WebGl2RenderingContext::TRIANGLES
+    }
+
+    fn get_uid(&self) -> &u32
+    {
+        &self.uid
     }
 }

@@ -2,7 +2,7 @@ use crate::graphics::draw_batch::DrawBatch;
 use crate::state::input_state::InputState;
 use crate::state::render_state::RenderState;
 
-use crate::graphics::renderable::RenderableConfig;
+use crate::graphics::renderable::{Renderable,RenderableConfig};
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
 use rand::Rng;
@@ -314,13 +314,13 @@ impl GameState
 
         for p in &self.friendly_possums
         {
-            let r = match p.get_renderable()
+            let i = match p.get_renderable()
             {
                 Some(re) => re,
                 None => {continue; }
             };
 
-           batch.add(r);
+           batch.add(i);
         }
 
         batch
