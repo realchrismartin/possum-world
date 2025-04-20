@@ -18,9 +18,9 @@ impl<T: Renderable> DrawBatch<T>
         }
     }
 
-    pub fn add(&mut self, renderable: &dyn Renderable)
+    pub fn add(&mut self, uid: &u32)
     {
-        self.uids.push(renderable.get_uid().clone());
+        self.uids.push(uid.clone());
     }
 
     pub fn get_uids(&self) -> &Vec<u32>

@@ -1,12 +1,12 @@
 use crate::state::render_state::RenderState;
-use crate::graphics::renderable::{Renderable,RenderableConfig};
+use crate::graphics::renderable::RenderableConfig;
 use crate::graphics::sprite::Sprite;
 
 pub struct AnimatedEntity
 {
     sprite_index: usize,
-    sprites_left: Vec<Sprite>,
-    sprites_right: Vec<Sprite>,
+    sprites_left: Vec<u32>,
+    sprites_right: Vec<u32>,
     animating: bool,
     facing_right: bool,
     time_since_frame_change: f32,
@@ -27,8 +27,8 @@ impl AnimatedEntity
             return None;
         }
 
-        let mut left_sprites = Vec::<Sprite>::new();
-        let mut right_sprites = Vec::<Sprite>::new();
+        let mut left_sprites = Vec::<u32>::new();
+        let mut right_sprites = Vec::<u32>::new();
 
         let mut shared_transform_uid : Option<u32> = None;
 
@@ -47,7 +47,7 @@ impl AnimatedEntity
                 None => {continue;}
             };
 
-            shared_transform_uid = Some(*sprite.get_uid());
+            shared_transform_uid = Some(sprite);
             left_sprites.push(sprite);
         }
 
@@ -65,7 +65,7 @@ impl AnimatedEntity
                 None => {continue;}
             };
 
-            shared_transform_uid = Some(*sprite.get_uid());
+            shared_transform_uid = Some(sprite);
             right_sprites.push(sprite);
         }
 
@@ -146,7 +146,6 @@ impl AnimatedEntity
         }
 
         self.sprite_index = sprite_index;
-
     }
 
     pub fn update(&mut self, delta_time: f32)
@@ -170,24 +169,20 @@ impl AnimatedEntity
         self.animating = state;
     }
 
-    pub fn get_renderable(&self) -> Option<&Sprite>
+    pub fn reset_animation(&mut self)
     {
-        if self.facing_right
-        {
-            return self.sprites_right.get(self.sprite_index);
-        }
-
-        self.sprites_left.get(self.sprite_index)
+        self.time_since_frame_change = 0.0;
+        self.sprite_index = 0;
     }
 
-    pub fn get_renderable_uid_clone(&self) -> Option<u32>
+    pub fn get_renderable_uid(&self) -> Option<&u32>
     {
         if self.facing_right
         {
             match self.sprites_right.get(self.sprite_index)
             {
                 Some(s) => {
-                    return Some(s.get_uid().clone());
+                    return Some(s);
                 },
                 None => {
                     return None;
@@ -198,7 +193,7 @@ impl AnimatedEntity
         match self.sprites_left.get(self.sprite_index)
         {
             Some(s) => {
-                return Some(s.get_uid().clone());
+                return Some(s);
             },
             None => {
                 return None;
@@ -206,22 +201,4 @@ impl AnimatedEntity
         }
     }
 
-    pub fn get_scaled_size(&self, render_state: &RenderState) -> Option<glm::Vec3>
-    {
-        let sprite = match self.get_renderable()
-        {
-            Some(s) => s,
-            None => { return None; }
-        };
-
-        let scale = match render_state.get_scale(sprite.get_uid())
-        {
-            Some(s) => s,
-            None => { return None; }
-        };
-
-        let sprite_size = sprite.get_size();
-
-        Some(glm::vec3(sprite_size[0] as f32 * scale.x, sprite_size[1] as f32 * scale.y, 1.0))
-    }
 }

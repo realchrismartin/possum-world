@@ -63,13 +63,10 @@ impl RenderableConfig
 }
 
 //A Renderable is:
-//a) Some static metadata on how to set up a Vertex Buffer a certain way
-//b) When derived, an object that is a handle containing indices that point to specific spots on EBO / transform buffers.
+// Some static metadata on how to set up a Vertex Buffer a certain way
 // Using this data, the renderer can set up a buffer for a renderable type and hold the data, passing back a lightweight handle that knows where the data is.
 pub trait Renderable
 {
-    fn new(uid: u32, size: [i32;2]) -> Self where Self: Sized;
-
     fn init_vertex_layout(context: &WebGl2RenderingContext) where Self: Sized
     {
         let vertex_layout = Self::get_vertex_layout();
@@ -114,8 +111,4 @@ pub trait Renderable
     fn get_vertex_layout() -> VertexLayout where Self: Sized;
 
     fn get_draw_type() -> u32 where Self: Sized;
-
-    fn get_size(&self) -> &[i32;2];
-
-    fn get_uid(&self) -> &u32;
 }

@@ -2,7 +2,7 @@ use crate::graphics::draw_batch::DrawBatch;
 use crate::state::input_state::InputState;
 use crate::state::render_state::RenderState;
 
-use crate::graphics::renderable::{Renderable,RenderableConfig};
+use crate::graphics::renderable::RenderableConfig;
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
 use rand::Rng;
@@ -11,8 +11,8 @@ use crate::util::logging::log;
 pub struct GameState
 {
     friendly_possums: Vec<AnimatedEntity>,
-    tiles: Vec<Sprite>,
-    texts: Vec<Sprite>,
+    tiles: Vec<u32>,
+    texts: Vec<u32>,
     floor_y: f32
 }
 
@@ -31,19 +31,17 @@ impl GameState
 
     pub fn init(&mut self, render_state: &mut RenderState)
     {
+        //When we resize, we need to clear all of the existing sprite buffers in the render state
         self.friendly_possums.clear();
         self.tiles.clear();
         self.texts.clear();
 
-        //When we resize, we need to clear all of the existing sprite buffers in the render state
-        //TODO: update so that we don't have to do this
-        render_state.clear_buffer::<Sprite>();
-        render_state.clear_transform_buffer();
+        render_state.clear();
 
-        let world_size_x = render_state.get_world_size_x();
-        let world_size_y = render_state.get_world_size_y();
         //The default sprite size for a tile is 100 x 100
         //Determine how many tiles we need to cover the canvas
+        let world_size_x = render_state.get_world_size_x();
+        let world_size_y = render_state.get_world_size_y();
         let tile_count_x =  world_size_x / 100;
         let tile_count_y = world_size_y / 100;
 
@@ -51,8 +49,6 @@ impl GameState
 
         let x_placement_offset = 100 as f32;
         let y_placement_offset = 100 as f32; 
-
-        log(format!("Using placement offset {}x{}",x_placement_offset,y_placement_offset).as_str());
 
         //Since each position is the center of a tile, we offset the initial placement by a tile half width
         let mut next_x_placement =  x_placement_offset / 2.0;
@@ -79,21 +75,21 @@ impl GameState
                 used_sprite_index = 0; //Use top layer
             } 
 
-            let tile = match render_state.request_new_renderable::<Sprite>(use_sprites.get(used_sprite_index).unwrap())
+            let tile_uid = match render_state.request_new_renderable::<Sprite>(use_sprites.get(used_sprite_index).unwrap())
             {
                 Some(s) => s,
                 None => { return; }
             };
 
-            self.tiles.push(tile);
+            self.tiles.push(tile_uid);
         }
 
         //Tiles start at the bottom left and grow right -> up
         let mut index = 0;
         let z = 2.0; //For tiles
-        for tile in &self.tiles
+        for tile_uid in &self.tiles
         {
-            render_state.set_position(tile.get_uid(), glm::vec3(next_x_placement as f32,next_y_placement as f32, z));
+            render_state.set_position(&tile_uid, glm::vec3(next_x_placement as f32,next_y_placement as f32, z));
 
             next_x_placement += x_placement_offset as f32;
 
@@ -117,8 +113,8 @@ impl GameState
         let logo_pos = glm::vec3((world_size_x as f32 / 2.0) - 50.0, (world_size_y as f32 / 1.2) + 50.0, 1.9);
         let logo_scale = glm::vec3(1.0,1.0,1.0);
 
-        render_state.set_scale(logo.get_uid(), logo_scale);
-        render_state.set_position(logo.get_uid(), logo_pos);
+        render_state.set_scale(&logo, logo_scale);
+        render_state.set_position(&logo, logo_pos);
         self.texts.push(logo);
 
        //Possums
@@ -145,7 +141,7 @@ impl GameState
         let mut first = true;
         for possum in &self.friendly_possums
         {
-            let s = match possum.get_renderable()
+            let s = match possum.get_renderable_uid()
             {
                 Some(t) => t,
                 None => {continue; }
@@ -154,10 +150,10 @@ impl GameState
             if first
             {
                 //Barry is larger than the other posses
-                render_state.set_scale(s.get_uid(), glm::vec3(3.0,3.0,1.0));
+                render_state.set_scale(s, glm::vec3(3.0,3.0,1.0));
             } else
             {
-                render_state.set_scale(s.get_uid(), glm::vec3(2.0,2.0,1.0));
+                render_state.set_scale(s, glm::vec3(2.0,2.0,1.0));
             }
 
             first = false;
@@ -199,13 +195,13 @@ impl GameState
             None => { return None; }
         };
 
-        let s = match possum.get_renderable()
+        let s = match possum.get_renderable_uid()
         {
             Some(t) => t,
             None => {return None; }
         };
 
-        render_state.set_position(s.get_uid(),starting_position);
+        render_state.set_position(s,starting_position);
 
         Some(possum)
     }
@@ -222,13 +218,13 @@ impl GameState
             //Rudimentary AI
             if index > 0
             {
-                let s = match p.get_renderable()
+                let s = match p.get_renderable_uid()
                 {
                     Some(s) => s,
                     None => {continue;}
                 };
 
-                let pos = match render_state.get_position(s.get_uid())
+                let pos = match render_state.get_position(s)
                 {
                     Some(p) => p,
                     None => { continue; }
@@ -308,7 +304,7 @@ impl GameState
 
         for p in &self.friendly_possums
         {
-            let i = match p.get_renderable()
+            let i = match p.get_renderable_uid()
             {
                 Some(re) => re,
                 None => { continue; }
@@ -324,9 +320,9 @@ impl GameState
     {
         animated_entity.update(delta_time);
 
-        let uid = match animated_entity.get_renderable_uid_clone()
+        let uid = match animated_entity.get_renderable_uid()
         {
-            Some(t) => t,
+            Some(t) => t.clone(),
             None => {return; }
         };
 
@@ -350,7 +346,7 @@ impl GameState
             position.y += (delta_time / 5.0) * 200.0;
         }
 
-        let size = match animated_entity.get_scaled_size(render_state) 
+        let size = match render_state.get_scaled_size(&uid) 
         {
             Some(s) => s,
             None => {return;}
@@ -375,6 +371,7 @@ impl GameState
         if (!gravity_affected) && movement_direction.x == 0.0 && movement_direction.y == 0.0
         {
             animated_entity.set_animating(false);
+            animated_entity.reset_animation();
         } else
         {
             animated_entity.set_animating(true);

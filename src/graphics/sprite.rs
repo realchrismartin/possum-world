@@ -7,23 +7,10 @@ use crate::util::util::get_rectangular_texture_coordinates;
 //Like all Renderables, a Sprite is a handle that points to locations on our buffers.
 //It doesn't hold vertex or index data. That data is generated once on upload to the GPU.
 #[derive(Clone)]
-pub struct Sprite
-{
-    uid: u32,
-    size: [i32;2]
-}
+pub struct Sprite {}
 
 impl Renderable for Sprite
 {
-    fn new(uid: u32, size: [i32;2]) -> Self 
-    {
-        Self 
-        {
-            size: size,
-            uid: uid
-        }
-    }
-
     fn get_vertex_layout() -> super::vertex_layout::VertexLayout
     {
        VertexLayout::new(vec![
@@ -73,18 +60,8 @@ impl Renderable for Sprite
         vec![0,1,2,2,3,0]
     }
 
-    fn get_size(&self) -> &[i32;2]
-    {
-        &self.size
-    }
-
     fn get_draw_type() -> u32
     {
         WebGl2RenderingContext::TRIANGLES
-    }
-
-    fn get_uid(&self) -> &u32
-    {
-        &self.uid
     }
 }

@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::any::TypeId;
 use std::any::Any;
 use crate::graphics::renderable::{Renderable,RenderableConfig};
+use crate::graphics::sprite::Sprite;
 use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
 use crate::util::util::{world_position_to_screen_translation,screen_translation_to_world_position};
@@ -26,6 +27,7 @@ pub struct RenderState
     camera: Camera,
     vertex_buffer_map: HashMap<TypeId,Box<dyn Any>>,
     transform_buffer: TransformBuffer,
+    uid_to_size_map: HashMap<u32,[i32;2]>, //Size of renderables
     next_uid: u32
 }
 
@@ -77,21 +79,22 @@ impl RenderState
             camera: Camera::new(canvas.width(),canvas.height()),
             vertex_buffer_map: HashMap::new(),
             transform_buffer: transform_buffer,
-            next_uid: 0
+            next_uid: 0,
+            uid_to_size_map: HashMap::new(),
         })
     }
 
-    pub fn request_new_renderable_with_existing_transform<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, reuse_existing_transform_for_uid: u32) -> Option<T>
+    pub fn request_new_renderable_with_existing_transform<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, reuse_existing_transform_for_uid: u32) -> Option<u32>
     {
-        self.request_new_renderable_impl(renderable_config,&Some(reuse_existing_transform_for_uid))
+        self.request_new_renderable_impl::<T>(renderable_config,&Some(reuse_existing_transform_for_uid))
     }
 
-    pub fn request_new_renderable<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig) -> Option<T>
+    pub fn request_new_renderable<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig) -> Option<u32>
     {
-        self.request_new_renderable_impl(renderable_config,&None::<u32>)
+        self.request_new_renderable_impl::<T>(renderable_config,&None::<u32>)
     }
 
-    fn request_new_renderable_impl<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, reuse_existing_transform_for_uid: &Option<u32>) -> Option<T>
+    fn request_new_renderable_impl<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, reuse_existing_transform_for_uid: &Option<u32>) -> Option<u32>
     {
         let texture_dimensions = match self.get_texture(renderable_config.get_texture_index())
         {
@@ -132,7 +135,9 @@ impl RenderState
         //immediately submit data to the buffer. This will only be done once.
         self.submit_data::<T>(&new_uid, &T::get_vertices(&copied_renderable_config, transform_index));
 
-        Some(T::new(self.next_uid,*copied_renderable_config.get_size()))
+        self.uid_to_size_map.insert(new_uid.clone(),copied_renderable_config.get_size().clone());
+
+        Some(new_uid)
     }
 
     //TODO: later move this
@@ -224,6 +229,28 @@ impl RenderState
     pub fn get_scale(&self, uid: &u32) -> Option<&glm::Vec3>
     {
         self.transform_buffer.get_scale(uid)
+    }
+
+    pub fn get_size(&self, uid: &u32) -> Option<&[i32;2]>
+    {
+        self.uid_to_size_map.get(uid)
+    }
+
+    pub fn get_scaled_size(&self, uid: &u32) -> Option<glm::Vec3>
+    {
+        let scale = match self.get_scale(uid)
+        {
+            Some(s) => s,
+            None => { return None; }
+        };
+
+        let size = match self.get_size(uid)
+        {
+            Some(s) => s,
+            None => { return None; }
+        };
+
+        Some(glm::vec3(size[0] as f32 * scale.x, size[1] as f32 * scale.y, 1.0))
     }
 
     pub fn bind_and_update_transform_buffer_data(&mut self)
@@ -408,7 +435,18 @@ impl RenderState
         self.camera.get_canvas_height()
     }
 
-    pub fn clear_buffer<T: Renderable + 'static>(&mut self)
+    pub fn clear(&mut self)
+    {
+        self.next_uid = 0;
+        self.uid_to_size_map.clear();
+
+        self.transform_buffer.clear();
+        
+        //TODO: clear other buffers when we can
+        self.clear_buffer::<Sprite>();
+    }
+
+    fn clear_buffer<T: Renderable + 'static>(&mut self)
     {
         let buffer = match Self::get_mapped_buffer::<T>(&mut self.vertex_buffer_map)
         {
@@ -418,10 +456,4 @@ impl RenderState
 
         buffer.clear();
     }
-
-    pub fn clear_transform_buffer(&mut self)
-    {
-        self.transform_buffer.clear();
-    }
-
 }
