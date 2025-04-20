@@ -101,9 +101,16 @@ impl RenderState
             None => { return None; }
         };
 
+        let world_size_x = self.get_world_size_x(); //In pixels
+        let world_size_y = self.get_world_size_y();
+        let world_size = [world_size_x as f32, world_size_y as f32];
+
         //Copy the RC to make it mutable
         let mut copied_renderable_config = renderable_config.clone();
+
+        //Set mutable properties
         copied_renderable_config.set_texture_dimensions(&texture_dimensions);
+        copied_renderable_config.set_world_size_ratio(&world_size);
 
         //If an existing transform is requested, use it, otherwise:
         //Request a transform from the buffer. It lives there in RAM. The buffer will handle moving the data over to uniforms.
@@ -114,7 +121,7 @@ impl RenderState
         };
 
         //Create a renderable
-        let mut renderable = T::new(transform_location);
+        let mut renderable = T::new(transform_location,*copied_renderable_config.get_size());
 
         //immediately submit its data to the buffer. This will only be done once.
         let range = match self.submit_data(&renderable,&copied_renderable_config)
@@ -123,6 +130,7 @@ impl RenderState
             None => { return None }
         };
 
+        //Set mutable properties of the renderable that aren't known at creation time
         renderable.set_element_location(range);
 
         //Return the renderable. The owner of the renderable can later submit it to be drawn, so we will know which buffer to use.

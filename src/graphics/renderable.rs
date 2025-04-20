@@ -15,21 +15,16 @@ pub struct RenderableConfig
 
 impl RenderableConfig
 {
-    pub fn new(tex_coordinates: [i32;2], sprite_size: [i32;2], current_world_size: [f32;2], tex_index: u32) -> Self 
+    pub fn new(tex_coordinates: [i32;2], sprite_size: [i32;2], tex_index: u32) -> Self 
     {
         Self
         {
             texture_coordinates :tex_coordinates,
-            texture_dimensions: [1,1], //Updated later
+            texture_dimensions: [1,1], //Updated by render_state later
             size: sprite_size,
-            world_size_ratio: Self::calculate_world_size_ratio(&sprite_size,&current_world_size),
+            world_size_ratio: [1.0,1.0], //Updated by render_state later
             texture_index: tex_index
         }
-    }
-
-    fn calculate_world_size_ratio(sprite_size: &[i32;2], current_world_size: &[f32;2]) -> [f32;2]
-    {
-        [sprite_size[0] as f32 / current_world_size[0],sprite_size[1] as f32 / current_world_size[1]]
     }
 
     pub fn get_texture_index(&self) -> u32
@@ -62,6 +57,10 @@ impl RenderableConfig
         self.texture_dimensions = *dimensions;
     }
 
+    pub fn set_world_size_ratio(&mut self, current_world_size: &[f32;2])
+    {
+        self.world_size_ratio = [self.size[0] as f32 / current_world_size[0],self.size[1] as f32 / current_world_size[1]];
+    }
 }
 
 //A Renderable is:
@@ -70,7 +69,7 @@ impl RenderableConfig
 // Using this data, the renderer can set up a buffer for a renderable type and hold the data, passing back a lightweight handle that knows where the data is.
 pub trait Renderable
 {
-    fn new(transform_location: u32) -> Self where Self: Sized;
+    fn new(transform_location: u32, size: [i32;2]) -> Self where Self: Sized;
 
     fn init_vertex_layout(context: &WebGl2RenderingContext) where Self: Sized
     {
@@ -124,4 +123,6 @@ pub trait Renderable
     fn set_element_location(&mut self, range: Range<i32>);
 
     fn get_draw_type() -> u32 where Self: Sized;
+
+    fn get_size(&self) -> &[i32;2];
 }

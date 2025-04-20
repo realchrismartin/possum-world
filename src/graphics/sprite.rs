@@ -11,17 +11,19 @@ use std::ops::Range;
 pub struct Sprite
 {
     element_location: Option<Range<i32>>,
-    transform_location: u32
+    transform_location: u32,
+    size: [i32;2]
 }
 
 impl Renderable for Sprite
 {
-    fn new(transform_location: u32) -> Self 
+    fn new(transform_location: u32, size: [i32;2]) -> Self 
     {
         Self 
         {
             element_location: None,
             transform_location,
+            size: size
         }
     }
 
@@ -83,6 +85,11 @@ impl Renderable for Sprite
     fn set_element_location(&mut self, loc: Range<i32>) 
     {
         self.element_location = Some(loc);
+    }
+
+    fn get_size(&self) -> &[i32;2]
+    {
+        &self.size
     }
 
     fn get_transform_location(&self) -> u32 

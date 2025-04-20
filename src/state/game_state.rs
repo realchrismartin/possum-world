@@ -37,25 +37,12 @@ impl GameState
         render_state.clear_buffer::<Sprite>();
         render_state.clear_transform_buffer();
 
-        let world_size_x = render_state.get_world_size_x(); //In pixels
-        let world_size_y = render_state.get_world_size_y();
-
-        let world_size = [world_size_x as f32, world_size_y as f32];
-
         //The default sprite size for a tile is 100 x 100
         //Determine how many tiles we need to cover the canvas
-        //TODO: not precise.
-        let tile_count_x = world_size_x / 100;
-        let tile_count_y = world_size_y / 100;
+        let tile_count_x = render_state.get_world_size_x() / 100;
+        let tile_count_y = render_state.get_world_size_y() / 100;
 
         log(format!("Resize requires tiles: {}x{}",tile_count_x,tile_count_y).as_str());
-
-        //Scale of 1.0 fills the screen (see sprite.rs default vertices) as long as we have a square viewport.
-        //We want a scale that will make the tile match the tile size
-        let scale_x = 1.0 / tile_count_x as f32;
-        let scale_y = 1.0 / tile_count_y as f32;
-
-        log(format!("Using scale {}x{}",scale_x,scale_y).as_str());
 
         let x_placement_offset = 100 as f32;
         let y_placement_offset = 100 as f32; 
@@ -70,9 +57,9 @@ impl GameState
         let mut rng = rand::thread_rng();
 
         let use_sprites  = vec![
-            RenderableConfig::new([2,2],[100,100],world_size,1), //ground
-            RenderableConfig::new([105,2],[100,100],world_size,1), //background
-            RenderableConfig::new([207,2],[100,100],world_size,1), //underground
+            RenderableConfig::new([2,2],[100,100],1), //ground
+            RenderableConfig::new([105,2],[100,100],1), //background
+            RenderableConfig::new([207,2],[100,100],1), //underground
         ];
 
         for i in 0..(tile_count_y * tile_count_x) +1
@@ -104,7 +91,6 @@ impl GameState
         for tile in &self.tiles
         {
             render_state.set_position(tile, glm::vec3(next_x_placement as f32,next_y_placement as f32, z));
-            //render_state.set_scale(tile, glm::vec3(scale_x,scale_y,1.0));
 
             next_x_placement += x_placement_offset as f32;
 
@@ -125,7 +111,7 @@ impl GameState
         for i in 0..5
         {
                 //TODO: hardcoded
-                let y = 600;
+                let y = 300;
                 let x = rng.gen_range(0..world_size_x); 
 
             z -= 0.1;
@@ -148,13 +134,13 @@ impl GameState
                 None => {continue; }
             };
 
-            //render_state.set_scale_with_index(transform_loc, glm::vec3(scale_x * 2.0,scale_y * 2.0 ,1.0));
-
-            if !first
+            if first
             {
-            } else {
                 //Barry is larger than the other posses
-                //render_state.set_scale_with_index(transform_loc, glm::vec3(scale_x * 2.0,scale_y * 2.0,1.0));
+                render_state.set_scale_with_index(transform_loc, glm::vec3(3.0,3.0,1.0));
+            } else
+            {
+                render_state.set_scale_with_index(transform_loc, glm::vec3(2.0,2.0,1.0));
             }
 
             first = false;
@@ -168,31 +154,27 @@ impl GameState
 
         let facing = rng.gen_range(0..2) > 0;
 
-        let world_size_x = render_state.get_world_size_x(); //In pixels
-        let world_size_y = render_state.get_world_size_y();
-        let world_size = [world_size_x as f32, world_size_y as f32];
-
         let possum = match AnimatedEntity::new(render_state,50.0,
             
             vec![
-                RenderableConfig::new([2,81],[58,18],world_size,0),
-                RenderableConfig::new([62,81],[58,18],world_size,0),
-                RenderableConfig::new([122,81],[58,18],world_size,0),
-                RenderableConfig::new([182,81],[58,18],world_size,0),
-                RenderableConfig::new([242,81],[58,18],world_size,0),
-                RenderableConfig::new([302,81],[58,18],world_size,0),
-                RenderableConfig::new([362,81],[58,18],world_size,0),
-                RenderableConfig::new([422,81],[58,18],world_size,0),
+                RenderableConfig::new([2,81],[58,18],0),
+                RenderableConfig::new([62,81],[58,18],0),
+                RenderableConfig::new([122,81],[58,18],0),
+                RenderableConfig::new([182,81],[58,18],0),
+                RenderableConfig::new([242,81],[58,18],0),
+                RenderableConfig::new([302,81],[58,18],0),
+                RenderableConfig::new([362,81],[58,18],0),
+                RenderableConfig::new([422,81],[58,18],0),
             ],
             vec![
-                RenderableConfig::new([2,21],[58,18],world_size,0),
-                RenderableConfig::new([62,21],[58,18],world_size,0),
-                RenderableConfig::new([122,21],[58,18],world_size,0),
-                RenderableConfig::new([182,21],[58,18],world_size,0),
-                RenderableConfig::new([242,21],[58,18],world_size,0),
-                RenderableConfig::new([302,21],[58,18],world_size,0),
-                RenderableConfig::new([362,21],[58,18],world_size,0),
-                RenderableConfig::new([422,21],[58,18],world_size,0),
+                RenderableConfig::new([2,21],[58,18],0),
+                RenderableConfig::new([62,21],[58,18],0),
+                RenderableConfig::new([122,21],[58,18],0),
+                RenderableConfig::new([182,21],[58,18],0),
+                RenderableConfig::new([242,21],[58,18],0),
+                RenderableConfig::new([302,21],[58,18],0),
+                RenderableConfig::new([362,21],[58,18],0),
+                RenderableConfig::new([422,21],[58,18],0),
             ],
             facing
         )
@@ -246,7 +228,6 @@ impl GameState
                     p.set_facing(true);
                 }
 
-                /*
                 if p.get_facing_right() 
                 {
                     movement_direction = glm::vec2(1.0,0.0);
@@ -254,7 +235,6 @@ impl GameState
                 {
                     movement_direction = glm::vec2(-1.0,0.0);
                 }
-                */
             } else 
             {
                 //Set the move direction based on where the mouse is
@@ -362,7 +342,7 @@ impl GameState
 
         let adjusted_floor_y = floor_y + (size.y / 2.0);
 
-        if position.y >= adjusted_floor_y
+        if position.y > adjusted_floor_y
         {
             gravity_affected = true;
             position.y -= (delta_time / 5.0) * 10.0;
@@ -373,9 +353,6 @@ impl GameState
             }
         }
 
-        //TODO: this is bugged somehow, player poss isn't falling properly, but more likely this has to do with scaling.
-        //Scaling up the small posses makes this happen to them too
-        //Once a poss moves, they get unstuck..
         if (!gravity_affected) && movement_direction.x == 0.0 && movement_direction.y == 0.0
         {
             animated_entity.set_animating(false);

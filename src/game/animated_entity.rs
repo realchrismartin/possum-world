@@ -1,14 +1,12 @@
 use crate::state::render_state::RenderState;
-use crate::graphics::renderable::RenderableConfig;
+use crate::graphics::renderable::{Renderable,RenderableConfig};
 use crate::graphics::sprite::Sprite;
 
 pub struct AnimatedEntity
 {
     sprite_index: usize,
     sprites_left: Vec<Sprite>,
-    sprites_left_sizes: Vec<i32>,
     sprites_right: Vec<Sprite>,
-    sprites_right_sizes: Vec<i32>,
     shared_transform_index: Option<u32>,
     animating: bool,
     facing_right: bool,
@@ -32,8 +30,6 @@ impl AnimatedEntity
 
         let mut left_sprites = Vec::<Sprite>::new();
         let mut right_sprites = Vec::<Sprite>::new();
-        let mut left_sprites_sizes = Vec::<i32>::new();
-        let mut right_sprites_sizes = Vec::<i32>::new();
 
         //Create all of the sprites but only use one transform index.
         let transform = render_state.request_new_transform();
@@ -46,10 +42,6 @@ impl AnimatedEntity
                 None => { continue; }
             };
             left_sprites.push(sprite);
-
-            let size = config.get_size();
-            left_sprites_sizes.push(size[0]);
-            left_sprites_sizes.push(size[1]);
         }
 
         for config in &right_sprite_configs
@@ -62,10 +54,6 @@ impl AnimatedEntity
             };
 
             right_sprites.push(sprite);
-
-            let size = config.get_size();
-            right_sprites_sizes.push(size[0]);
-            right_sprites_sizes.push(size[1]);
         }
 
         if facing_right && right_sprites.len() <= 0
@@ -83,8 +71,6 @@ impl AnimatedEntity
             sprite_index: 0,
             sprites_left: left_sprites,
             sprites_right: right_sprites,
-            sprites_left_sizes: left_sprites_sizes,
-            sprites_right_sizes: right_sprites_sizes,
             shared_transform_index: Some(transform),
             animating: false,
             time_since_frame_change: 0.0,
@@ -201,32 +187,14 @@ impl AnimatedEntity
             None => { return None; }
         };
 
-        let mut size_x = self.sprites_right_sizes[self.sprite_index] as f32;
-        let mut size_y = self.sprites_right_sizes[self.sprite_index+1] as f32;
-
-        if !self.facing_right
+        let sprite = match self.get_renderable()
         {
-            size_x = self.sprites_left_sizes[self.sprite_index] as f32;
-            size_y = self.sprites_left_sizes[self.sprite_index+1] as f32;
-        }
+            Some(s) => s,
+            None => { return None; }
+        };
 
-        /*
-        let world_size_x = render_state.get_world_size_x() as f32;
-        let world_size_y = render_state.get_world_size_y() as f32;
+        let sprite_size = sprite.get_size();
 
-        //Assume Y is 1.0 (exact view height), x is less than that
-        let mut current_pixel_size_x = (size_x / size_y) * world_size_x * scale.x;
-        let mut current_pixel_size_y = world_size_y * scale.y;
-
-        //Use the sizes to infer the dimensions of the sprite on the canvas
-        if size_x > size_y
-        {
-            //X is 1.0 (exact view width), y is less than that
-            current_pixel_size_x = world_size_x * scale.x;
-            current_pixel_size_y = (size_y / size_x) * world_size_y * scale.y
-        }
-        */
-
-        Some(glm::vec3(size_x * scale.x, size_y * scale.y, 1.0))
+        Some(glm::vec3(sprite_size[0] as f32 * scale.x, sprite_size[1] as f32 * scale.y, 1.0))
     }
 }
