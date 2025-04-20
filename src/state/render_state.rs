@@ -187,7 +187,7 @@ impl RenderState
 
     pub fn set_position_with_index(&mut self, transform_index: u32, position : glm::Vec3)
     {
-        self.set_translation_with_index(transform_index, world_position_to_screen_translation(&position,
+        self.transform_buffer.set_translation(transform_index, world_position_to_screen_translation(&position,
             &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)));
     }
 
@@ -201,11 +201,6 @@ impl RenderState
 
         Some(screen_translation_to_world_position(&translation,
             &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)))
-    }
-
-    fn set_translation_with_index(&mut self, transform_index: u32, translation: glm::Vec3)
-    {
-        self.transform_buffer.set_translation(transform_index, translation);
     }
 
     pub fn set_rotation_with_index(&mut self, transform_index: u32, rotation: f32)
