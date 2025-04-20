@@ -95,11 +95,9 @@ impl Game
         render_state.submit_camera_uniforms(); 
         render_state.bind_and_update_transform_buffer_data();
 
-        //Copy data into a batch to be drawn
-        let batch = self.game_state.get_renderable_batch();
-
+        //Copy ranges into a batch to be drawn
         //Draw everything in the batch.
-        batch.draw(&render_state);
+        render_state.draw(&self.game_state.get_renderable_sprite_batch());
     }
 
     pub fn process_keypress_event(&mut self, pressed: bool, code : &str)

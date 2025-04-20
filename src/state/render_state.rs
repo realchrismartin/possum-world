@@ -16,6 +16,7 @@ use crate::graphics::renderable::{Renderable,RenderableConfig};
 use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
 use crate::util::util::{world_position_to_screen_translation,screen_translation_to_world_position};
+use crate::graphics::draw_batch::DrawBatch;
 use std::ops::Range;
 
 pub struct RenderState
@@ -300,7 +301,7 @@ impl RenderState
         context.uniform_matrix4fv_with_f32_array(vp_location.as_ref(),false,vp_converted.as_slice());
     }
 
-    pub fn draw<T: Renderable + 'static>(&self, renderables: &Vec<T>)
+    pub fn draw<T: Renderable + 'static>(&self, draw_batch: &DrawBatch<T>)
     {
         let buffer = match Self::get_const_mapped_buffer::<T>(&self.vertex_buffer_map)
         {
@@ -310,13 +311,8 @@ impl RenderState
 
         buffer.bind(&self.context);
 
-        for renderable in renderables
+        for range in draw_batch.get_ranges()
         {
-            let range = match renderable.get_element_location()
-            {
-                Some(r) => r,
-                None => { continue; }
-            };
 
             let count = range.end - range.start;
 

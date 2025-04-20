@@ -2,7 +2,7 @@ use crate::graphics::draw_batch::DrawBatch;
 use crate::state::input_state::InputState;
 use crate::state::render_state::RenderState;
 
-use crate::graphics::renderable::{Renderable,RenderableConfig};
+use crate::graphics::renderable::RenderableConfig;
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
 use rand::Rng;
@@ -298,18 +298,18 @@ impl GameState
         }
     }
 
-    pub fn get_renderable_batch(&mut self) -> DrawBatch
+    pub fn get_renderable_sprite_batch(&mut self) -> DrawBatch<Sprite>
     {
-        let mut batch = DrawBatch::new();
+        let mut batch = DrawBatch::<Sprite>::new();
 
         for i in &self.tiles
         {
-           batch.add_sprite(i);
+           batch.add(i);
         }
 
         for i in &self.texts
         {
-           batch.add_sprite(i);
+           batch.add(i);
         }
 
         for p in &self.friendly_possums
@@ -320,7 +320,7 @@ impl GameState
                 None => {continue; }
             };
 
-           batch.add_sprite(r);
+           batch.add(r);
         }
 
         batch

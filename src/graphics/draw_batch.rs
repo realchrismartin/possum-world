@@ -1,31 +1,37 @@
-use crate::graphics::sprite::Sprite;
-use crate::state::render_state::RenderState;
+use crate::graphics::renderable::Renderable;
+use std::marker::PhantomData;
+use std::ops::Range;
 
-//TODO: add other renderable types here.
-
-pub struct DrawBatch
+pub struct DrawBatch<T>
 {
-    sprites: Vec<Sprite>
+    _phantom: PhantomData<T>, //Hint that we will use the type T later
+    ranges: Vec<Range<i32>>
 }
 
-impl DrawBatch
+impl<T: Renderable> DrawBatch<T>
 {
     pub fn new() -> Self
     {
         Self 
         {
-            sprites: Vec::new()
+            _phantom: PhantomData,
+            ranges: Vec::new()
         }
     }
 
-    pub fn add_sprite(&mut self, sprite: &Sprite)
+    pub fn add(&mut self, renderable: &dyn Renderable)
     {
-        self.sprites.push(sprite.clone());
+        let range = match renderable.get_element_location()
+        {
+            Some(r) => r,
+            None => { return; }
+        };
+
+        self.ranges.push(range.clone());
     }
 
-    pub fn draw(&self, render_state: &RenderState)
+    pub fn get_ranges(&self) -> &Vec<Range<i32>>
     {
-        render_state.draw(&self.sprites);
+        &self.ranges
     }
-
 }
