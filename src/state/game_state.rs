@@ -340,11 +340,7 @@ impl GameState
             animated_entity.set_facing(false);
         }
 
-        //Vertical movement
-        if movement_direction.y > 0.0
-        {
-            position.y += (delta_time / 5.0) * 200.0;
-        }
+        //"Gravity"
 
         let size = match render_state.get_scaled_size(&uid) 
         {
@@ -352,14 +348,10 @@ impl GameState
             None => {return;}
         };
 
-        //"Gravity"
-        let mut gravity_affected = false;
-
         let adjusted_floor_y = floor_y + (size.y / 2.0);
 
         if position.y > adjusted_floor_y
         {
-            gravity_affected = true;
             position.y -= (delta_time / 5.0) * 10.0;
 
             if position.y < adjusted_floor_y
@@ -368,18 +360,18 @@ impl GameState
             }
         }
 
-        if (!gravity_affected) && movement_direction.x == 0.0 && movement_direction.y == 0.0
+        if movement_direction.x != 0.0
+        {
+            animated_entity.set_animating(true);
+        } else
         {
             animated_entity.set_animating(false);
             animated_entity.reset_animation();
-        } else
-        {
-            animated_entity.set_animating(true);
         }
 
         //TODO: arbitrary speed/ distance
-        //TODO: ignoring Y movement
         position.x += (delta_time / 5.0) * movement_direction.x;
+        position.y += (delta_time / 5.0) * movement_direction.y;
 
         render_state.set_position(&uid,position);
     }

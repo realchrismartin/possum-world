@@ -213,13 +213,10 @@ impl RenderState
             &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)))
     }
 
-    /*
-    //NB: unused for now
-    pub fn set_rotation(&mut self, uid: u32, rotation: f32)
+    pub fn set_rotation(&mut self, uid: &u32, rotation: f32)
     {
         self.transform_buffer.set_rotation(uid, rotation);
     }
-    */
 
     pub fn set_scale(&mut self, uid: &u32, scale: glm::Vec3)
     {
