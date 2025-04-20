@@ -233,13 +233,8 @@ impl RenderState
     //0,max_y is the top left corner
     pub fn set_position<T: Renderable + 'static>(&mut self, renderable: &T, position : glm::Vec3)
     {
-        self.set_translation(renderable, world_position_to_screen_translation(&position,
+        self.transform_buffer.set_translation(renderable.get_transform_location(), world_position_to_screen_translation(&position,
             &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)));
-    }
-
-    fn set_translation<T: Renderable + 'static>(&mut self, renderable: &T, translation: glm::Vec3)
-    {
-        self.transform_buffer.set_translation(renderable.get_transform_location(), translation);
     }
 
     pub fn set_rotation<T: Renderable + 'static>(&mut self, renderable: &T, rotation: f32)
