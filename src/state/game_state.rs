@@ -121,7 +121,7 @@ impl GameState
        let mut rng = rand::thread_rng();
        let mut z = 2.0;
 
-        for _i in 0..30
+        for _i in 0..1
         {
                 //TODO: hardcoded
                 let y = 300;

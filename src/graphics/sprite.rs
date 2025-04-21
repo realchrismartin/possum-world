@@ -23,10 +23,8 @@ impl Renderable for Sprite
 
     fn get_vertices(renderable_config: &RenderableConfig, transform_index: u32) -> Vec<f32>
     {
-        let size = renderable_config.get_size(); //pixels
-
         let tex_coords = get_rectangular_texture_coordinates(renderable_config.get_texture_coordinates(), 
-            size, renderable_config.get_texture_dimensions());
+            renderable_config.get_size(), renderable_config.get_texture_dimensions());
 
         //Local are set according to how big the sprite should be in comparison to the world size.
         let x_axis = renderable_config.get_world_size_ratio()[0];
