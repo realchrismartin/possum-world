@@ -1,15 +1,15 @@
 use web_sys::WebGl2RenderingContext;
 use crate::graphics::vertex_layout::VertexLayout;
+use crate::RenderState;
 
+//Provides params for a single renderable.
 //This struct may contain more data than is needed for any given Renderable. TODO: address?
 #[derive(Clone)]
 pub struct RenderableConfig
 {
     texture_coordinates: [i32;2],
-    texture_dimensions: [i32;2], //TODO: storing this repeatedly/unnecessary
     size: [i32;2],
-    world_size_ratio: [f32;2],
-    texture_index: u32,
+    texture_index: u32
 }
 
 impl RenderableConfig
@@ -19,9 +19,7 @@ impl RenderableConfig
         Self
         {
             texture_coordinates :tex_coordinates,
-            texture_dimensions: [1,1], //Updated by render_state later
             size: sprite_size,
-            world_size_ratio: [1.0,1.0], //Updated by render_state later
             texture_index: tex_index
         }
     }
@@ -39,26 +37,6 @@ impl RenderableConfig
     pub fn get_size(&self) -> &[i32;2]
     {
         &&self.size
-    }
-
-    pub fn get_texture_dimensions(&self) -> &[i32;2]
-    {
-        &&self.texture_dimensions
-    }
-
-    pub fn get_world_size_ratio(&self) -> &[f32;2]
-    {
-        &&self.world_size_ratio
-    }
-
-    pub fn set_texture_dimensions(&mut self, dimensions: &[i32;2])
-    {
-        self.texture_dimensions = *dimensions;
-    }
-
-    pub fn set_world_size_ratio(&mut self, current_world_size: &[f32;2])
-    {
-        self.world_size_ratio = [self.size[0] as f32 / current_world_size[0],self.size[1] as f32 / current_world_size[1]];
     }
 }
 
@@ -100,8 +78,8 @@ pub trait Renderable
         Self::get_vertex_layout().get_elements().iter().map(|element| element.size ).sum::<i32>()
     }
 
-    //Given a renderable config, statically generate vertices for this renderable
-    fn get_vertices(renderable_config: &RenderableConfig, transform_index: u32) -> Vec<f32> where Self: Sized;
+    //Given the current render state and a renderable config to get vertices for, statically generate vertices for the renderable
+    fn get_vertices(render_state: &RenderState, renderable_config: &RenderableConfig, model_matrix_transform_index: u32) -> Vec<f32> where Self: Sized;
 
     //Given a renderable config, statically generate indices for this renderable
     //This has to always be the same for any given Renderable type (ie consistent for that type)

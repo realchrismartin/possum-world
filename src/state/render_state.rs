@@ -102,25 +102,13 @@ impl RenderState
             None => { return None; }
         };
 
-        let world_size_x = self.get_world_size_x(); //In pixels
-        let world_size_y = self.get_world_size_y();
-        let world_size = [world_size_x as f32, world_size_y as f32];
-
-        //Copy the RC to make it mutable
-        let mut copied_renderable_config = renderable_config.clone();
-
-        //Set mutable properties
-        copied_renderable_config.set_texture_dimensions(&texture_dimensions);
-        copied_renderable_config.set_world_size_ratio(&world_size);
-
         self.next_uid += 1;
 
         let new_uid = self.next_uid.clone();
 
         //If an existing transform is requested, use it, otherwise:
         //Request a transform from the buffer. It lives there in RAM. The buffer will handle moving the data over to uniforms.
-
-        let transform_index = match reuse_existing_transform_for_uid
+        let model_matrix_transform_index = match reuse_existing_transform_for_uid
         {
             Some(t) => {
                 //An existing UID was provided, use this UID to find an existing transform index to use.
@@ -133,9 +121,9 @@ impl RenderState
         };
 
         //immediately submit data to the buffer. This will only be done once.
-        self.submit_data::<T>(&new_uid, &T::get_vertices(&copied_renderable_config, transform_index));
+        self.submit_data::<T>(&new_uid, &T::get_vertices(&self, &renderable_config, model_matrix_transform_index));
 
-        self.uid_to_size_map.insert(new_uid.clone(),copied_renderable_config.get_size().clone());
+        self.uid_to_size_map.insert(new_uid.clone(),renderable_config.get_size().clone());
 
         Some(new_uid)
     }
@@ -325,7 +313,7 @@ impl RenderState
         VertexBuffer::<T>::unbind(&self.context);
     }
 
-    fn get_texture(&self, index: u32) -> Option<&Texture>
+    pub fn get_texture(&self, index: u32) -> Option<&Texture>
     {
         if !self.textures.contains_key(&index)
         {
