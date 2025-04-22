@@ -1,18 +1,19 @@
-use crate::graphics::draw_batch::DrawBatch;
-use crate::state::input_state::InputState;
 use crate::state::render_state::RenderState;
 
 use crate::graphics::renderable::RenderableConfig;
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
+use crate::util::logging::log;
 use rand::Rng;
 
 pub struct GameState
 {
-    friendly_possums: Vec<AnimatedEntity>,
+    player_possums: Vec<AnimatedEntity>,
+    npc_possums: Vec<AnimatedEntity>,
     tiles: Vec<u32>,
     texts: Vec<u32>,
-    floor_y: f32
+    next_possum_z: f32,
+    player_movement_direction: glm::Vec2
 }
 
 impl GameState
@@ -21,59 +22,76 @@ impl GameState
     {
         Self
         {
-            friendly_possums: Vec::new(),
+            player_possums: Vec::new(),
+            npc_possums: Vec::new(),
             tiles: Vec::new(),
             texts: Vec::new(),
-            floor_y: 200.0
+            next_possum_z: 2.0,
+            player_movement_direction: glm::vec2(0.0,0.0)
         }
     }
 
-    pub fn get_renderable_sprite_batch(&mut self) -> DrawBatch<Sprite>
+    pub fn get_player_movement_direction(&self) -> &glm::Vec2
     {
-        let mut batch = DrawBatch::<Sprite>::new();
+        &self.player_movement_direction
+    }
 
-        for i in &self.tiles
-        {
-           batch.add(i);
-        }
+    pub fn set_player_movement_direction(&mut self, direction: &glm::Vec2)
+    {
+        self.player_movement_direction = *direction;
+    }
 
-        for i in &self.texts
-        {
-           batch.add(i);
-        }
+    pub fn get_tiles(&self) -> &Vec<u32>
+    {
+        &self.tiles
+    }
 
-        for p in &self.friendly_possums
-        {
-            let i = match p.get_renderable_uid()
-            {
-                Some(re) => re,
-                None => { continue; }
-            };
+    pub fn get_texts(&self) -> &Vec<u32>
+    {
+        &self.texts
+    }
 
-           batch.add(i);
-        }
+    pub fn get_player_possums(&self) -> &Vec<AnimatedEntity>
+    {
+        &self.player_possums
+    }
 
-        batch
+    pub fn get_npc_possums(&self) -> &Vec<AnimatedEntity>
+    {
+        &self.npc_possums
+    }
+
+    pub fn get_mutable_player_possums(&mut self) -> &mut Vec<AnimatedEntity>
+    {
+        &mut self.player_possums
+    }
+
+    pub fn get_mutable_npc_possums(&mut self) -> &mut Vec<AnimatedEntity>
+    {
+        &mut self.npc_possums
     }
 
     pub fn init(&mut self, render_state: &mut RenderState)
     {
-        render_state.clear();
-        self.friendly_possums.clear();
+        self.player_possums.clear();
+        self.npc_possums.clear();
         self.tiles.clear();
         self.texts.clear();
 
+        self.next_possum_z = 1.9;
+
         self.generate_tile_grid(render_state);
         self.generate_logo(render_state);
-        self.generate_possums(render_state);
+        self.generate_player_possums(render_state);
+        self.generate_npc_possums(render_state);
     }
 
     fn generate_tile_grid(&mut self, render_state: &mut RenderState)
     {
         //The default sprite size for a tile is 100 x 100
         //Determine how many tiles we need to cover the canvas
-        let world_size_x = render_state.get_world_size_x();
-        let world_size_y = render_state.get_world_size_y();
+        let world_size_x = render_state.get_canvas_size_x();
+        let world_size_y = render_state.get_canvas_size_y();
         let tile_count_x = world_size_x / 100;
         let tile_count_y = world_size_y / 100;
 
@@ -141,7 +159,7 @@ impl GameState
 
         //NB: 50.0 is from the extra 100 we add as padding to the canvas in index js
         //This gives us roughly the center of the canvas - won't be exact because the 100 is used for overflow (variably)
-        let logo_pos = glm::vec3((render_state.get_world_size_x() as f32 / 2.0) - 50.0, (render_state.get_world_size_y() as f32 / 1.2) + 50.0, 1.9);
+        let logo_pos = glm::vec3((render_state.get_canvas_size_x() as f32 / 2.0) - 50.0, (render_state.get_canvas_size_y() as f32 / 1.2) + 50.0, 1.9);
         let logo_scale = glm::vec3(1.0,1.0,1.0);
 
         render_state.set_scale(&logo, logo_scale);
@@ -149,23 +167,36 @@ impl GameState
         self.texts.push(logo);
     }
 
-    fn generate_possums(&mut self, render_state: &mut RenderState)
+    fn generate_player_possums(&mut self, render_state: &mut RenderState)
+    {
+        let poss = match Self::add_possum(render_state,true,self.next_possum_z)
+        {
+                Some(p) => p,
+                None => { return; }
+        };
+
+        self.player_possums.push(poss);
+        self.next_possum_z -= 0.01;
+    }
+
+    fn generate_npc_possums(&mut self, render_state: &mut RenderState)
     {
         let mut rng = rand::thread_rng();
 
-        for index in 0..rng.gen_range(4..50)
+        for _index in 0..rng.gen_range(4..50)
         {
-            let poss = match Self::add_possum(render_state,index)
+            let poss = match Self::add_possum(render_state,false,self.next_possum_z)
             {
                     Some(p) => p,
                     None => { return; }
             };
 
-            self.friendly_possums.push(poss);
+            self.npc_possums.push(poss);
+            self.next_possum_z -= 0.01;
         }
     }
 
-    fn add_possum(render_state: &mut RenderState, index: i32) -> Option<AnimatedEntity>
+    fn add_possum(render_state: &mut RenderState, isPlayer: bool, z: f32) -> Option<AnimatedEntity>
     {
         let mut rng = rand::thread_rng();
 
@@ -207,13 +238,12 @@ impl GameState
         };
         
         let scale = rng.gen_range(1.0..4.0);
-        let x = rng.gen_range(0..render_state.get_world_size_x()) as f32; 
+        let x = rng.gen_range(200..render_state.get_canvas_size_x() - 100) as f32; 
         let y = 600.0; //Hardcoded
-        let z = 1.9 - (index as f32 * 0.1); //Hardcoded. Above 1.9, the BG will win.
 
         render_state.set_position(uid,glm::vec3(x,y,z));
-        
-        if index == 0
+
+        if isPlayer
         {
             //Barry is lorger than the other posses
             render_state.set_scale(uid, glm::vec3(5.0,5.0,1.0));
@@ -223,147 +253,5 @@ impl GameState
         }
 
         Some(possum)
-    }
-
-    pub fn update(&mut self, render_state: &mut RenderState, input_state: &mut InputState, delta_time: f32)
-    {
-        let x_bound = render_state.get_world_size_x();
-
-        let mut index = 0;
-        for p in &mut self.friendly_possums
-        {
-            let mut movement_direction = glm::vec2(0.0,0.0);
-            
-            //Rudimentary AI
-            if index > 0
-            {
-                let s = match p.get_renderable_uid()
-                {
-                    Some(s) => s,
-                    None => {continue;}
-                };
-
-                let pos = match render_state.get_position(s)
-                {
-                    Some(p) => p,
-                    None => { continue; }
-                };
-
-                if pos.x > x_bound as f32 && p.get_facing_right()
-                {
-                    p.set_facing(false);
-                } else if pos.x < 0.0 && !p.get_facing_right() 
-                {
-                    p.set_facing(true);
-                }
-
-                if p.get_facing_right() 
-                {
-                    movement_direction = glm::vec2(1.0,0.0);
-                } else
-                {
-                    movement_direction = glm::vec2(-1.0,0.0);
-                }
-            } else 
-            {
-                //Set the move direction based on where the mouse is
-                if input_state.get_current_mouse_location().is_active()
-                {
-                    let x = render_state.get_world_size_x();                    
-
-                    if input_state.get_current_mouse_location().get_x_coordinate() > (x/2) as i32
-                    {
-                        movement_direction = glm::vec2(1.0,0.0);
-                    } else {
-                        movement_direction = glm::vec2(-1.0,0.0);
-                    }
-                }
-
-                //TODO: remove this
-                /*
-                let mut clicked = false;
-
-                while input_state.has_next_click()
-                {
-                    let click = match input_state.get_next_click()
-                    {
-
-                        Some(c) => c,
-                        None => { continue; }
-                    };
-
-                    clicked = true;
-                }
-                
-                if clicked
-                {
-                    movement_direction += glm::vec2(0.0,1.0);
-                }
-                 */
-            }
-
-            Self::update_animated_entity(p,&movement_direction,render_state,delta_time,self.floor_y);
-            index = index + 1;
-        }
-    }
-
-    fn update_animated_entity(animated_entity: &mut AnimatedEntity, movement_direction: &glm::Vec2, render_state: &mut RenderState, delta_time: f32, floor_y: f32)
-    {
-        animated_entity.update(delta_time);
-
-        let uid = match animated_entity.get_renderable_uid()
-        {
-            Some(t) => t.clone(),
-            None => {return; }
-        };
-
-        let mut position = match render_state.get_position(&uid)
-        {
-            Some(pos) => pos,
-            None => {return; }
-        };
-
-        if movement_direction.x > 0.0 && !animated_entity.get_facing_right()
-        {
-            animated_entity.set_facing(true);
-        } else if movement_direction.x < 0.0 && animated_entity.get_facing_right()
-        {
-            animated_entity.set_facing(false);
-        }
-
-        //"Gravity"
-
-        let size = match render_state.get_scaled_size(&uid) 
-        {
-            Some(s) => s,
-            None => {return;}
-        };
-
-        let adjusted_floor_y = floor_y + (size.y / 2.0);
-
-        if position.y > adjusted_floor_y
-        {
-            position.y -= (delta_time / 5.0) * 10.0;
-
-            if position.y < adjusted_floor_y
-            {
-                position.y = adjusted_floor_y;
-            }
-        }
-
-        if movement_direction.x != 0.0
-        {
-            animated_entity.set_animating(true);
-        } else
-        {
-            animated_entity.set_animating(false);
-            animated_entity.reset_animation();
-        }
-
-        //TODO: arbitrary speed/ distance
-        position.x += (delta_time / 5.0) * movement_direction.x;
-        position.y += (delta_time / 5.0) * movement_direction.y;
-
-        render_state.set_position(&uid,position);
     }
 }

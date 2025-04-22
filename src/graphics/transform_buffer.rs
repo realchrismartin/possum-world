@@ -13,7 +13,7 @@ pub struct TransformBuffer
 {
     uniform_name: String,
     transforms: Vec<Transform>,
-    ubo: WebGlBuffer,
+    ubo: Option<WebGlBuffer>,
     next_available_index: u32,
     dirty_transforms: HashSet<u32>,
     uid_to_index_map: HashMap<u32,u32>
@@ -21,37 +21,51 @@ pub struct TransformBuffer
 
 impl TransformBuffer
 {
-    pub fn new(context: &WebGl2RenderingContext, uniform_name: &str) -> Option<Self>
+    pub fn new(web_context: Option<&WebGl2RenderingContext>, uniform_name: &str) -> Self
     {
-        let buffer = match context.create_buffer()
+        let mut ubo: Option<WebGlBuffer> = None;
+
+        match web_context
         {
-            Some(b) => b,
-            None => {return None;}
+            Some(context) => {
+                match context.create_buffer()
+                {
+                    Some(buffer) => {
+                        context.bind_buffer(WebGl2RenderingContext::UNIFORM_BUFFER,Some(&buffer));
+                        context.buffer_data_with_i32(WebGl2RenderingContext::UNIFORM_BUFFER, (MAX_BUFFER_SIZE * std::mem::size_of::<f32>()) as i32, WebGl2RenderingContext::STATIC_DRAW);
+                        context.bind_buffer(WebGl2RenderingContext::UNIFORM_BUFFER,None);
+
+                        let max_matrices = context.get_parameter(WebGl2RenderingContext::MAX_UNIFORM_BLOCK_SIZE).unwrap().as_f64().unwrap() / mem::size_of::<glm::Mat4>() as f64;
+                        log(format!("Max Matrices in UBO: {}",max_matrices).as_str());
+
+                        ubo = Some(buffer);
+                    },
+                    None => {}
+                };
+            },
+            None => {}
         };
 
-        context.bind_buffer(WebGl2RenderingContext::UNIFORM_BUFFER,Some(&buffer));
-        context.buffer_data_with_i32(WebGl2RenderingContext::UNIFORM_BUFFER, (MAX_BUFFER_SIZE * std::mem::size_of::<f32>()) as i32, WebGl2RenderingContext::STATIC_DRAW);
-        context.bind_buffer(WebGl2RenderingContext::UNIFORM_BUFFER,None);
-
-        let max_matrices = context.get_parameter(WebGl2RenderingContext::MAX_UNIFORM_BLOCK_SIZE).unwrap().as_f64().unwrap() / mem::size_of::<glm::Mat4>() as f64;
-
-        log(format!("Max Matrices in UBO: {}",max_matrices).as_str());
-
-        Some(Self {
+        Self {
             uniform_name: uniform_name.to_string(),
             transforms: Vec::new(),
-            ubo: buffer,
+            ubo: ubo ,
             next_available_index: 0,
             dirty_transforms: HashSet::new(),
             uid_to_index_map: HashMap::new()
-        })
+        }
     }
 
     pub fn bind_to_shader(&self, context: &WebGl2RenderingContext, shader: &Shader)
     {
+        if self.ubo.is_none()
+        {
+            return;
+        }
+
         let block_index = context.get_uniform_block_index(shader.get_shader_program(), self.uniform_name.as_str());
         context.uniform_block_binding(shader.get_shader_program(), block_index, 0);
-        context.bind_buffer_base(WebGl2RenderingContext::UNIFORM_BUFFER, 0, Some(&self.ubo));
+        context.bind_buffer_base(WebGl2RenderingContext::UNIFORM_BUFFER, 0, Some(&self.ubo.as_ref().unwrap()));
     }
 
     pub fn unbind_from_shader(&self, context:&WebGl2RenderingContext)
@@ -62,7 +76,12 @@ impl TransformBuffer
 
     pub fn bind(&self, context: &WebGl2RenderingContext)
     {        
-       context.bind_buffer(WebGl2RenderingContext::UNIFORM_BUFFER, Some(&self.ubo));
+       if self.ubo.is_none()
+       {
+        return;
+       }
+
+       context.bind_buffer(WebGl2RenderingContext::UNIFORM_BUFFER, Some(&self.ubo.as_ref().unwrap()));
     }
 
     pub fn unbind(context: &WebGl2RenderingContext)

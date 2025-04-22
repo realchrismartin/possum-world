@@ -21,7 +21,7 @@ use crate::graphics::draw_batch::DrawBatch;
 
 pub struct RenderState
 {
-    context: WebGl2RenderingContext,
+    context: Option<WebGl2RenderingContext>,
     shader: Option<Shader>, //TODO: assumes one shader for all buffers
     textures: HashMap<u32,Texture>, 
     camera: Camera,
@@ -33,7 +33,43 @@ pub struct RenderState
 
 impl RenderState
 {
-    pub fn new(document : &Document) -> Option<RenderState>
+    pub fn new(document : &Document) -> RenderState
+    {
+        let web_context = Self::get_context_for_document(document);
+        let canvas_size = Self::get_canvas_size(document);
+        let transform_buffer = TransformBuffer::new(web_context.as_ref(),"ModelMatrixBlock");
+
+        Self
+        {
+            context: web_context,
+            shader: None::<Shader>,
+            textures: HashMap::new(),
+            camera: Camera::new(canvas_size[0],canvas_size[1]),
+            vertex_buffer_map: HashMap::new(),
+            transform_buffer: transform_buffer,
+            next_uid: 0,
+            uid_to_size_map: HashMap::new(),
+        }
+    }
+
+    fn get_canvas_size(document: &Document) -> [u32;2]
+    {
+        let canvas = match document.get_element_by_id("canvas")
+        {
+            Some(canvas) => canvas,
+            None => {return [1,1];}
+        };
+        
+        let canvas = match canvas.dyn_into::<web_sys::HtmlCanvasElement>()
+        {
+            Ok(canvas) => canvas,
+            Err(_) => {return [1,1];}
+        };
+
+        return [canvas.width(),canvas.height()];
+    }
+
+    fn get_context_for_document(document: &Document) -> Option<WebGl2RenderingContext>
     {
         let canvas = match document.get_element_by_id("canvas")
         {
@@ -59,29 +95,13 @@ impl RenderState
             Err(e) => {log_value(&e);return None;}
         };
 
-        let transform_buffer = match TransformBuffer::new(&web_context,"ModelMatrixBlock")
-        {
-            Some(buffer) => buffer,
-            None => { return None; }
-        };
-
         web_context.enable(WebGl2RenderingContext::BLEND);
         web_context.blend_func(WebGl2RenderingContext::SRC_ALPHA ,WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
         web_context.enable(WebGl2RenderingContext::DEPTH_TEST);
         web_context.clear_color(0.0, 0.0, 0.0, 1.0);
         web_context.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
 
-        Some(Self
-        {
-            context: web_context,
-            shader: None::<Shader>,
-            textures: HashMap::new(),
-            camera: Camera::new(canvas.width(),canvas.height()),
-            vertex_buffer_map: HashMap::new(),
-            transform_buffer: transform_buffer,
-            next_uid: 0,
-            uid_to_size_map: HashMap::new(),
-        })
+        Some(web_context)
     }
 
     pub fn request_new_renderable_with_existing_transform<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, reuse_existing_transform_for_uid: u32) -> Option<u32>
@@ -127,7 +147,13 @@ impl RenderState
     //TODO: later move this
     pub fn set_shader(&mut self, vertex_source :&str, frag_source: &str)
     {
-        let shader = match Shader::new(&self.context,vertex_source,frag_source)
+        let web_context = match self.context.as_ref()
+        {
+            Some(c) => c,
+            None => { return; }
+        };
+
+        let shader = match Shader::new(web_context,vertex_source,frag_source)
         {
             Ok(shader) => shader,
             Err(e) => {
@@ -137,13 +163,19 @@ impl RenderState
             }
         };
 
-        self.context.use_program(Some(shader.get_shader_program()));
+        web_context.use_program(Some(shader.get_shader_program()));
 
         self.shader = Some(shader);
     }
 
     pub fn load_texture(&mut self, index: u32, img: HtmlImageElement)
     {
+        let web_context = match self.context.as_ref()
+        {
+            Some(c) => c,
+            None => { return; }
+        };
+
         let mut the_texture = Texture::new();
 
         let shader = self.shader.as_ref().expect("No shader bound!");
@@ -152,7 +184,7 @@ impl RenderState
 
         let uniform_name = format!("u_texture_{}",index);
 
-        let loc =  match self.context.get_uniform_location(shader.get_shader_program(),uniform_name.as_str())
+        let loc =  match web_context.get_uniform_location(shader.get_shader_program(),uniform_name.as_str())
         {
             Some(l) => l,
             None => { 
@@ -161,20 +193,26 @@ impl RenderState
             }
         };
 
-        match the_texture.load(&self.context,img,next_texture)
+        match the_texture.load(web_context,img,next_texture)
         {
             Ok(_r) => { },
             Err(e) => {log_value(&e);return;}
         };
 
         self.textures.insert(index,the_texture);
-        self.context.uniform1i(Some(&loc), index as i32);
+        web_context.uniform1i(Some(&loc), index as i32);
 
     }
 
     pub fn clear_context(&self)
     {
-        let _ = &self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT);
+        let web_context = match self.context.as_ref()
+        {
+            Some(c) => c,
+            None => { return; }
+        };
+
+        let _ = web_context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT);
     }
 
     //0,0 is the bottom left corner of the world
@@ -236,18 +274,25 @@ impl RenderState
 
     pub fn bind_and_update_transform_buffer_data(&mut self)
     {
-        let shader = match &self.shader 
+        let web_context = match self.context.as_ref()
+        {
+            Some(c) => c,
+            None => { return; }
+        };
+
+
+        let shader = match self.shader.as_ref()
         {
             Some(shader) => shader,
             None => {return}
         };
 
         //Bind the UBO to the shader before rendering
-        self.transform_buffer.bind_to_shader(&self.context, shader);
+        self.transform_buffer.bind_to_shader(web_context, shader);
 
         //Recalculate matrices that are marked dirty and need recalculating.
         //Upload any matrices to the UBO that have changed.
-        self.transform_buffer.recalculate_transforms_and_update_data(&self.context);
+        self.transform_buffer.recalculate_transforms_and_update_data(web_context);
     }
 
     pub fn submit_camera_uniforms(&mut self)
@@ -257,6 +302,12 @@ impl RenderState
            return; 
         }
 
+        let web_context = match self.context.as_ref()
+        {
+            Some(c) => c,
+            None => { return; }
+        };
+
         let shader = match &self.shader 
         {
             Some(shader) => shader,
@@ -264,28 +315,33 @@ impl RenderState
         };
 
         let camera = &mut self.camera;
-        let context = &self.context;
 
         camera.recalculate();
 
-        let vp_location = context.get_uniform_location(shader.get_shader_program(),"vp_matrix");
+        let vp_location = web_context.get_uniform_location(shader.get_shader_program(),"vp_matrix");
 
         let view_projection_matrix = camera.get_view_projection_matrix();
         
         let vp_converted : glm::Mat4 = view_projection_matrix.into();
 
-        context.uniform_matrix4fv_with_f32_array(vp_location.as_ref(),false,vp_converted.as_slice());
+        web_context.uniform_matrix4fv_with_f32_array(vp_location.as_ref(),false,vp_converted.as_slice());
     }
 
     pub fn draw<T: Renderable + 'static>(&self, draw_batch: &DrawBatch<T>)
     {
+        let web_context = match self.context.as_ref()
+        {
+            Some(c) => c,
+            None => { return; }
+        };
+
         let buffer = match Self::get_const_mapped_buffer::<T>(&self.vertex_buffer_map)
         {
             Some(buffer) => buffer,
             None => {return}
         };
 
-        buffer.bind(&self.context);
+        buffer.bind(web_context);
 
         for uid in draw_batch.get_uids()
         {
@@ -303,10 +359,10 @@ impl RenderState
                 continue;
             }
 
-            self.context.draw_elements_with_i32(T::get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,range.start);
+            web_context.draw_elements_with_i32(T::get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,range.start);
         }
 
-        VertexBuffer::<T>::unbind(&self.context);
+        VertexBuffer::<T>::unbind(web_context);
     }
 
     pub fn get_texture(&self, index: u32) -> Option<&Texture>
@@ -328,7 +384,13 @@ impl RenderState
             return;
         }
 
-        let buffer : VertexBuffer<T> = match VertexBuffer::new(&self.context)
+        let web_context = match self.context.as_ref()
+        {
+            Some(c) => c,
+            None => { return; }
+        };
+
+        let buffer : VertexBuffer<T> = match VertexBuffer::new(web_context)
         {
             Some(buffer) => buffer,
             None => {return}
@@ -346,6 +408,12 @@ impl RenderState
             self.init_buffer::<T>();
         }
 
+        let web_context = match self.context.as_ref()
+        {
+            Some(c) => c,
+            None => { return; }
+        };
+
         //Now that we've perhaps lazily initialized, grab a ref to the buffer.
         let buffer = match Self::get_mapped_buffer::<T>(&mut self.vertex_buffer_map)
         {
@@ -353,9 +421,9 @@ impl RenderState
             None => { return; }
         };
 
-        buffer.bind(&self.context);
-        buffer.buffer_data(&self.context,uid,vertices);
-        VertexBuffer::<T>::unbind(&self.context);
+        buffer.bind(web_context);
+        buffer.buffer_data(web_context,uid,vertices);
+        VertexBuffer::<T>::unbind(web_context);
     }
 
     fn get_const_mapped_buffer<T: Renderable + 'static>(vertex_buffer_map: &HashMap<TypeId,Box<dyn Any>>) -> Option<&VertexBuffer<T>>
@@ -398,20 +466,26 @@ impl RenderState
 
     pub fn set_canvas_dimensions(&mut self, x: u32, y: u32)
     {
-        self.context.viewport(0, 0, x as i32, y as i32);
+        let web_context = match self.context.as_ref()
+        {
+            Some(c) => c,
+            None => { return; }
+        };
 
-        let viewport = self.context.get_parameter(WebGl2RenderingContext::VIEWPORT).unwrap();
+        web_context.viewport(0, 0, x as i32, y as i32);
+
+        let viewport = web_context.get_parameter(WebGl2RenderingContext::VIEWPORT).unwrap();
         log_value(&viewport);
 
         self.camera.set_canvas_dimensions(x, y);
     }
 
-    pub fn get_world_size_x(&self) -> u32
+    pub fn get_canvas_size_x(&self) -> u32
     {
         self.camera.get_canvas_width()
     }
 
-    pub fn get_world_size_y(&self) -> u32
+    pub fn get_canvas_size_y(&self) -> u32
     {
         self.camera.get_canvas_height()
     }

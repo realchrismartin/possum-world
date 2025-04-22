@@ -79,8 +79,7 @@ export function init(textures,shader_sources)
 
         let delta_time = (now - previous); //in MS
 
-        game.update(delta_time);
-        game.render();
+        game.run_systems(delta_time);
 
         requestAnimationFrame(gameLoop);
     };
