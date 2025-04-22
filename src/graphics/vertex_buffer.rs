@@ -156,6 +156,12 @@ impl<T: Renderable> VertexBuffer<T>
     //Assumes this buffer is bound already
     pub fn buffer_data(&mut self, context: &WebGl2RenderingContext, uid: &u32, vertices: &Vec<f32>)
     {
+        if self.uid_to_range_map.contains_key(uid)
+        {
+            log("Tried to buffer data using a uid that already has data on this buffer.");
+            return;
+        }
+
         let indices = T::get_indices();
 
         let vertex_data = vertices.as_slice();

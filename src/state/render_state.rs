@@ -96,12 +96,6 @@ impl RenderState
 
     fn request_new_renderable_impl<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, reuse_existing_transform_for_uid: &Option<u32>) -> Option<u32>
     {
-        let texture_dimensions = match self.get_texture(renderable_config.get_texture_index())
-        {
-            Some(t) => t.get_dimensions(),
-            None => { return None; }
-        };
-
         self.next_uid += 1;
 
         let new_uid = self.next_uid.clone();
@@ -112,10 +106,12 @@ impl RenderState
         {
             Some(t) => {
                 //An existing UID was provided, use this UID to find an existing transform index to use.
+                //The buffer will mark that this transform is being used by both uids (plus any that were already using it).
                 self.transform_buffer.reuse_existing_transform_index(&new_uid,&t)
             },
             None => {
                 //No UID was provided - we need a new transform. Use the new UID to generate it.
+                //The buffer will mark that this transform is being used by this uid.
                 self.transform_buffer.request_new_transform_index(&new_uid)
             }
         };

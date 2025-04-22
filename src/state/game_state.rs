@@ -6,7 +6,6 @@ use crate::graphics::renderable::RenderableConfig;
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
 use rand::Rng;
-use crate::util::logging::log;
 
 pub struct GameState
 {
@@ -29,23 +28,54 @@ impl GameState
         }
     }
 
+    pub fn get_renderable_sprite_batch(&mut self) -> DrawBatch<Sprite>
+    {
+        let mut batch = DrawBatch::<Sprite>::new();
+
+        for i in &self.tiles
+        {
+           batch.add(i);
+        }
+
+        for i in &self.texts
+        {
+           batch.add(i);
+        }
+
+        for p in &self.friendly_possums
+        {
+            let i = match p.get_renderable_uid()
+            {
+                Some(re) => re,
+                None => { continue; }
+            };
+
+           batch.add(i);
+        }
+
+        batch
+    }
+
     pub fn init(&mut self, render_state: &mut RenderState)
     {
-        //When we resize, we need to clear all of the existing sprite buffers in the render state
+        render_state.clear();
         self.friendly_possums.clear();
         self.tiles.clear();
         self.texts.clear();
 
-        render_state.clear();
+        self.generate_tile_grid(render_state);
+        self.generate_logo(render_state);
+        self.generate_possums(render_state);
+    }
 
+    fn generate_tile_grid(&mut self, render_state: &mut RenderState)
+    {
         //The default sprite size for a tile is 100 x 100
         //Determine how many tiles we need to cover the canvas
         let world_size_x = render_state.get_world_size_x();
         let world_size_y = render_state.get_world_size_y();
-        let tile_count_x =  world_size_x / 100;
+        let tile_count_x = world_size_x / 100;
         let tile_count_y = world_size_y / 100;
-
-        log(format!("Resize requires tiles: {}x{}",tile_count_x,tile_count_y).as_str());
 
         let x_placement_offset = 100 as f32;
         let y_placement_offset = 100 as f32; 
@@ -60,6 +90,10 @@ impl GameState
             RenderableConfig::new([105,2],[100,100],1), //background
             RenderableConfig::new([207,2],[100,100],1), //underground
         ];
+
+        //Tiles start at the bottom left and grow right -> up
+        let mut index = 0;
+        let z = 2.0; //For tiles
 
         for i in 0..(tile_count_y * tile_count_x) +1
         {
@@ -82,13 +116,7 @@ impl GameState
             };
 
             self.tiles.push(tile_uid);
-        }
 
-        //Tiles start at the bottom left and grow right -> up
-        let mut index = 0;
-        let z = 2.0; //For tiles
-        for tile_uid in &self.tiles
-        {
             render_state.set_position(&tile_uid, glm::vec3(next_x_placement as f32,next_y_placement as f32, z));
 
             next_x_placement += x_placement_offset as f32;
@@ -101,7 +129,10 @@ impl GameState
 
             index += 1;
         }
+    }
 
+    fn generate_logo(&mut self, render_state: &mut RenderState)
+    {
         let logo = match render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([309,2],[368,31],1))
         {
             Some(s) => s,
@@ -110,26 +141,21 @@ impl GameState
 
         //NB: 50.0 is from the extra 100 we add as padding to the canvas in index js
         //This gives us roughly the center of the canvas - won't be exact because the 100 is used for overflow (variably)
-        let logo_pos = glm::vec3((world_size_x as f32 / 2.0) - 50.0, (world_size_y as f32 / 1.2) + 50.0, 1.9);
+        let logo_pos = glm::vec3((render_state.get_world_size_x() as f32 / 2.0) - 50.0, (render_state.get_world_size_y() as f32 / 1.2) + 50.0, 1.9);
         let logo_scale = glm::vec3(1.0,1.0,1.0);
 
         render_state.set_scale(&logo, logo_scale);
         render_state.set_position(&logo, logo_pos);
         self.texts.push(logo);
+    }
 
-       //Possums
-       let mut rng = rand::thread_rng();
-       let mut z = 2.0;
+    fn generate_possums(&mut self, render_state: &mut RenderState)
+    {
+        let mut rng = rand::thread_rng();
 
-        for _i in 0..1
+        for index in 0..rng.gen_range(4..50)
         {
-                //TODO: hardcoded
-                let y = 300;
-                let x = rng.gen_range(0..world_size_x); 
-
-            z -= 0.1;
-
-            let poss = match Self::add_possum(render_state,glm::vec3(x as f32,y as f32,z as f32))
+            let poss = match Self::add_possum(render_state,index)
             {
                     Some(p) => p,
                     None => { return; }
@@ -137,30 +163,9 @@ impl GameState
 
             self.friendly_possums.push(poss);
         }
-
-        let mut first = true;
-        for possum in &self.friendly_possums
-        {
-            let s = match possum.get_renderable_uid()
-            {
-                Some(t) => t,
-                None => {continue; }
-            };
-
-            if first
-            {
-                //Barry is larger than the other posses
-                render_state.set_scale(s, glm::vec3(3.0,3.0,1.0));
-            } else
-            {
-                render_state.set_scale(s, glm::vec3(2.0,2.0,1.0));
-            }
-
-            first = false;
-        }
     }
 
-    pub fn add_possum(render_state: &mut RenderState, starting_position: glm::Vec3) -> Option<AnimatedEntity>
+    fn add_possum(render_state: &mut RenderState, index: i32) -> Option<AnimatedEntity>
     {
         let mut rng = rand::thread_rng();
 
@@ -195,13 +200,27 @@ impl GameState
             None => { return None; }
         };
 
-        let s = match possum.get_renderable_uid()
+        let uid = match possum.get_renderable_uid()
         {
             Some(t) => t,
             None => {return None; }
         };
+        
+        let scale = rng.gen_range(1.0..4.0);
+        let x = rng.gen_range(0..render_state.get_world_size_x()) as f32; 
+        let y = 600.0; //Hardcoded
+        let z = 1.9 - (index as f32 * 0.1); //Hardcoded. Above 1.9, the BG will win.
 
-        render_state.set_position(s,starting_position);
+        render_state.set_position(uid,glm::vec3(x,y,z));
+        
+        if index == 0
+        {
+            //Barry is lorger than the other posses
+            render_state.set_scale(uid, glm::vec3(5.0,5.0,1.0));
+        } else 
+        {
+            render_state.set_scale(uid, glm::vec3(scale,scale,1.0));
+        }
 
         Some(possum)
     }
@@ -286,34 +305,6 @@ impl GameState
             Self::update_animated_entity(p,&movement_direction,render_state,delta_time,self.floor_y);
             index = index + 1;
         }
-    }
-
-    pub fn get_renderable_sprite_batch(&mut self) -> DrawBatch<Sprite>
-    {
-        let mut batch = DrawBatch::<Sprite>::new();
-
-        for i in &self.tiles
-        {
-           batch.add(i);
-        }
-
-        for i in &self.texts
-        {
-           batch.add(i);
-        }
-
-        for p in &self.friendly_possums
-        {
-            let i = match p.get_renderable_uid()
-            {
-                Some(re) => re,
-                None => { continue; }
-            };
-
-           batch.add(i);
-        }
-
-        batch
     }
 
     fn update_animated_entity(animated_entity: &mut AnimatedEntity, movement_direction: &glm::Vec2, render_state: &mut RenderState, delta_time: f32, floor_y: f32)
