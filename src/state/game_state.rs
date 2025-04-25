@@ -12,7 +12,10 @@ pub struct GameState
     npc_possums: Vec<AnimatedEntity>,
     tiles: Vec<u32>,
     texts: Vec<u32>,
-    next_possum_z: f32,
+    base_z: f32,
+    z_buffer: f32,
+    start_x: f32,
+    logo_y: f32,
     player_movement_direction: glm::Vec2
 }
 
@@ -26,7 +29,10 @@ impl GameState
             npc_possums: Vec::new(),
             tiles: Vec::new(),
             texts: Vec::new(),
-            next_possum_z: 2.0,
+            base_z: 0.0, 
+            start_x: 0.0,
+            logo_y: 0.0,
+            z_buffer: 0.001,
             player_movement_direction: glm::vec2(0.0,0.0)
         }
     }
@@ -77,8 +83,9 @@ impl GameState
         self.npc_possums.clear();
         self.tiles.clear();
         self.texts.clear();
-
-        self.next_possum_z = 1.9;
+        
+        self.start_x = render_state.get_canvas_size_x() as f32 / 2.0;
+        self.logo_y = 500.0;
 
         self.generate_tile_grid(render_state);
         self.generate_logo(render_state);
@@ -88,65 +95,48 @@ impl GameState
 
     fn generate_tile_grid(&mut self, render_state: &mut RenderState)
     {
-        //The default sprite size for a tile is 100 x 100
-        //Determine how many tiles we need to cover the canvas
-        let world_size_x = render_state.get_canvas_size_x();
-        let world_size_y = render_state.get_canvas_size_y();
-        let tile_count_x = world_size_x / 100;
-        let tile_count_y = world_size_y / 100;
-
-        let x_placement_offset = 100 as f32;
-        let y_placement_offset = 100 as f32; 
-
-        //Since each position is the center of a tile, we offset the initial placement by a tile half width
-        let mut next_x_placement =  x_placement_offset / 2.0;
-        let mut next_y_placement = y_placement_offset / 2.0;
-
-        //Generate tile grid
         let use_sprites  = vec![
             RenderableConfig::new([2,2],[100,100],1), //ground
             RenderableConfig::new([105,2],[100,100],1), //background
             RenderableConfig::new([207,2],[100,100],1), //underground
         ];
 
-        //Tiles start at the bottom left and grow right -> up
-        let mut index = 0;
-        let z = 2.0; //For tiles
+        let z = self.base_z;
 
-        for i in 0..(tile_count_y * tile_count_x) +1
+        let underground = match render_state.request_new_renderable::<Sprite>(use_sprites.get(2).unwrap())
         {
-            let mut used_sprite_index = 2; //start with ground
+            Some(s) => s,
+            None => { return; }
+        };
 
-            if i > (tile_count_x * 2)
-            {
-                //Start using sky once we've created two layers of ground
-                used_sprite_index = 1;
-            }
-            else if i > tile_count_x
-            {
-                used_sprite_index = 0; //Use top layer
-            } 
+        render_state.set_scale(&underground, glm::vec3(100.0,10.0,1.0));
+        render_state.set_position(&underground, glm::vec3(0.0 as f32,-350.0 as f32, z));
 
-            let tile_uid = match render_state.request_new_renderable::<Sprite>(use_sprites.get(used_sprite_index).unwrap())
-            {
-                Some(s) => s,
-                None => { return; }
-            };
+        self.tiles.push(underground);
 
-            self.tiles.push(tile_uid);
+        let ground = match render_state.request_new_renderable::<Sprite>(use_sprites.get(0).unwrap())
+        {
+            Some(s) => s,
+            None => { return; }
+        };
 
-            render_state.set_position(&tile_uid, glm::vec3(next_x_placement as f32,next_y_placement as f32, z));
+        render_state.set_scale(&ground, glm::vec3(100.0,2.0,1.0));
+        render_state.set_position(&ground, glm::vec3(0.0 as f32,100.0 as f32, z + self.z_buffer));
 
-            next_x_placement += x_placement_offset as f32;
 
-            if index != 0 && index % tile_count_x == 0
-            {
-                next_y_placement += y_placement_offset as f32;
-                next_x_placement = x_placement_offset as f32 / 2.0;
-            }
+        self.tiles.push(ground);
 
-            index += 1;
-        }
+        let sky = match render_state.request_new_renderable::<Sprite>(use_sprites.get(1).unwrap())
+        {
+            Some(s) => s,
+            None => { return; }
+        };
+
+        render_state.set_scale(&sky, glm::vec3(100.0,100.0,1.0));
+        render_state.set_position(&sky, glm::vec3(0.0 as f32,0.0 as f32, z - self.z_buffer));
+
+
+        self.tiles.push(sky);
     }
 
     fn generate_logo(&mut self, render_state: &mut RenderState)
@@ -157,46 +147,50 @@ impl GameState
             None => { return; }
         };
 
-        //NB: 50.0 is from the extra 100 we add as padding to the canvas in index js
-        //This gives us roughly the center of the canvas - won't be exact because the 100 is used for overflow (variably)
-        let logo_pos = glm::vec3((render_state.get_canvas_size_x() as f32 / 2.0) - 50.0, (render_state.get_canvas_size_y() as f32 / 1.2) + 50.0, 1.9);
-        let logo_scale = glm::vec3(1.0,1.0,1.0);
+        let logo_pos = glm::vec3(self.start_x, self.logo_y, self.base_z + self.z_buffer * 3.0);
 
-        render_state.set_scale(&logo, logo_scale);
         render_state.set_position(&logo, logo_pos);
         self.texts.push(logo);
     }
 
     fn generate_player_possums(&mut self, render_state: &mut RenderState)
     {
-        let poss = match Self::add_possum(render_state,true,self.next_possum_z)
+        let poss = match Self::add_possum(render_state,true,self.logo_y,self.base_z + self.z_buffer)
         {
                 Some(p) => p,
                 None => { return; }
         };
 
+        let uid = match poss.get_renderable_uid()
+        {
+            Some(u) => u,
+            None => { return; }
+        };
+
+        render_state.set_position(&uid, glm::vec3(self.start_x,self.logo_y,self.base_z + self.z_buffer));
+
         self.player_possums.push(poss);
-        self.next_possum_z -= 0.01;
     }
 
     fn generate_npc_possums(&mut self, render_state: &mut RenderState)
     {
         let mut rng = rand::thread_rng();
+        let mut z = self.base_z + self.z_buffer * 2.0;
 
         for _index in 0..rng.gen_range(4..50)
         {
-            let poss = match Self::add_possum(render_state,false,self.next_possum_z)
+            let poss = match Self::add_possum(render_state,false,self.logo_y,z)
             {
                     Some(p) => p,
                     None => { return; }
             };
 
             self.npc_possums.push(poss);
-            self.next_possum_z -= 0.01;
+            z += self.z_buffer;
         }
     }
 
-    fn add_possum(render_state: &mut RenderState, isPlayer: bool, z: f32) -> Option<AnimatedEntity>
+    fn add_possum(render_state: &mut RenderState, isPlayer: bool, y: f32, z: f32) -> Option<AnimatedEntity>
     {
         let mut rng = rand::thread_rng();
 
@@ -239,14 +233,13 @@ impl GameState
         
         let scale = rng.gen_range(1.0..4.0);
         let x = rng.gen_range(200..render_state.get_canvas_size_x() - 100) as f32; 
-        let y = 600.0; //Hardcoded
-
+        
         render_state.set_position(uid,glm::vec3(x,y,z));
 
         if isPlayer
         {
             //Barry is lorger than the other posses
-            render_state.set_scale(uid, glm::vec3(5.0,5.0,1.0));
+            render_state.set_scale(uid, glm::vec3(7.0,7.0,1.0));
         } else 
         {
             render_state.set_scale(uid, glm::vec3(scale,scale,1.0));

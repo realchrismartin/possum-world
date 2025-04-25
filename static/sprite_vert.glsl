@@ -17,7 +17,7 @@ out float vertex_texture_index;
 
 void main() 
 {
-    gl_Position = model_matrices.matrices[int(model_matrix_index)] * vp_matrix * vec4(position,1.0);
+    gl_Position = vp_matrix * model_matrices.matrices[int(model_matrix_index)] * vec4(position,1.0);
     vertex_texture_coordinates = texture_coordinates;
     vertex_texture_index = texture_index;
 }

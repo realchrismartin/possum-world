@@ -12,8 +12,8 @@ pub fn run_systems(game_state: &mut GameState, render_state: &mut RenderState, i
     run_physics_system(game_state, render_state, delta_time); //TODO: stop passing render state
     run_ai_system(game_state, render_state, delta_time); //TODO: stop passing render state
     run_animation_system(game_state, delta_time);
+    run_camera_update_system(game_state, render_state);
 
-    //TODO: camera system?
     run_render_system(game_state,render_state);
 }
 
@@ -153,6 +153,7 @@ fn run_possum_physics(animated_entity: &mut AnimatedEntity, render_state: &mut R
     let floor_y = 200.0;
 
     let adjusted_floor_y = floor_y + (size.y / 2.0);
+    //let adjusted_floor_y = floor_y;
 
     if position.y > adjusted_floor_y
     {
@@ -221,5 +222,30 @@ fn run_animation_system(game_state: &mut GameState, delta_time: f32)
     for possum in game_state.get_mutable_npc_possums()
     {
         possum.update(delta_time);
+    }
+}
+
+fn run_camera_update_system(game_state: &GameState, render_state: &mut RenderState)
+{
+    //NB: sets to the first player position
+
+    for possum in game_state.get_player_possums()
+    {
+        let renderable_uid = match possum.get_renderable_uid()
+        {
+            Some(u) => u,
+            None => {continue;}
+        };
+
+        let position = match render_state.get_position(renderable_uid)
+        {
+            Some(p) => p,
+            None => {continue;}
+        };
+
+        let cam_pos = glm::vec3(position.x,position.y, position.z);
+
+        render_state.set_camera_world_position(&cam_pos);
+        break;
     }
 }

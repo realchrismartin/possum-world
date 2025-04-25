@@ -98,6 +98,7 @@ impl RenderState
         web_context.enable(WebGl2RenderingContext::BLEND);
         web_context.blend_func(WebGl2RenderingContext::SRC_ALPHA ,WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
         web_context.enable(WebGl2RenderingContext::DEPTH_TEST);
+        web_context.disable(WebGl2RenderingContext::CULL_FACE);
         web_context.clear_color(0.0, 0.0, 0.0, 1.0);
         web_context.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
 
@@ -293,6 +294,11 @@ impl RenderState
         //Recalculate matrices that are marked dirty and need recalculating.
         //Upload any matrices to the UBO that have changed.
         self.transform_buffer.recalculate_transforms_and_update_data(web_context);
+    }
+
+    pub fn set_camera_world_position(&mut self, position: &glm::Vec3)
+    {
+        self.camera.set_camera_world_position(position);
     }
 
     pub fn submit_camera_uniforms(&mut self)

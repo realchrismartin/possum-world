@@ -1,4 +1,5 @@
 use nalgebra_glm::TMat4;
+use crate::util::util::world_position_to_screen_translation;
 use crate::util::logging::log;
 
 pub struct Camera
@@ -7,7 +8,9 @@ pub struct Camera
     projection_matrix: TMat4<f32>,
     dirty : bool,
     canvas_width : u32,
-    canvas_height : u32
+    canvas_height : u32,
+    eye: glm::Vec3,
+    target: glm::Vec3
 }
 
 impl Camera
@@ -20,24 +23,22 @@ impl Camera
             projection_matrix: glm::Mat4::identity(),
             dirty: true,
             canvas_width,
-            canvas_height
+            canvas_height,
+            eye: glm::vec3(0.0,0.0,1.0),
+            target: glm::vec3(0.0,0.0,0.0)
         }
     }
 
     fn update_view_matrix(&mut self)
     {
-        let eye = glm::vec3(0.0,0.0,0.0);
-        let target = glm::vec3(0.0,0.0,-1.0);
         let up_vector = glm::vec3(0.0,1.0,0.0);
-
-        self.view_matrix = glm::look_at(&eye,&target,&up_vector);
+        self.view_matrix = glm::look_at(&self.eye,&self.target,&up_vector);
     }
 
     fn update_projection_matrix(&mut self)
     {
-
-        let near = 0.1;
-        let far = 20.0;
+        let near = -10000.0;
+        let far = 10000.0;
 
         //TODO: AR is unused.
 
@@ -55,7 +56,7 @@ impl Camera
 
     pub fn get_view_projection_matrix(self : &Self) -> TMat4<f32>
     {
-        self.view_matrix * self.projection_matrix
+        self.projection_matrix * self.view_matrix
     }
 
     pub fn dirty(&self) -> bool
@@ -65,7 +66,6 @@ impl Camera
 
     pub fn recalculate(&mut self)
     {
-        log("Recalc");
         self.update_view_matrix();
         self.update_projection_matrix();
         self.dirty = false;
@@ -83,11 +83,20 @@ impl Camera
 
     pub fn set_canvas_dimensions(&mut self, x: u32, y: u32)
     {
-        log(format!("Canvas size set to: {} {}",x,y).as_str());
-
         self.canvas_width = x;
         self.canvas_height = y;
         self.dirty = true;
     }
 
+    pub fn set_camera_world_position(&mut self, position: &glm::Vec3)
+    {
+        let screen_translation = world_position_to_screen_translation(&position,&glm::vec2(self.canvas_width as f32,self.canvas_height as f32));
+
+        self.eye.x = screen_translation.x;
+        self.eye.y = screen_translation.y;
+
+        self.target.x = screen_translation.x;
+        self.target.y = screen_translation.y;
+        self.dirty = true;
+    }
 }
