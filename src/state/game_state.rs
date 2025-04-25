@@ -85,7 +85,7 @@ impl GameState
         self.texts.clear();
         
         self.start_x = render_state.get_canvas_size_x() as f32 / 2.0;
-        self.logo_y = 500.0;
+        self.logo_y = 400.0;
 
         self.generate_tile_grid(render_state);
         self.generate_logo(render_state);
@@ -150,6 +150,7 @@ impl GameState
         let logo_pos = glm::vec3(self.start_x, self.logo_y, self.base_z + self.z_buffer * 3.0);
 
         render_state.set_position(&logo, logo_pos);
+        render_state.set_scale(&logo, glm::vec3(0.8,0.8,0.8));
         self.texts.push(logo);
     }
 
@@ -231,7 +232,7 @@ impl GameState
             None => {return None; }
         };
         
-        let scale = rng.gen_range(1.0..4.0);
+        let scale = rng.gen_range(1.0..2.0);
         let x = rng.gen_range(200..render_state.get_canvas_size_x() - 100) as f32; 
         
         render_state.set_position(uid,glm::vec3(x,y,z));
@@ -239,7 +240,7 @@ impl GameState
         if isPlayer
         {
             //Barry is lorger than the other posses
-            render_state.set_scale(uid, glm::vec3(7.0,7.0,1.0));
+            render_state.set_scale(uid, glm::vec3(4.0,4.0,1.0));
         } else 
         {
             render_state.set_scale(uid, glm::vec3(scale,scale,1.0));
