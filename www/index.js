@@ -61,6 +61,7 @@ export function init(textures,shader_sources)
     let index = 0;
     for(const texture of textures)
     {
+        console.log(texture);
         game.load_texture(index,texture);
         index = index + 1;
     }

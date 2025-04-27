@@ -34,6 +34,7 @@ let texture_sources =
 [
     loadImage("/possum_sprite_sheet.png"),
     loadImage("/background_sprite_sheet.png"),
+    loadImage("/font_sprite_sheet.png"),
 ];
 
 let shader_sources = 

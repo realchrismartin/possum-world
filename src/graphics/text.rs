@@ -2,30 +2,31 @@ use web_sys::WebGl2RenderingContext;
 
 use crate::graphics::renderable::Renderable;
 use crate::graphics::vertex_layout::{VertexLayout,VertexLayoutElement};
-use crate::util::util::{get_character_size, get_character_texture_coordinates};
+use crate::graphics::font::Font;
+use crate::util::util::get_rectangular_texture_coordinates;
 
 use crate::util::logging::log;
 
 use crate::RenderState;
 
+const INDICES_PER_CHAR : u32 = 4;
+
 #[derive(Clone)]
 pub struct Text {
     content: String,
-    size: [i32;2],
-    texture_index: u32,
-    pixel_space_between_letters: u32
+    font: Font,
+    size: [i32;2]
 }
 
 impl Text 
 {
-    pub fn new(content: &str) -> Self 
+    pub fn new(content: &str, font: &Font) -> Self 
     {
         Self
         {
             content: String::from(content),
-            size: [1,1], //TODO
-            texture_index: 1, //TODO: hardcoded
-            pixel_space_between_letters: 4
+            font: font.clone(),
+            size: [1,1], //TODO: unused
         }
     }
 }
@@ -44,34 +45,62 @@ impl Renderable for Text
 
     fn get_vertices(&self, render_state: &RenderState, model_matrix_transform_index: u32) -> Vec<f32>
     {
-        //NB: texture index is hardcoded for font
-        let texture_dimensions = match render_state.get_texture(self.texture_index)
+        let texture_index = match self.font.get_texture_index()
+        {
+            Some(i) => i,
+            None => 2 //2 is the default tex index
+        };
+
+        let kerning_width = match self.font.get_kerning_pixel_width()
+        {
+            Some(v) => v as f32 / render_state.get_canvas_size_x() as f32,
+            None => { 0.0 }
+        };
+
+        let whitespace_width = match self.font.get_whitespace_pixel_width()
+        {
+            Some(v) => v as f32 / render_state.get_canvas_size_x() as f32,
+            None => { 0.0 }
+        };
+
+        let texture_dimensions = match render_state.get_texture(texture_index)
         {
             Some(t) => t.get_dimensions(),
             None => { [1,1] }
         };
 
-        let mut vertices = Vec::<f32>::new();
-
-
         let mut character_size_iterator = self.content.chars();
-
-        let x_pixel_padding = (self.pixel_space_between_letters as f32 / render_state.get_canvas_size_x() as f32);
 
         let mut total_x_canvas_size : f32 = 0.0;
         let mut tallest_character_height : f32 = 0.0;
 
         while let Some(character) = character_size_iterator.next()
         {
-            let character_size = get_character_size(&character);
+            match character
+            {
+                ' ' => {
+                    total_x_canvas_size += (whitespace_width * 2.0) + kerning_width;
+                    continue;
+                }
+                _ => {}
+            };
+
+            let char_data = match self.font.get_character_data(&character)
+            {
+                Some(f) => f,
+                None => { continue; }
+            };
 
             //Local size is set according to how big the character should be in comparison to the canvas size.
+            let character_size = char_data.get_size();
             let x_axis = character_size[0] as f32 / render_state.get_canvas_size_x() as f32;
             let y_axis = character_size[1] as f32 / render_state.get_canvas_size_y() as f32;
 
-            total_x_canvas_size += ((x_axis + x_pixel_padding) * 2.0);
+            total_x_canvas_size += (x_axis + kerning_width) * 2.0;
             tallest_character_height = tallest_character_height.max(y_axis);
         }
+
+        let mut vertices = Vec::<f32>::new();
 
         //Establish offsets so that the center of the combined text is at 0,0
         //TODO: Later, we may wish to add an option that doesn't center the text.
@@ -82,50 +111,62 @@ impl Renderable for Text
 
         while let Some(character) = character_iterator.next()
         {
-            let character_size = get_character_size(&character);
-
-            //Local size is set according to how big the character should be in comparison to the canvas size.
-            let x_axis = character_size[0] as f32 / render_state.get_canvas_size_x() as f32;
-            let y_axis = character_size[1] as f32 / render_state.get_canvas_size_y() as f32;
-
+            //For whitespace, just pad the next character
             match character
             {
                 ' ' => {
-                    x_used += (x_axis * 2.0) + x_pixel_padding;
+                    x_used += (whitespace_width * 2.0) + kerning_width;
                     continue;
                 }
                 _ => {}
             };
 
+            let char_data = match self.font.get_character_data(&character)
+            {
+                Some(f) => f,
+                None => { continue; }
+            };
+
+            let character_size = char_data.get_size();
+            let character_tex_coords = char_data.get_tex_coords();
+
+            //Local size is set according to how big the character should be in comparison to the canvas size.
+            let x_axis = character_size[0] as f32 / render_state.get_canvas_size_x() as f32;
+            let y_axis = character_size[1] as f32 / render_state.get_canvas_size_y() as f32;
+
             //Set to the amount of space it takes to make all the characters flush with the bottom line
             let y_canvas_offset = tallest_character_height - y_axis;
 
-            let tex_coords = get_character_texture_coordinates(&character, &texture_dimensions);
+            //TODO
+            
+            let tex_coords = get_rectangular_texture_coordinates(character_tex_coords, character_size, &texture_dimensions);
 
+            //TODO: slight bug here if characters differ in size
+            //e.g. M overlaps with whatever is before it because it's larger
             let char_vertex_vec = vec![
                 -x_axis + x_used - x_canvas_offset,y_axis - y_canvas_offset,0.0,
                 model_matrix_transform_index as f32,
                 tex_coords[0][0], tex_coords[0][1],
-                self.texture_index as f32,
+                texture_index as f32,
 
                 -x_axis + x_used - x_canvas_offset,-y_axis - y_canvas_offset,0.0,
                 model_matrix_transform_index as f32,
                 tex_coords[1][0], tex_coords[1][1],
-                self.texture_index as f32,
+                texture_index as f32,
 
                 x_axis + x_used - x_canvas_offset,-y_axis - y_canvas_offset,0.0,
                 model_matrix_transform_index as f32,
                 tex_coords[2][0], tex_coords[2][1],
-                self.texture_index as f32,
+                texture_index as f32,
 
                 x_axis + x_used - x_canvas_offset,y_axis - y_canvas_offset,0.0,
                 model_matrix_transform_index as f32,
                 tex_coords[3][0], tex_coords[3][1],
-                self.texture_index as f32,
+                texture_index as f32,
             ];
 
             vertices.extend(&char_vertex_vec);
-            x_used += (x_axis * 2.0) + x_pixel_padding;
+            x_used += (x_axis * 2.0) + kerning_width;
         }
 
         vertices
@@ -135,20 +176,18 @@ impl Renderable for Text
     {
         let mut indices = Vec::<u32>::new();
 
-        const indices_per_char : u32 = 4;
-
         let chars_so_far : u32 = 0;
 
         for index in 0..self.content.chars().count()
         {
             let i : u32 = index as u32;
 
-            indices.push(0 + (i * indices_per_char));
-            indices.push(1 + (i * indices_per_char));
-            indices.push(2 + (i * indices_per_char));
-            indices.push(2 + (i * indices_per_char));
-            indices.push(3 + (i * indices_per_char));
-            indices.push(0 + (i * indices_per_char));
+            indices.push(0 + (i * INDICES_PER_CHAR));
+            indices.push(1 + (i * INDICES_PER_CHAR));
+            indices.push(2 + (i * INDICES_PER_CHAR));
+            indices.push(2 + (i * INDICES_PER_CHAR));
+            indices.push(3 + (i * INDICES_PER_CHAR));
+            indices.push(0 + (i * INDICES_PER_CHAR));
         }
 
         indices

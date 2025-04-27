@@ -12,6 +12,7 @@ wasm-bindgen = "0.2.84"
 nalgebra-glm = "0.3"
 rand = "0.8.5"
 getrandom = { version = "0.2", features = ["js"] }
+phf = { version = "0.11", features=["macros"] }
 
 [dependencies.console_error_panic_hook]
 version = "0.1.7"

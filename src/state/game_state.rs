@@ -2,6 +2,7 @@ use crate::state::render_state::RenderState;
 
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
+use crate::graphics::font::Font;
 use crate::graphics::text::Text;
 use crate::util::logging::log;
 use rand::Rng;
@@ -141,7 +142,7 @@ impl GameState
 
     fn generate_logo(&mut self, render_state: &mut RenderState)
     {
-        let logo = match render_state.request_new_renderable::<Text>(&Text::new("poss poss poss poss"))
+        let logo = match render_state.request_new_renderable::<Text>(&Text::new("Possum World", &Font::Default))
         {
             Some(s) => s,
             None => { return; }
@@ -151,7 +152,7 @@ impl GameState
 
         render_state.set_position(&logo, logo_pos);
 
-        let subtext = match render_state.request_new_renderable::<Text>(&Text::new("poss"))
+        let subtext = match render_state.request_new_renderable::<Text>(&Text::new("Insert 1 coin to continue", &Font::Default))
         {
             Some(s) => s,
             None => { return; }
