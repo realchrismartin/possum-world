@@ -41,15 +41,12 @@ impl Camera
         let far = 10000.0;
 
         //TODO: AR is unused.
-
-        let aspect_ratio = self.canvas_width as f32 / self.canvas_height as f32;
+        //let aspect_ratio = self.canvas_width as f32 / self.canvas_height as f32;
 
         let left = -1.0;
         let right = 1.0;
         let bottom = -1.0;
         let top = 1.0;
-
-        log(format!("New aspect ratio: {} with w: {} and h: {}",aspect_ratio,self.canvas_width,self.canvas_height).as_str());
 
         self.projection_matrix = glm::ortho(left,right,bottom,top,near,far);
     }

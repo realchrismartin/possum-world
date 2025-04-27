@@ -2,6 +2,7 @@ use crate::state::render_state::RenderState;
 
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
+use crate::graphics::text::Text;
 use crate::util::logging::log;
 use rand::Rng;
 
@@ -140,7 +141,7 @@ impl GameState
 
     fn generate_logo(&mut self, render_state: &mut RenderState)
     {
-        let logo = match render_state.request_new_renderable::<Sprite>(&Sprite::new([309,2],[368,31],1))
+        let logo = match render_state.request_new_renderable::<Text>(&Text::new("poss poss poss poss"))
         {
             Some(s) => s,
             None => { return; }
@@ -149,8 +150,20 @@ impl GameState
         let logo_pos = glm::vec3(self.start_x, self.logo_y, self.base_z + self.z_buffer * 3.0);
 
         render_state.set_position(&logo, logo_pos);
-        render_state.set_scale(&logo, glm::vec3(0.8,0.8,0.8));
+
+        let subtext = match render_state.request_new_renderable::<Text>(&Text::new("poss"))
+        {
+            Some(s) => s,
+            None => { return; }
+        };
+
+        let subtext_pos = glm::vec3(self.start_x, self.logo_y - 40.0, self.base_z + self.z_buffer * 3.0);
+
+        render_state.set_position(&subtext, subtext_pos);
+
+        //render_state.set_scale(&logo, glm::vec3(0.8,0.8,0.8));
         self.texts.push(logo);
+        self.texts.push(subtext);
     }
 
     fn generate_player_possums(&mut self, render_state: &mut RenderState)

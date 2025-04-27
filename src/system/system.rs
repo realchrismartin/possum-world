@@ -4,6 +4,7 @@ use crate::state::render_state::RenderState;
 
 use crate::graphics::draw_batch::DrawBatch;
 use crate::graphics::sprite::Sprite;
+use crate::graphics::text::Text;
 use crate::game::animated_entity::AnimatedEntity;
 
 pub fn run_systems(game_state: &mut GameState, render_state: &mut RenderState, input_state: &mut InputState, delta_time : f32)
@@ -25,7 +26,7 @@ fn run_render_system(game_state: &GameState, render_state: &mut RenderState)
     render_state.bind_and_update_transform_buffer_data();
 
     let mut sprite_batch = DrawBatch::<Sprite>::new();
-
+    let mut text_batch = DrawBatch::<Text>::new();
 
     for uid in game_state.get_tiles()
     {
@@ -34,7 +35,7 @@ fn run_render_system(game_state: &GameState, render_state: &mut RenderState)
 
     for uid in game_state.get_texts()
     {
-        sprite_batch.add(uid);
+        text_batch.add(uid);
     }
 
     for possum in game_state.get_player_possums()
@@ -62,6 +63,7 @@ fn run_render_system(game_state: &GameState, render_state: &mut RenderState)
 
     //Render any entities that want to be drawn
     render_state.draw(&sprite_batch);
+    render_state.draw(&text_batch);
 }
 
 //TODO: apply input to whatever entities want it

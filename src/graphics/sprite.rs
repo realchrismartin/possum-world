@@ -76,7 +76,6 @@ impl Renderable for Sprite
 
     fn get_indices(&self) -> Vec<u32>
     {
-        //TODO: check what happens if this becomes dynamic size. does it break? :) 
         vec![0,1,2,2,3,0]
     }
 

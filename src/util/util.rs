@@ -1,3 +1,31 @@
+pub fn get_character_texture_coordinates(character: &char, tex_dimensions: &[i32;2]) -> [[f32;2];4]
+{
+    //TODO: hardcoded
+    let coords : [i32;2] = match character
+    {
+        'p' => [309,2],
+        'o' => [349,11],
+        's' => [380,11],
+        _ => [0,0]
+    };
+
+    get_rectangular_texture_coordinates(&coords,&get_character_size(character),tex_dimensions)
+}
+
+pub fn get_character_size(character: &char) -> [i32;2]
+{
+    let size: [i32;2] = match character
+    {
+        'p' => [36,31],
+        'o' => [27,22],
+        's' => [26,22],
+        ' ' => [22,22],
+        _ => [1,1]
+    };
+
+    size
+}
+
 //Given a top left corner, the dimensions of a rectangle, and the dimensions of a texture, get a set of 4 texture coordinates for the rectangle's extents
 pub fn get_rectangular_texture_coordinates(top_left_pixel_coordinate: &[i32;2], dimensions: &[i32;2], tex_dimensions: &[i32;2]) -> [[f32;2];4]
 {

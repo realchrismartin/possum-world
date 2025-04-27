@@ -8,3 +8,4 @@ pub mod transform_buffer;
 pub mod vertex_layout;
 pub mod transform;
 pub mod draw_batch;
+pub mod text;

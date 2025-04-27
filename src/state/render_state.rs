@@ -14,6 +14,7 @@ use std::any::TypeId;
 use std::any::Any;
 use crate::graphics::renderable::Renderable;
 use crate::graphics::sprite::Sprite;
+use crate::graphics::text::Text;
 use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
 use crate::util::util::{world_position_to_screen_translation,screen_translation_to_world_position};
@@ -506,6 +507,7 @@ impl RenderState
         
         //TODO: clear other buffers when we can
         self.clear_buffer::<Sprite>();
+        self.clear_buffer::<Text>();
     }
 
     fn clear_buffer<T: Renderable + 'static>(&mut self)
