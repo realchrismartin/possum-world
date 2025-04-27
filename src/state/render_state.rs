@@ -12,7 +12,7 @@ use crate::graphics::vertex_buffer::VertexBuffer;
 use std::collections::HashMap;
 use std::any::TypeId;
 use std::any::Any;
-use crate::graphics::renderable::{Renderable,RenderableConfig};
+use crate::graphics::renderable::Renderable;
 use crate::graphics::sprite::Sprite;
 use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
@@ -105,17 +105,17 @@ impl RenderState
         Some(web_context)
     }
 
-    pub fn request_new_renderable_with_existing_transform<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, reuse_existing_transform_for_uid: u32) -> Option<u32>
+    pub fn request_new_renderable_with_existing_transform<T: Renderable + 'static>(&mut self, renderable: &T, reuse_existing_transform_for_uid: u32) -> Option<u32>
     {
-        self.request_new_renderable_impl::<T>(renderable_config,&Some(reuse_existing_transform_for_uid))
+        self.request_new_renderable_impl::<T>(renderable,&Some(reuse_existing_transform_for_uid))
     }
 
-    pub fn request_new_renderable<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig) -> Option<u32>
+    pub fn request_new_renderable<T: Renderable + 'static>(&mut self, renderable: &T) -> Option<u32>
     {
-        self.request_new_renderable_impl::<T>(renderable_config,&None::<u32>)
+        self.request_new_renderable_impl::<T>(renderable,&None::<u32>)
     }
 
-    fn request_new_renderable_impl<T: Renderable + 'static>(&mut self, renderable_config: &RenderableConfig, reuse_existing_transform_for_uid: &Option<u32>) -> Option<u32>
+    fn request_new_renderable_impl<T: Renderable + 'static>(&mut self, renderable: &T, reuse_existing_transform_for_uid: &Option<u32>) -> Option<u32>
     {
         self.next_uid += 1;
 
@@ -138,9 +138,10 @@ impl RenderState
         };
 
         //immediately submit data to the buffer. This will only be done once.
-        self.submit_data::<T>(&new_uid, &T::get_vertices(&self, &renderable_config, model_matrix_transform_index));
+        self.submit_data::<T>(&new_uid, &renderable.get_vertices(&self, model_matrix_transform_index), &renderable.get_indices());
 
-        self.uid_to_size_map.insert(new_uid.clone(),renderable_config.get_size().clone());
+        //TODO: this only applies to sprites. fix/remove
+        self.uid_to_size_map.insert(new_uid.clone(),renderable.get_size().clone());
 
         Some(new_uid)
     }
@@ -405,7 +406,7 @@ impl RenderState
         self.vertex_buffer_map.insert(type_id,Box::new(buffer));
     }
 
-    fn submit_data<T: Renderable + 'static>(&mut self,uid: &u32, vertices: &Vec<f32>)
+    fn submit_data<T: Renderable + 'static>(&mut self,uid: &u32, vertices: &Vec<f32>, indices: &Vec<u32>)
     {
         let type_id = TypeId::of::<T>();
         if !self.vertex_buffer_map.contains_key(&type_id)
@@ -428,7 +429,7 @@ impl RenderState
         };
 
         buffer.bind(web_context);
-        buffer.buffer_data(web_context,uid,vertices);
+        buffer.buffer_data(web_context,uid,vertices,indices);
         VertexBuffer::<T>::unbind(web_context);
     }
 

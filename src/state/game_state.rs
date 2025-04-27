@@ -1,6 +1,5 @@
 use crate::state::render_state::RenderState;
 
-use crate::graphics::renderable::RenderableConfig;
 use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
 use crate::util::logging::log;
@@ -96,9 +95,9 @@ impl GameState
     fn generate_tile_grid(&mut self, render_state: &mut RenderState)
     {
         let use_sprites  = vec![
-            RenderableConfig::new([2,2],[100,100],1), //ground
-            RenderableConfig::new([105,2],[100,100],1), //background
-            RenderableConfig::new([207,2],[100,100],1), //underground
+            Sprite::new([2,2],[100,100],1), //ground
+            Sprite::new([105,2],[100,100],1), //background
+            Sprite::new([207,2],[100,100],1), //underground
         ];
 
         let z = self.base_z;
@@ -141,7 +140,7 @@ impl GameState
 
     fn generate_logo(&mut self, render_state: &mut RenderState)
     {
-        let logo = match render_state.request_new_renderable::<Sprite>(&RenderableConfig::new([309,2],[368,31],1))
+        let logo = match render_state.request_new_renderable::<Sprite>(&Sprite::new([309,2],[368,31],1))
         {
             Some(s) => s,
             None => { return; }
@@ -200,24 +199,24 @@ impl GameState
         let possum = match AnimatedEntity::new(render_state,50.0,
             
             &vec![
-                RenderableConfig::new([2,81],[58,18],0),
-                RenderableConfig::new([62,81],[58,18],0),
-                RenderableConfig::new([122,81],[58,18],0),
-                RenderableConfig::new([182,81],[58,18],0),
-                RenderableConfig::new([242,81],[58,18],0),
-                RenderableConfig::new([302,81],[58,18],0),
-                RenderableConfig::new([362,81],[58,18],0),
-                RenderableConfig::new([422,81],[58,18],0),
+                Sprite::new([2,81],[58,18],0),
+                Sprite::new([62,81],[58,18],0),
+                Sprite::new([122,81],[58,18],0),
+                Sprite::new([182,81],[58,18],0),
+                Sprite::new([242,81],[58,18],0),
+                Sprite::new([302,81],[58,18],0),
+                Sprite::new([362,81],[58,18],0),
+                Sprite::new([422,81],[58,18],0),
             ],
             &vec![
-                RenderableConfig::new([2,21],[58,18],0),
-                RenderableConfig::new([62,21],[58,18],0),
-                RenderableConfig::new([122,21],[58,18],0),
-                RenderableConfig::new([182,21],[58,18],0),
-                RenderableConfig::new([242,21],[58,18],0),
-                RenderableConfig::new([302,21],[58,18],0),
-                RenderableConfig::new([362,21],[58,18],0),
-                RenderableConfig::new([422,21],[58,18],0),
+                Sprite::new([2,21],[58,18],0),
+                Sprite::new([62,21],[58,18],0),
+                Sprite::new([122,21],[58,18],0),
+                Sprite::new([182,21],[58,18],0),
+                Sprite::new([242,21],[58,18],0),
+                Sprite::new([302,21],[58,18],0),
+                Sprite::new([362,21],[58,18],0),
+                Sprite::new([422,21],[58,18],0),
             ],
             facing
         )

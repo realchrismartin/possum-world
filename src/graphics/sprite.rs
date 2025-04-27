@@ -1,14 +1,29 @@
 use web_sys::WebGl2RenderingContext;
 
-use crate::graphics::renderable::{Renderable, RenderableConfig};
+use crate::graphics::renderable::Renderable;
 use crate::graphics::vertex_layout::{VertexLayout,VertexLayoutElement};
 use crate::util::util::get_rectangular_texture_coordinates;
 use crate::RenderState;
 
-//Like all Renderables, a Sprite is a handle that points to locations on our buffers.
-//It doesn't hold vertex or index data. That data is generated once on upload to the GPU.
 #[derive(Clone)]
-pub struct Sprite {}
+pub struct Sprite {
+    texture_coordinates: [i32;2],
+    size: [i32;2],
+    texture_index: u32
+}
+
+impl Sprite
+{
+    pub fn new(tex_coordinates: [i32;2], sprite_size: [i32;2], tex_index: u32) -> Self 
+    {
+        Self
+        {
+            texture_coordinates :tex_coordinates,
+            size: sprite_size,
+            texture_index: tex_index
+        }
+    }
+}
 
 impl Renderable for Sprite
 {
@@ -22,51 +37,56 @@ impl Renderable for Sprite
        ])
     }
 
-    fn get_vertices(render_state: &RenderState, renderable_config: &RenderableConfig, model_matrix_transform_index: u32) -> Vec<f32>
+    fn get_vertices(&self, render_state: &RenderState, model_matrix_transform_index: u32) -> Vec<f32>
     {
-        let texture_dimensions = match render_state.get_texture(renderable_config.get_texture_index())
+        let texture_dimensions = match render_state.get_texture(self.texture_index)
         {
             Some(t) => t.get_dimensions(),
             None => { [1,1] }
         };
 
-        let tex_coords = get_rectangular_texture_coordinates(renderable_config.get_texture_coordinates(), 
-            renderable_config.get_size(), &texture_dimensions);
+        let tex_coords = get_rectangular_texture_coordinates(&self.texture_coordinates,&self.size,&texture_dimensions);
 
         //Local size is set according to how big the sprite should be in comparison to the canvas size.
-        let x_axis = renderable_config.get_size()[0] as f32 / render_state.get_canvas_size_x() as f32;
-        let y_axis = renderable_config.get_size()[1] as f32 / render_state.get_canvas_size_y() as f32;
+        let x_axis = self.size[0] as f32 / render_state.get_canvas_size_x() as f32;
+        let y_axis = self.size[1] as f32 / render_state.get_canvas_size_y() as f32;
 
         vec![
             -x_axis,y_axis,0.0,
             model_matrix_transform_index as f32,
             tex_coords[0][0], tex_coords[0][1],
-            renderable_config.get_texture_index() as f32,
+            self.texture_index as f32,
 
             -x_axis,-y_axis,0.0,
             model_matrix_transform_index as f32,
             tex_coords[1][0], tex_coords[1][1],
-            renderable_config.get_texture_index() as f32,
+            self.texture_index as f32,
 
             x_axis,-y_axis,0.0,
             model_matrix_transform_index as f32,
             tex_coords[2][0], tex_coords[2][1],
-            renderable_config.get_texture_index() as f32,
+            self.texture_index as f32,
 
             x_axis,y_axis,0.0,
             model_matrix_transform_index as f32,
             tex_coords[3][0], tex_coords[3][1],
-            renderable_config.get_texture_index() as f32,
+            self.texture_index as f32,
         ]
     }
 
-    fn get_indices() -> Vec<u32>
+    fn get_indices(&self) -> Vec<u32>
     {
+        //TODO: check what happens if this becomes dynamic size. does it break? :) 
         vec![0,1,2,2,3,0]
     }
 
     fn get_draw_type() -> u32
     {
         WebGl2RenderingContext::TRIANGLES
+    }
+
+    fn get_size(&self) -> &[i32;2]
+    {
+        &&self.size
     }
 }

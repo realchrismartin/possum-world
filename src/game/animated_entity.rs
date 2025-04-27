@@ -1,5 +1,4 @@
 use crate::state::render_state::RenderState;
-use crate::graphics::renderable::RenderableConfig;
 use crate::graphics::sprite::Sprite;
 
 pub struct AnimatedEntity
@@ -16,8 +15,8 @@ pub struct AnimatedEntity
 impl AnimatedEntity
 {
     pub fn new(render_state: &mut RenderState, time_per_frame: f32,
-        left_sprite_configs: &Vec<RenderableConfig>,
-        right_sprite_configs: &Vec<RenderableConfig>,
+        left_sprite_configs: &Vec<Sprite>,
+        right_sprite_configs: &Vec<Sprite>,
         facing_right: bool
     ) -> Option<Self>
     {
