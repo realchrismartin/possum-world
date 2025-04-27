@@ -90,6 +90,7 @@ impl GameState
         self.generate_tile_grid(render_state);
         self.generate_logo(render_state);
         self.generate_player_possums(render_state);
+        self.generate_grasses(render_state);
         self.generate_npc_possums(render_state);
     }
 
@@ -132,10 +133,30 @@ impl GameState
         };
 
         render_state.set_scale(&sky, glm::vec3(100.0,100.0,1.0));
-        render_state.set_position(&sky, glm::vec3(0.0 as f32,0.0 as f32, z - self.z_buffer));
-
+        render_state.set_position(&sky, glm::vec3(0.0 as f32,0.0 as f32, z - self.z_buffer * 2.0));
 
         self.tiles.push(sky);
+    }
+
+    fn generate_grasses(&mut self, render_state: &mut RenderState)
+    {
+        let mut rng = rand::thread_rng();
+        let mut z = self.base_z - self.z_buffer;
+        
+        let grass_sprite = Sprite::new([309,2],[62,46],1);
+        for _index in 0..rng.gen_range(4..50)
+        {
+            let grass = match render_state.request_new_renderable::<Sprite>(&grass_sprite)
+            {
+                Some(s) => s,
+                None => { return; }
+            };
+
+            let x_pos = rng.gen_range(0..render_state.get_canvas_size_x());
+            render_state.set_position(&grass, glm::vec3(x_pos as f32,210.0 as f32, z));
+
+            self.tiles.push(grass);
+        }
     }
 
     fn generate_logo(&mut self, render_state: &mut RenderState)
@@ -166,7 +187,7 @@ impl GameState
 
     fn generate_player_possums(&mut self, render_state: &mut RenderState)
     {
-        let poss = match Self::add_possum(render_state,true,self.logo_y,self.base_z + self.z_buffer)
+        let poss = match Self::add_possum(render_state,true,self.logo_y,self.base_z + self.z_buffer * 3.0)
         {
                 Some(p) => p,
                 None => { return; }
@@ -178,7 +199,7 @@ impl GameState
             None => { return; }
         };
 
-        render_state.set_position(&uid, glm::vec3(self.start_x,self.logo_y,self.base_z + self.z_buffer));
+        render_state.set_position(&uid, glm::vec3(self.start_x,self.logo_y,self.base_z + self.z_buffer * 3.0));
 
         self.player_possums.push(poss);
     }
@@ -186,7 +207,7 @@ impl GameState
     fn generate_npc_possums(&mut self, render_state: &mut RenderState)
     {
         let mut rng = rand::thread_rng();
-        let mut z = self.base_z + self.z_buffer * 2.0;
+        let mut z = self.base_z + self.z_buffer * 4.0;
 
         for _index in 0..rng.gen_range(4..50)
         {

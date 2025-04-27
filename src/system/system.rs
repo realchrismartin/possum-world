@@ -60,7 +60,6 @@ fn run_render_system(game_state: &GameState, render_state: &mut RenderState)
         sprite_batch.add(uid);
     }
 
-
     //Render any entities that want to be drawn
     render_state.draw(&sprite_batch);
     render_state.draw(&text_batch);
