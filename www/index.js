@@ -9,15 +9,10 @@ export function init(textures,shader_sources)
         let container = document.getElementById("canvas-container");
         let canvas = document.getElementById("canvas");
 
-        //Ensure the canvas is sized according to multiples of 100 to prevent visual artifacts
-        //We add 100 to each axis so that the whole viewport is always filled.
-        let x = (Math.round(container.clientWidth / 100) * 100) + 100;
-        let y = (Math.round(container.clientHeight / 100) * 100) + 100;
+        canvas.width = container.clientWidth; 
+        canvas.height = container.clientHeight; 
 
-        canvas.width = x; 
-        canvas.height = y; 
-
-        game_object.set_canvas_dimensions(x,y);
+        game_object.set_canvas_dimensions(container.clientWidth, container.clientHeight);
     };
 
     addEventListener("resize",(event) =>
@@ -61,7 +56,6 @@ export function init(textures,shader_sources)
     let index = 0;
     for(const texture of textures)
     {
-        console.log(texture);
         game.load_texture(index,texture);
         index = index + 1;
     }

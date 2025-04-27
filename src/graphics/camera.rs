@@ -1,6 +1,5 @@
 use nalgebra_glm::TMat4;
 use crate::util::util::world_position_to_screen_translation;
-use crate::util::logging::log;
 
 pub struct Camera
 {

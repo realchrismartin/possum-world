@@ -5,8 +5,6 @@ use crate::graphics::vertex_layout::{VertexLayout,VertexLayoutElement};
 use crate::graphics::font::Font;
 use crate::util::util::get_rectangular_texture_coordinates;
 
-use crate::util::logging::log;
-
 use crate::RenderState;
 
 const INDICES_PER_CHAR : u32 = 4;
@@ -96,7 +94,7 @@ impl Renderable for Text
             let x_axis = character_size[0] as f32 / render_state.get_canvas_size_x() as f32;
             let y_axis = character_size[1] as f32 / render_state.get_canvas_size_y() as f32;
 
-            total_x_canvas_size += (x_axis + kerning_width) * 2.0;
+            total_x_canvas_size += x_axis + kerning_width;
             tallest_character_height = tallest_character_height.max(y_axis);
         }
 
@@ -134,22 +132,23 @@ impl Renderable for Text
             let x_axis = character_size[0] as f32 / render_state.get_canvas_size_x() as f32;
             let y_axis = character_size[1] as f32 / render_state.get_canvas_size_y() as f32;
 
+            //TODO: position might be slightly off on both axes, for different reasons here
+
             //Set to the amount of space it takes to make all the characters flush with the bottom line
             let y_canvas_offset = tallest_character_height - y_axis;
 
-            //TODO
-            
             let tex_coords = get_rectangular_texture_coordinates(character_tex_coords, character_size, &texture_dimensions);
 
-            //TODO: slight bug here if characters differ in size
+            //TODO: slight bug here if characters differ in size(?)
             //e.g. M overlaps with whatever is before it because it's larger
+            //Alternately, position might be slightly off since local doesn't overlap zero, unless adjustment is working right
             let char_vertex_vec = vec![
-                -x_axis + x_used - x_canvas_offset,y_axis - y_canvas_offset,0.0,
+                x_used - x_canvas_offset,y_axis - y_canvas_offset,0.0,
                 model_matrix_transform_index as f32,
                 tex_coords[0][0], tex_coords[0][1],
                 texture_index as f32,
 
-                -x_axis + x_used - x_canvas_offset,-y_axis - y_canvas_offset,0.0,
+                x_used - x_canvas_offset,-y_axis - y_canvas_offset,0.0,
                 model_matrix_transform_index as f32,
                 tex_coords[1][0], tex_coords[1][1],
                 texture_index as f32,
@@ -166,7 +165,7 @@ impl Renderable for Text
             ];
 
             vertices.extend(&char_vertex_vec);
-            x_used += (x_axis * 2.0) + kerning_width;
+            x_used += x_axis + kerning_width;
         }
 
         vertices
@@ -175,8 +174,6 @@ impl Renderable for Text
     fn get_indices(&self) -> Vec<u32>
     {
         let mut indices = Vec::<u32>::new();
-
-        let chars_so_far : u32 = 0;
 
         for index in 0..self.content.chars().count()
         {

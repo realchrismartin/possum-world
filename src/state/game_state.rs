@@ -4,7 +4,6 @@ use crate::game::animated_entity::AnimatedEntity;
 use crate::graphics::sprite::Sprite;
 use crate::graphics::font::Font;
 use crate::graphics::text::Text;
-use crate::util::logging::log;
 use rand::Rng;
 
 pub struct GameState
@@ -86,7 +85,7 @@ impl GameState
         self.texts.clear();
         
         self.start_x = render_state.get_canvas_size_x() as f32 / 2.0;
-        self.logo_y = 400.0;
+        self.logo_y = 350.0;
 
         self.generate_tile_grid(render_state);
         self.generate_logo(render_state);
@@ -121,9 +120,8 @@ impl GameState
             None => { return; }
         };
 
-        render_state.set_scale(&ground, glm::vec3(100.0,2.0,1.0));
-        render_state.set_position(&ground, glm::vec3(0.0 as f32,100.0 as f32, z + self.z_buffer));
-
+        render_state.set_scale(&ground, glm::vec3(100.0,1.0,1.0));
+        render_state.set_position(&ground, glm::vec3(self.start_x, 150.0, z + self.z_buffer));
 
         self.tiles.push(ground);
 
@@ -162,7 +160,6 @@ impl GameState
 
         render_state.set_position(&subtext, subtext_pos);
 
-        //render_state.set_scale(&logo, glm::vec3(0.8,0.8,0.8));
         self.texts.push(logo);
         self.texts.push(subtext);
     }
@@ -204,7 +201,7 @@ impl GameState
         }
     }
 
-    fn add_possum(render_state: &mut RenderState, isPlayer: bool, y: f32, z: f32) -> Option<AnimatedEntity>
+    fn add_possum(render_state: &mut RenderState, is_player: bool, y: f32, z: f32) -> Option<AnimatedEntity>
     {
         let mut rng = rand::thread_rng();
 
@@ -250,7 +247,7 @@ impl GameState
         
         render_state.set_position(uid,glm::vec3(x,y,z));
 
-        if isPlayer
+        if is_player 
         {
             //Barry is lorger than the other posses
             render_state.set_scale(uid, glm::vec3(4.0,4.0,1.0));

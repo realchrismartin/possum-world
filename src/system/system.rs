@@ -155,7 +155,6 @@ fn run_possum_physics(animated_entity: &mut AnimatedEntity, render_state: &mut R
     let floor_y = 200.0;
 
     let adjusted_floor_y = floor_y + (size.y / 2.0);
-    //let adjusted_floor_y = floor_y;
 
     if position.y > adjusted_floor_y
     {
@@ -183,7 +182,7 @@ fn run_possum_physics(animated_entity: &mut AnimatedEntity, render_state: &mut R
     render_state.set_position(&uid,position);
 }
 
-fn run_ai_system(game_state: &mut GameState, render_state: &RenderState, delta_time: f32)
+fn run_ai_system(game_state: &mut GameState, render_state: &RenderState, _delta_time: f32)
 {
     //TODO: operate only on AI components.
     //Then, pass the AI data to the physics components
