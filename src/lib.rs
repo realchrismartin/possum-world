@@ -12,12 +12,15 @@ mod util;
 mod graphics;
 mod game;
 mod system;
+mod component;
+mod scene;
 
 use web_sys::{Document, HtmlImageElement};
 
 use state::game_state::GameState;
 use state::input_state::InputState;
 use state::render_state::RenderState;
+use scene::scene::Scene;
 use crate::system::system::run_systems;
 
 #[wasm_bindgen]
@@ -25,7 +28,8 @@ pub struct Game
 {
     game_state: GameState,
     render_state: RenderState,
-    input_state: InputState
+    input_state: InputState,
+    scene: Scene
 }
 
 #[wasm_bindgen]
@@ -37,7 +41,8 @@ impl Game
         {
             game_state: GameState::new(),
             render_state: RenderState::new(document),
-            input_state: InputState::new()
+            input_state: InputState::new(),
+            scene: Scene::new()
         }
     }
 
