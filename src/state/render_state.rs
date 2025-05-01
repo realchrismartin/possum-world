@@ -106,17 +106,17 @@ impl RenderState
         Some(web_context)
     }
 
-    pub fn request_new_renderable_with_existing_transform<T: Renderable + 'static>(&mut self, renderable: &T, reuse_existing_transform_for_uid: u32) -> Option<u32>
+    pub fn request_new_renderable_with_existing_transform<T: Renderable>(&mut self, renderable: &T, reuse_existing_transform_for_uid: u32) -> Option<u32>
     {
         self.request_new_renderable_impl::<T>(renderable,&Some(reuse_existing_transform_for_uid))
     }
 
-    pub fn request_new_renderable<T: Renderable + 'static>(&mut self, renderable: &T) -> Option<u32>
+    pub fn request_new_renderable<T: Renderable>(&mut self, renderable: &T) -> Option<u32>
     {
         self.request_new_renderable_impl::<T>(renderable,&None::<u32>)
     }
 
-    fn request_new_renderable_impl<T: Renderable + 'static>(&mut self, renderable: &T, reuse_existing_transform_for_uid: &Option<u32>) -> Option<u32>
+    fn request_new_renderable_impl<T: Renderable>(&mut self, renderable: &T, reuse_existing_transform_for_uid: &Option<u32>) -> Option<u32>
     {
         self.next_uid += 1;
 
@@ -335,7 +335,7 @@ impl RenderState
         web_context.uniform_matrix4fv_with_f32_array(vp_location.as_ref(),false,vp_converted.as_slice());
     }
 
-    pub fn draw<T: Renderable + 'static>(&self, draw_batch: &DrawBatch<T>)
+    pub fn draw<T: Renderable>(&self, draw_batch: &DrawBatch<T>)
     {
         let web_context = match self.context.as_ref()
         {
@@ -343,7 +343,7 @@ impl RenderState
             None => { return; }
         };
 
-        let buffer = match Self::get_const_mapped_buffer::<T>(&self.vertex_buffer_map)
+        let buffer = match Self::get_mapped_buffer::<T>(&self.vertex_buffer_map)
         {
             Some(buffer) => buffer,
             None => {return}
@@ -383,7 +383,7 @@ impl RenderState
         self.textures.get(&index)
     }
 
-    fn init_buffer<T: Renderable + 'static>(&mut self)
+    fn init_buffer<T: Renderable>(&mut self)
     {
         let type_id = TypeId::of::<T>();
         if self.vertex_buffer_map.contains_key(&type_id)
@@ -407,7 +407,7 @@ impl RenderState
         self.vertex_buffer_map.insert(type_id,Box::new(buffer));
     }
 
-    fn submit_data<T: Renderable + 'static>(&mut self,uid: &u32, vertices: &Vec<f32>, indices: &Vec<u32>)
+    fn submit_data<T: Renderable>(&mut self,uid: &u32, vertices: &Vec<f32>, indices: &Vec<u32>)
     {
         let type_id = TypeId::of::<T>();
         if !self.vertex_buffer_map.contains_key(&type_id)
@@ -423,7 +423,7 @@ impl RenderState
         };
 
         //Now that we've perhaps lazily initialized, grab a ref to the buffer.
-        let buffer = match Self::get_mapped_buffer::<T>(&mut self.vertex_buffer_map)
+        let buffer = match Self::get_mut_mapped_buffer::<T>(&mut self.vertex_buffer_map)
         {
             Some(buffer) => buffer,
             None => { return; }
@@ -434,7 +434,7 @@ impl RenderState
         VertexBuffer::<T>::unbind(web_context);
     }
 
-    fn get_const_mapped_buffer<T: Renderable + 'static>(vertex_buffer_map: &HashMap<TypeId,Box<dyn Any>>) -> Option<&VertexBuffer<T>>
+    fn get_mapped_buffer<T: Renderable>(vertex_buffer_map: &HashMap<TypeId,Box<dyn Any>>) -> Option<&VertexBuffer<T>>
     {
         let type_id = TypeId::of::<T>();
 
@@ -450,10 +450,10 @@ impl RenderState
             None => {return None;}
         };
 
-        return (&*boxed_buffer).downcast_ref::<VertexBuffer<T>>()
+        boxed_buffer.downcast_ref::<VertexBuffer<T>>()
     }
 
-    fn get_mapped_buffer<T: Renderable + 'static>(vertex_buffer_map: &mut HashMap<TypeId,Box<dyn Any>>) -> Option<&mut VertexBuffer<T>>
+    fn get_mut_mapped_buffer<T: Renderable>(vertex_buffer_map: &mut HashMap<TypeId,Box<dyn Any>>) -> Option<&mut VertexBuffer<T>>
     {
         let type_id = TypeId::of::<T>();
 
@@ -469,7 +469,7 @@ impl RenderState
             None => {return None;}
         };
 
-        return (&mut *boxed_buffer).downcast_mut::<VertexBuffer<T>>()
+        boxed_buffer.downcast_mut::<VertexBuffer<T>>()
     }
 
     pub fn set_canvas_dimensions(&mut self, x: u32, y: u32)
@@ -510,9 +510,9 @@ impl RenderState
         self.clear_buffer::<Text>();
     }
 
-    fn clear_buffer<T: Renderable + 'static>(&mut self)
+    fn clear_buffer<T: Renderable>(&mut self)
     {
-        let buffer = match Self::get_mapped_buffer::<T>(&mut self.vertex_buffer_map)
+        let buffer = match Self::get_mut_mapped_buffer::<T>(&mut self.vertex_buffer_map)
         {
             Some(buffer) => buffer,
             None => {return}
