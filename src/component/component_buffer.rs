@@ -52,7 +52,7 @@ impl<T:Component> ComponentBuffer<T>
             return None;
         }
 
-        return self.components[index].as_ref();
+        self.components[index].as_ref()
     }
 
     pub fn get_mut(&mut self, index: usize) -> Option<&mut T>
@@ -67,7 +67,22 @@ impl<T:Component> ComponentBuffer<T>
             return None;
         }
 
-        return self.components[index].as_mut();
+        self.components[index].as_mut()
+    }
+
+    pub fn has(&self, index: usize) -> bool
+    {
+        if index >= self.components.len()
+        {
+            return false;
+        }
+
+        if self.components[index].is_none()
+        {
+            return false;
+        }
+
+        true
     }
 }
 

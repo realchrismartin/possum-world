@@ -22,6 +22,7 @@ use state::input_state::InputState;
 use state::render_state::RenderState;
 use scene::scene::Scene;
 use crate::system::system::run_systems;
+use crate::component::physics_component::PhysicsComponent;
 
 #[wasm_bindgen]
 pub struct Game
@@ -60,6 +61,22 @@ impl Game
     {
         self.render_state.clear();
         self.game_state.init(&mut self.render_state);
+
+        /*
+        //TODO: remove this placeholder stuff.
+        let entity = match self.scene.add_entity()
+        {
+            Some(e) => e,
+            None => {return;}
+        };
+
+        self.scene.add_component::<PhysicsComponent>(entity);
+
+        for entity in self.scene.get_entities_with_components::<PhysicsComponent,OtherComponent>()
+        {
+            let pc = self.scene.get_component::<PhysicsComponent>(entity);
+        }
+        */
     }
 
     pub fn run_systems(&mut self, delta_time: f32)

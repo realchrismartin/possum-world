@@ -21,6 +21,24 @@ impl Scene
         }
     }
 
+    pub fn get_entities_with_components<T: Component, U: Component>(&self) -> Vec<usize>
+    {
+        //TODO: could get the intersection of the sets used by each buffer instead of iterating and using has_component
+        //This is probably pretty slow.
+
+        let mut result = Vec::<usize>::new();
+
+        for entity_uid in 0..self.next_entity_uid
+        {
+            if self.has_component::<T>(entity_uid) && self.has_component::<U>(entity_uid)
+            {
+                result.push(entity_uid);
+            }
+        }
+
+        result
+    }
+
     pub fn add_entity(&mut self) -> Option<usize>
     {
         //Can't have more entities than component buffer size
@@ -45,6 +63,17 @@ impl Scene
         };
 
         mut_buffer.add(entity_uid);
+    }
+
+    pub fn has_component<T: Component>(&self, entity_uid: usize) -> bool
+    {
+        let buffer = match Self::get_component_buffer::<T>(&self.component_buffer_map)
+        {
+            Some(b) => b,
+            None => { return false; }
+        };
+
+        buffer.has(entity_uid)
     }
 
     pub fn get_component<T: Component>(&self, entity_uid: usize) -> Option<&T>
