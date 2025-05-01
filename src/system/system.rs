@@ -3,9 +3,63 @@ use crate::state::input_state::InputState;
 use crate::state::render_state::RenderState;
 
 use crate::graphics::draw_batch::DrawBatch;
+use crate::graphics::renderable::Renderable;
 use crate::graphics::sprite::Sprite;
 use crate::graphics::text::Text;
 use crate::game::animated_entity::AnimatedEntity;
+use crate::util::logging::log;
+use crate::scene::scene::Scene;
+use crate::component::component::Component;
+use crate::component::physics_component::PhysicsComponent;
+
+pub fn init_systems(game_state: &mut GameState, render_state: &mut RenderState, scene: &mut Scene)
+{
+    //get data from game state, initialize stuff in render state for it
+    render_state.clear();
+    game_state.init(render_state);
+
+    //TODO: remove this placeholder stuff.
+    let first = match scene.add_entity()
+    {
+        Some(e) => e,
+        None => {return;}
+    };
+
+    let second = match scene.add_entity()
+    {
+        Some(e) => e,
+        None => {return;}
+    };
+
+    let third = match scene.add_entity()
+    {
+        Some(e) => e,
+        None => {return;}
+    };
+
+    scene.add_component::<PhysicsComponent>(second);
+    scene.add_component::<PhysicsComponent>(third);
+    scene.add_component::<Sprite>(third);
+
+    scene.run_on_component::<PhysicsComponent, _>(third, |pc: &PhysicsComponent|
+    {
+        log(format!("before mod entity 3 has PC position {} {}",pc.get_position().x,pc.get_position().y).as_str());
+    });
+
+    scene.apply_to_entities_with::<PhysicsComponent,Sprite, _>(|entity_uid: usize, pc: &mut PhysicsComponent, s: &mut Sprite|
+    {
+        let current_pos = pc.get_position();
+
+        pc.set_position(current_pos.x + s.get_size()[0] as f32, current_pos.y + s.get_size()[1] as f32);
+
+        log(format!("test, entity with both a sprite and a PC is {}",entity_uid).as_str());
+    });
+
+    scene.run_on_component::<PhysicsComponent, _>(third, |pc: &PhysicsComponent|
+    {
+        log(format!("after mod entity 3 has PC position {} {}",pc.get_position().x,pc.get_position().y).as_str());
+    });
+}
 
 pub fn run_systems(game_state: &mut GameState, render_state: &mut RenderState, input_state: &mut InputState, delta_time : f32)
 {

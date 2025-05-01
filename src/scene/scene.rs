@@ -1,13 +1,19 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
+use std::collections::hash_set::Intersection;
 use std::any::TypeId;
 use std::any::Any;
+use std::cell::RefCell;
+use core::cell::Ref;
+use core::cell::RefMut;
 use crate::component::component::Component;
 use crate::component::component_buffer::ComponentBuffer;
+use crate::util::logging::log;
 
 pub struct Scene
 {
     next_entity_uid: usize,
-    component_buffer_map: HashMap<TypeId,Box<dyn Any + 'static>>,
+    component_buffer_map: HashMap<TypeId,RefCell<Box<dyn Any + 'static>>>,
 }
 
 impl Scene
@@ -21,22 +27,86 @@ impl Scene
         }
     }
 
-    pub fn get_entities_with_components<T: Component, U: Component>(&self) -> Vec<usize>
+    pub fn run_on_component<T: Component, F>(&self, entity_uid: usize, functor: F)
+    where
+        F: Fn(&T)
     {
-        //TODO: could get the intersection of the sets used by each buffer instead of iterating and using has_component
-        //This is probably pretty slow.
-
-        let mut result = Vec::<usize>::new();
-
-        for entity_uid in 0..self.next_entity_uid
+        let buffer = match Self::get_component_buffer::<T>(&self.component_buffer_map)
         {
-            if self.has_component::<T>(entity_uid) && self.has_component::<U>(entity_uid)
+            Some(a) => a,
+            None => { return; }
+        };
+
+        let component = match buffer.get(entity_uid)
+        {
+            Some(c) => c,
+            None => {return; }
+        };
+
+        functor(component);
+    }
+
+    pub fn apply_to_entities_with<T: Component, U: Component, F>(&mut self, mut functor: F)
+    where
+        F: FnMut(usize,&mut T, &mut U)
+    {
+        //First, create a list of uids that are all entities which have both component types
+        let intersection : Vec<usize>;
+        {
+            let buffer_a = match Self::get_component_buffer::<T>(&self.component_buffer_map)
             {
-                result.push(entity_uid);
-            }
+                Some(a) => a,
+                None => { return; }
+            };
+
+            let buffer_b = match Self::get_component_buffer::<U>(&self.component_buffer_map)
+            {
+                Some(b) => b,
+                None => { return; }
+            };
+
+            let set_a = buffer_a.get_entity_set();
+            let set_b = buffer_b.get_entity_set();
+
+            intersection = set_a.intersection(&set_b).cloned().collect();
         }
 
-        result
+        let component_buffer_map = &mut self.component_buffer_map;
+
+        let buffer_a_ref = match component_buffer_map.get(&TypeId::of::<T>()) 
+        {
+            Some(a) => a,
+            None => { return; }
+        };
+
+        let buffer_b_ref = match component_buffer_map.get(&TypeId::of::<U>()) 
+        {
+            Some(b) => b,
+            None => { return; }
+        };
+
+        let mut mut_borrow_a = buffer_a_ref.borrow_mut();
+        let buffer_a = mut_borrow_a.downcast_mut::<ComponentBuffer<T>>().unwrap();
+
+        let mut mut_borrow_b = buffer_b_ref.borrow_mut();
+        let buffer_b = mut_borrow_b.downcast_mut::<ComponentBuffer<U>>().unwrap();
+
+        for entity_uid in intersection
+        {
+            let component_instance_a = match buffer_a.get_mut(entity_uid)
+            {
+                Some(a) => a,
+                None => { continue; }
+            };
+
+            let component_instance_b = match buffer_b.get_mut(entity_uid)
+            {
+                Some(b) => b,
+                None => { continue; }
+            };
+
+            functor(entity_uid,component_instance_a,component_instance_b);
+        }
     }
 
     pub fn add_entity(&mut self) -> Option<usize>
@@ -56,46 +126,13 @@ impl Scene
         //Lazy init the component buffer for this type
         self.init_component_buffer::<T>();
 
-        let mut_buffer = match Self::get_mut_component_buffer::<T>(&mut self.component_buffer_map)
+        let mut mut_buffer = match Self::get_mut_component_buffer::<T>(&mut self.component_buffer_map)
         {
             Some(b) => b,
             None => { return; }
         };
 
         mut_buffer.add(entity_uid);
-    }
-
-    pub fn has_component<T: Component>(&self, entity_uid: usize) -> bool
-    {
-        let buffer = match Self::get_component_buffer::<T>(&self.component_buffer_map)
-        {
-            Some(b) => b,
-            None => { return false; }
-        };
-
-        buffer.has(entity_uid)
-    }
-
-    pub fn get_component<T: Component>(&self, entity_uid: usize) -> Option<&T>
-    {
-        let buffer = match Self::get_component_buffer::<T>(&self.component_buffer_map)
-        {
-            Some(b) => b,
-            None => { return None; }
-        };
-
-        buffer.get(entity_uid)
-    }
-
-    pub fn get_mut_component<T: Component>(&mut self, entity_uid: usize) -> Option<&mut T>
-    {
-        let buffer = match Self::get_mut_component_buffer::<T>(&mut self.component_buffer_map)
-        {
-            Some(b) => b,
-            None => { return None; }
-        };
-
-        buffer.get_mut(entity_uid)
     }
 
     fn init_component_buffer<T: Component>(&mut self)
@@ -107,10 +144,10 @@ impl Scene
             return;
         }
 
-        self.component_buffer_map.insert(type_id,Box::new(ComponentBuffer::<T>::new()));
+        self.component_buffer_map.insert(type_id,RefCell::new(Box::new(ComponentBuffer::<T>::new())));
     }
 
-    fn get_component_buffer<T: Component>(buffer_map: & HashMap<TypeId,Box<dyn Any>>) -> Option<&ComponentBuffer<T>>
+    fn get_component_buffer<T: Component>(buffer_map: & HashMap<TypeId,RefCell<Box<dyn Any>>>) -> Option<Ref<ComponentBuffer<T>>>
     {
         let type_id = TypeId::of::<T>();
 
@@ -120,16 +157,14 @@ impl Scene
             return None;
         }
 
-        let boxed_buffer = match buffer_map.get(&type_id)
-        {
-            Some(boxed_buffer) => boxed_buffer,
-            None => {return None;}
-        };
+        let boxed_buffer = buffer_map.get(&type_id).unwrap(); 
 
-        boxed_buffer.downcast_ref::<ComponentBuffer<T>>()
+        Some(Ref::map(boxed_buffer.borrow(), |any| {
+            any.downcast_ref::<ComponentBuffer<T>>().unwrap()
+        }))
     }
 
-    fn get_mut_component_buffer<T: Component>(buffer_map: &mut HashMap<TypeId,Box<dyn Any>>) -> Option<&mut ComponentBuffer<T>>
+    fn get_mut_component_buffer<T: Component>(buffer_map: &mut HashMap<TypeId,RefCell<Box<dyn Any>>>) -> Option<RefMut<ComponentBuffer<T>>>
     {
         let type_id = TypeId::of::<T>();
 
@@ -139,12 +174,10 @@ impl Scene
             return None;
         }
 
-        let boxed_buffer = match buffer_map.get_mut(&type_id)
-        {
-            Some(boxed_buffer) => boxed_buffer,
-            None => {return None;}
-        };
+        let boxed_buffer = buffer_map.get_mut(&type_id).unwrap(); 
 
-        boxed_buffer.downcast_mut::<ComponentBuffer<T>>()
+        Some(RefMut::map(boxed_buffer.borrow_mut(), |any| {
+            any.downcast_mut::<ComponentBuffer<T>>().unwrap()
+        }))
     }
 }

@@ -61,7 +61,7 @@ export function init(textures,shader_sources)
     }
 
     //Load initial data - has to be done after renderer is set up.
-    game.init_game_data();
+    game.init();
 
     //TODO: make the clock less rudimentary
     let now = new Date();

@@ -9,15 +9,15 @@ pub struct PhysicsComponent
 
 impl PhysicsComponent
 {
-    fn get_position(&self) -> &glm::Vec2
+    pub fn get_position(&self) -> &glm::Vec2
     {
         &&self.position
     }
 
-    fn set_position(&mut self, position : &glm::Vec2)
+    pub fn set_position(&mut self, x: f32, y: f32)
     {
-        self.position.x = position.x;
-        self.position.y = position.y;
+        self.position.x = x;
+        self.position.y = y;
     }
 }
 

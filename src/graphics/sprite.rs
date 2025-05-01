@@ -4,7 +4,9 @@ use crate::graphics::renderable::Renderable;
 use crate::graphics::vertex_layout::{VertexLayout,VertexLayoutElement};
 use crate::util::util::get_rectangular_texture_coordinates;
 use crate::RenderState;
+use crate::component::component::Component;
 
+#[derive(Copy)]
 #[derive(Clone)]
 pub struct Sprite {
     texture_coordinates: [i32;2],
@@ -21,6 +23,19 @@ impl Sprite
             texture_coordinates :tex_coordinates,
             size: sprite_size,
             texture_index: tex_index
+        }
+    }
+}
+
+impl Component for Sprite
+{
+    fn new() -> Self
+    {
+        Self
+        {
+            texture_coordinates: [0,0],
+            size: [1,1],
+            texture_index: 0
         }
     }
 }

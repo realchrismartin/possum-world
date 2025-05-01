@@ -1,8 +1,10 @@
 use crate::component::component::Component;
+use std::collections::HashSet;
 
 pub struct ComponentBuffer<T>
 {
-    components: [Option<T>;1000]
+    components: [Option<T>;1000],
+    entity_set: HashSet<usize>
 }
 
 impl<T:Component> ComponentBuffer<T>
@@ -11,7 +13,8 @@ impl<T:Component> ComponentBuffer<T>
     {
         Self
         {
-            components: [None;1000]
+            components: [None;1000],
+            entity_set: HashSet::with_capacity(100)
         }
     }
 
@@ -27,7 +30,13 @@ impl<T:Component> ComponentBuffer<T>
             return;
         }
 
+        if self.entity_set.contains(&index)
+        {
+            return;
+        }
+
         self.components[index] = Some(T::new());
+        self.entity_set.insert(index);
     }
 
     pub fn remove(&mut self, index: usize)
@@ -37,7 +46,13 @@ impl<T:Component> ComponentBuffer<T>
             return;
         }
 
+        if !self.entity_set.contains(&index)
+        {
+            return;
+        }
+
         self.components[index] = None;
+        self.entity_set.remove(&index);
     }
 
     pub fn get(&self, index: usize) -> Option<&T>
@@ -70,19 +85,9 @@ impl<T:Component> ComponentBuffer<T>
         self.components[index].as_mut()
     }
 
-    pub fn has(&self, index: usize) -> bool
+    pub fn get_entity_set(&self) -> &HashSet<usize>
     {
-        if index >= self.components.len()
-        {
-            return false;
-        }
-
-        if self.components[index].is_none()
-        {
-            return false;
-        }
-
-        true
+        &&self.entity_set
     }
 }
 
