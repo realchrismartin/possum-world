@@ -5,7 +5,7 @@ pub struct ComponentBuffer<T>
     components: [Option<T>;1000]
 }
 
-impl<T: Copy + Clone + Component> ComponentBuffer<T>
+impl<T:Component> ComponentBuffer<T>
 {
     pub fn new() -> Self
     {

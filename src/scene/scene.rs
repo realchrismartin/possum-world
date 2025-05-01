@@ -7,7 +7,7 @@ use crate::component::component_buffer::ComponentBuffer;
 pub struct Scene
 {
     next_entity_uid: usize,
-    component_buffer_map: HashMap<TypeId,Box<dyn Any>>,
+    component_buffer_map: HashMap<TypeId,Box<dyn Any + 'static>>,
 }
 
 impl Scene
@@ -33,7 +33,7 @@ impl Scene
         return Some(self.next_entity_uid);
     }
 
-    pub fn add_component<T: Component + Copy + 'static>(&mut self, entity_uid: usize)
+    pub fn add_component<T: Component>(&mut self, entity_uid: usize)
     {
         //Lazy init the component buffer for this type
         self.init_component_buffer::<T>();
@@ -47,7 +47,7 @@ impl Scene
         mut_buffer.add(entity_uid);
     }
 
-    pub fn get_component<T: Component + Copy + 'static>(&self, entity_uid: usize) -> Option<&T>
+    pub fn get_component<T: Component>(&self, entity_uid: usize) -> Option<&T>
     {
         let buffer = match Self::get_component_buffer::<T>(&self.component_buffer_map)
         {
@@ -58,7 +58,7 @@ impl Scene
         buffer.get(entity_uid)
     }
 
-    pub fn get_mut_component<T: Component + Copy + 'static>(&mut self, entity_uid: usize) -> Option<&mut T>
+    pub fn get_mut_component<T: Component>(&mut self, entity_uid: usize) -> Option<&mut T>
     {
         let buffer = match Self::get_mut_component_buffer::<T>(&mut self.component_buffer_map)
         {
@@ -69,7 +69,7 @@ impl Scene
         buffer.get_mut(entity_uid)
     }
 
-    fn init_component_buffer<T: Component + Copy + 'static>(&mut self)
+    fn init_component_buffer<T: Component>(&mut self)
     {
         let type_id = TypeId::of::<T>();
         if self.component_buffer_map.contains_key(&type_id)
@@ -81,7 +81,7 @@ impl Scene
         self.component_buffer_map.insert(type_id,Box::new(ComponentBuffer::<T>::new()));
     }
 
-    fn get_component_buffer<T: Component + Copy + 'static>(buffer_map: & HashMap<TypeId,Box<dyn Any>>) -> Option<&ComponentBuffer<T>>
+    fn get_component_buffer<T: Component>(buffer_map: & HashMap<TypeId,Box<dyn Any>>) -> Option<&ComponentBuffer<T>>
     {
         let type_id = TypeId::of::<T>();
 
@@ -97,10 +97,10 @@ impl Scene
             None => {return None;}
         };
 
-        return (&*boxed_buffer).downcast_ref::<ComponentBuffer<T>>()
+        boxed_buffer.downcast_ref::<ComponentBuffer<T>>()
     }
 
-    fn get_mut_component_buffer<T: Component + Clone + 'static>(buffer_map: &mut HashMap<TypeId,Box<dyn Any>>) -> Option<&mut ComponentBuffer<T>>
+    fn get_mut_component_buffer<T: Component>(buffer_map: &mut HashMap<TypeId,Box<dyn Any>>) -> Option<&mut ComponentBuffer<T>>
     {
         let type_id = TypeId::of::<T>();
 
@@ -116,6 +116,6 @@ impl Scene
             None => {return None;}
         };
 
-        return (&mut *boxed_buffer).downcast_mut::<ComponentBuffer<T>>()
+        boxed_buffer.downcast_mut::<ComponentBuffer<T>>()
     }
 }
