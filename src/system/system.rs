@@ -46,7 +46,7 @@ pub fn init_systems(game_state: &mut GameState, render_state: &mut RenderState, 
         log(format!("before mod entity 3 has PC position {} {}",pc.get_position().x,pc.get_position().y).as_str());
     });
 
-    scene.apply_to_entities_with::<PhysicsComponent,Sprite, _>(|entity_uid: usize, pc: &mut PhysicsComponent, s: &mut Sprite|
+    scene.apply_to_entities_with_both::<PhysicsComponent,Sprite, _>(|entity_uid: usize, pc: &mut PhysicsComponent, s: &mut Sprite|
     {
         let current_pos = pc.get_position();
 
@@ -61,19 +61,19 @@ pub fn init_systems(game_state: &mut GameState, render_state: &mut RenderState, 
     });
 }
 
-pub fn run_systems(game_state: &mut GameState, render_state: &mut RenderState, input_state: &mut InputState, delta_time : f32)
+pub fn run_systems(scene: &mut Scene, game_state: &mut GameState, render_state: &mut RenderState, input_state: &mut InputState, delta_time : f32)
 {
-    run_input_system(input_state, render_state, game_state); //TODO: stop passing render state
-    run_physics_system(game_state, render_state, delta_time); //TODO: stop passing render state
-    run_ai_system(game_state, render_state, delta_time); //TODO: stop passing render state
-    run_animation_system(game_state, delta_time);
-    run_camera_update_system(game_state, render_state);
+    run_input_system(scene, input_state, render_state, game_state); //TODO: stop passing render state
+    run_physics_system(scene, game_state, render_state, delta_time); //TODO: stop passing render state
+    run_ai_system(scene, game_state, render_state, delta_time); //TODO: stop passing render state
+    run_animation_system(scene, game_state, delta_time);
+    run_camera_update_system(scene, game_state, render_state);
 
-    run_render_system(game_state,render_state);
+    run_render_system(scene, game_state,render_state);
 }
 
 //TODO: maybe later remove game_state from here, pass entity deets from elsewhere
-fn run_render_system(game_state: &GameState, render_state: &mut RenderState)
+fn run_render_system(scene: &mut Scene, game_state: &GameState, render_state: &mut RenderState)
 {   
     render_state.clear_context();
     render_state.submit_camera_uniforms(); 
@@ -81,6 +81,29 @@ fn run_render_system(game_state: &GameState, render_state: &mut RenderState)
 
     let mut sprite_batch = DrawBatch::<Sprite>::new();
     let mut text_batch = DrawBatch::<Text>::new();
+
+    scene.apply_to_entities_with::<Sprite, _>(|entity_uid: usize, sprite: &mut Sprite|
+    {
+    //    sprite_batch.add(entity_uid);
+    });
+
+    /*
+    scene.apply_to_entities_with::<Text, _>(|entity_uid: usize, sprite: &mut Sprite|
+    {
+        text_batch.add(entity_uid);
+    });
+
+    scene.apply_to_entities_with::<Animation, _>(|entity_uid: usize, sprite: &mut Animation|
+    {
+        let uid = match animation.get_renderable_uid()
+        {
+            Some(u) => {u},
+            None => {continue;}
+        };
+
+        sprite_batch.add(entity_uid);
+    });
+    */
 
     for uid in game_state.get_tiles()
     {
@@ -121,19 +144,28 @@ fn run_render_system(game_state: &GameState, render_state: &mut RenderState)
 
 //TODO: apply input to whatever entities want it
 //TODO: stop passing all of these state datas
-fn run_input_system(input_state: &InputState, render_state: &RenderState, game_state: &mut GameState)
+fn run_input_system(scene: &mut Scene, input_state: &InputState, render_state: &RenderState, game_state: &mut GameState)
 {
+    
+    let mut velocity = glm::vec2(0.0,0.0);
+
     if input_state.get_current_mouse_location().is_active()
     {
         if input_state.get_current_mouse_location().get_x_coordinate() > (render_state.get_canvas_size_x()/2) as i32
         {
-            game_state.set_player_movement_direction(&glm::vec2(1.0,0.0));
+            game_state.set_player_movement_direction(&glm::vec2(1.0,0.0)); //TODO
+            velocity.x = 1.0;
         } else {
-            game_state.set_player_movement_direction(&glm::vec2(-1.0,0.0));
+            game_state.set_player_movement_direction(&glm::vec2(-1.0,0.0)); //TODO
+            velocity.x = -1.0;
         }
-    } else {
-       game_state.set_player_movement_direction(&glm::vec2(0.0,0.0));
     }
+
+    scene.apply_to_entities_with::<PhysicsComponent, _>(|entity_uid: usize, pc: &mut PhysicsComponent|
+    {
+       //TODO
+       pc.set_velocity(velocity.x,velocity.y);
+    });
 
     /*
     let mut clicked = false;
@@ -156,11 +188,50 @@ fn run_input_system(input_state: &InputState, render_state: &RenderState, game_s
     */
 }
 
-fn run_physics_system(game_state: &mut GameState, render_state: &mut RenderState, delta_time: f32)
+fn run_physics_system(scene: &mut Scene, game_state: &mut GameState, render_state: &mut RenderState, delta_time: f32)
 {
     //TODO: apply physics to whatever entities want it
     //Update their physics components
 
+    let floor_y = 200.0;
+
+    scene.apply_to_entities_with::<PhysicsComponent, _>(|entity_uid: usize, pc: &mut PhysicsComponent|
+    {
+            //TODO: ground is hardcoded to be at 200
+
+        //let adjusted_floor_y = floor_y + (size.y / 2.0);
+        let adjusted_floor_y = 200.0;
+
+        let new_position;
+
+        {
+            let position = pc.get_position();
+            let velocity = pc.get_velocity();
+
+            if position.y > adjusted_floor_y
+            {
+                /*
+                position.y -= (delta_time / 5.0) * 10.0;
+
+                if position.y < adjusted_floor_y
+                {
+                    position.y = adjusted_floor_y;
+                }
+                */
+            }
+
+            //TODO: arbitrary speed/ distance
+            new_position = glm::vec2(position.x + (delta_time / 5.0) * velocity.x, position.y + (delta_time / 5.0) * velocity.y);
+        }
+
+        pc.set_position(new_position.x,new_position.y);
+
+        log(format!("after input entity has PC position {} {}",pc.get_position().x,pc.get_position().y).as_str());
+        log(format!("after input entity has PC velocity {} {}",pc.get_velocity().x,pc.get_velocity().y).as_str());
+
+    });
+
+    //TODO: remove old code when done
     let player_movement_direction = game_state.get_player_movement_direction().clone();
 
     for possum in game_state.get_mutable_player_possums()
@@ -235,7 +306,7 @@ fn run_possum_physics(animated_entity: &mut AnimatedEntity, render_state: &mut R
     render_state.set_position(&uid,position);
 }
 
-fn run_ai_system(game_state: &mut GameState, render_state: &RenderState, _delta_time: f32)
+fn run_ai_system(scene: &mut Scene, game_state: &mut GameState, render_state: &RenderState, _delta_time: f32)
 {
     //TODO: operate only on AI components.
     //Then, pass the AI data to the physics components
@@ -266,7 +337,7 @@ fn run_ai_system(game_state: &mut GameState, render_state: &RenderState, _delta_
     }
 }
 
-fn run_animation_system(game_state: &mut GameState, delta_time: f32)
+fn run_animation_system(scene: &mut Scene, game_state: &mut GameState, delta_time: f32)
 {
     for possum in game_state.get_mutable_player_possums()
     {
@@ -279,7 +350,7 @@ fn run_animation_system(game_state: &mut GameState, delta_time: f32)
     }
 }
 
-fn run_camera_update_system(game_state: &GameState, render_state: &mut RenderState)
+fn run_camera_update_system(scene: &mut Scene, game_state: &GameState, render_state: &mut RenderState)
 {
     //NB: sets to the first player position
 

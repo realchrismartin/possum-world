@@ -63,7 +63,7 @@ impl Game
 
     pub fn run_systems(&mut self, delta_time: f32)
     {
-        run_systems(&mut self.game_state,&mut self.render_state,&mut self.input_state, delta_time);
+        run_systems(&mut self.scene, &mut self.game_state,&mut self.render_state,&mut self.input_state, delta_time);
     }
 
     pub fn process_keypress_event(&mut self, pressed: bool, code : &str)

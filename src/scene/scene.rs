@@ -46,7 +46,7 @@ impl Scene
         functor(component);
     }
 
-    pub fn apply_to_entities_with<T: Component, U: Component, F>(&mut self, mut functor: F)
+    pub fn apply_to_entities_with_both<T: Component, U: Component, F>(&mut self, mut functor: F)
     where
         F: FnMut(usize,&mut T, &mut U)
     {
@@ -106,6 +106,45 @@ impl Scene
             };
 
             functor(entity_uid,component_instance_a,component_instance_b);
+        }
+    }
+
+    pub fn apply_to_entities_with<T: Component, F>(&mut self, mut functor: F)
+    where
+        F: FnMut(usize,&mut T)
+    {
+        let set: Vec<usize>;
+
+        {
+            let buffer = match Self::get_component_buffer::<T>(&self.component_buffer_map)
+            {
+                Some(a) => a,
+                None => { return; }
+            };
+
+            set = buffer.get_entity_set().iter().cloned().collect();
+        }
+
+        let component_buffer_map = &mut self.component_buffer_map;
+
+        let buffer_ref = match component_buffer_map.get(&TypeId::of::<T>()) 
+        {
+            Some(a) => a,
+            None => { return; }
+        };
+
+        let mut mut_borrow = buffer_ref.borrow_mut();
+        let buffer = mut_borrow.downcast_mut::<ComponentBuffer<T>>().unwrap();
+
+        for entity_uid in set 
+        {
+            let component_instance = match buffer.get_mut(entity_uid)
+            {
+                Some(a) => a,
+                None => { continue; }
+            };
+
+            functor(entity_uid,component_instance);
         }
     }
 
