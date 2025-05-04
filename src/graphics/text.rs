@@ -10,11 +10,10 @@ use crate::RenderState;
 
 const INDICES_PER_CHAR : u32 = 4;
 
-#[derive(Copy)]
 #[derive(Clone)]
 pub struct Text {
     renderable_uid: u32,
-    content: &'static str,
+    content: String,
     font: Font,
     size: [i32;2],
     starting_world_position: glm::Vec3
@@ -31,7 +30,7 @@ impl Text
         Self
         {
             renderable_uid: 0, //TODO: better deefault
-            content: "TODO",
+            content: String::from(content),
             font: font.clone(),
             size: [1,1], //TODO: unused
             starting_world_position: glm::vec3(0.0,0.0,0.0),

@@ -6,7 +6,6 @@ use crate::util::util::get_rectangular_texture_coordinates;
 use crate::RenderState;
 use crate::component::component::Component;
 
-#[derive(Copy)]
 #[derive(Clone)]
 pub struct Sprite {
     texture_coordinates: [i32;2],

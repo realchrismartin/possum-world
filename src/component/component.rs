@@ -1,4 +1,4 @@
 
-pub trait Component : Copy + Clone + 'static
+pub trait Component : Clone + 'static
 {
 }
