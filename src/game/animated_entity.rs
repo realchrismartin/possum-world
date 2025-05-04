@@ -31,13 +31,16 @@ impl AnimatedEntity
 
         let mut shared_transform_uid : Option<u32> = None;
 
+        //TODO: broken
+
         //Create all of the sprites but only use one transform index.
-        for config in left_sprite_configs
+        /*
+        for &mut config in left_sprite_configs
         {
             let maybe_sprite = match shared_transform_uid
             {
                 Some(u) => render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,u),
-                None => render_state.request_new_renderable::<Sprite>(&config)
+                None => render_state.request_new_renderable::<Sprite>(config)
             };
 
             let sprite = match maybe_sprite
@@ -50,12 +53,12 @@ impl AnimatedEntity
             left_sprites.push(sprite);
         }
 
-        for config in right_sprite_configs
+        for &mut config in right_sprite_configs
         {
             let maybe_sprite = match shared_transform_uid
             {
                 Some(u) => render_state.request_new_renderable_with_existing_transform::<Sprite>(&config,u),
-                None => render_state.request_new_renderable::<Sprite>(&config)
+                None => render_state.request_new_renderable::<Sprite>(config)
             };
 
             let sprite = match maybe_sprite
@@ -67,6 +70,7 @@ impl AnimatedEntity
             shared_transform_uid = Some(sprite);
             right_sprites.push(sprite);
         }
+        */
 
         if facing_right && right_sprites.len() <= 0
         {

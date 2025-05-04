@@ -153,6 +153,7 @@ impl FontCharacter
 }
 
 #[derive(Clone)]
+#[derive(Copy)]
 pub enum Font
 {
     Default

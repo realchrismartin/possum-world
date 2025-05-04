@@ -4,16 +4,24 @@ use crate::graphics::renderable::Renderable;
 use crate::graphics::vertex_layout::{VertexLayout,VertexLayoutElement};
 use crate::graphics::font::Font;
 use crate::util::util::get_rectangular_texture_coordinates;
+use crate::component::component::Component;
 
 use crate::RenderState;
 
 const INDICES_PER_CHAR : u32 = 4;
 
+#[derive(Copy)]
 #[derive(Clone)]
 pub struct Text {
-    content: String,
+    renderable_uid: u32,
+    content: &'static str,
     font: Font,
-    size: [i32;2]
+    size: [i32;2],
+    starting_world_position: glm::Vec3
+}
+
+impl Component for Text
+{
 }
 
 impl Text 
@@ -22,9 +30,11 @@ impl Text
     {
         Self
         {
-            content: String::from(content),
+            renderable_uid: 0, //TODO: better deefault
+            content: "TODO",
             font: font.clone(),
             size: [1,1], //TODO: unused
+            starting_world_position: glm::vec3(0.0,0.0,0.0),
         }
     }
 }
@@ -198,5 +208,20 @@ impl Renderable for Text
     fn get_size(&self) -> &[i32;2]
     {
         &&self.size
+    }
+
+    fn get_starting_world_position(&self) -> Option<&glm::Vec3> 
+    {
+        Some(&&self.starting_world_position)
+    }
+
+    fn get_renderable_uid(&self) -> u32
+    {
+        self.renderable_uid
+    }
+
+    fn set_renderable_uid(&mut self, uid: u32)
+    {
+        self.renderable_uid = uid;
     }
 }

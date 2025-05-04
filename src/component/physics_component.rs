@@ -35,12 +35,4 @@ impl PhysicsComponent
 
 impl Component for PhysicsComponent
 {
-    fn new() -> Self
-    {
-        Self
-        {
-            position: glm::vec2(0.0,0.0),
-            velocity: glm::vec2(0.0,0.0),
-        }
-    }
 }

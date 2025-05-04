@@ -77,22 +77,7 @@ impl GameState
         &mut self.npc_possums
     }
 
-    pub fn init(&mut self, render_state: &mut RenderState)
-    {
-        self.player_possums.clear();
-        self.npc_possums.clear();
-        self.tiles.clear();
-        self.texts.clear();
-        
-        self.start_x = render_state.get_canvas_size_x() as f32 / 2.0;
-        self.logo_y = 350.0;
-
-        self.generate_tile_grid(render_state);
-        self.generate_logo(render_state);
-        self.generate_player_possums(render_state);
-        self.generate_grasses(render_state);
-        self.generate_npc_possums(render_state);
-    }
+    /*
 
     fn generate_tile_grid(&mut self, render_state: &mut RenderState)
     {
@@ -141,7 +126,7 @@ impl GameState
     fn generate_grasses(&mut self, render_state: &mut RenderState)
     {
         let mut rng = rand::thread_rng();
-        let mut z = self.base_z - self.z_buffer;
+        let z = self.base_z - self.z_buffer;
         
         let grass_sprite = Sprite::new([309,2],[62,46],1);
         for _index in 0..rng.gen_range(4..50)
@@ -279,4 +264,5 @@ impl GameState
 
         Some(possum)
     }
+    */
 }

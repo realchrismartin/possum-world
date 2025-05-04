@@ -53,4 +53,9 @@ pub trait Renderable : 'static
 
     //TODO: remove this;
     fn get_size(&self) -> &[i32;2];
+
+    fn get_starting_world_position(&self) -> Option<&glm::Vec3> where Self: Sized;
+
+    fn set_renderable_uid(&mut self, uid: u32);
+    fn get_renderable_uid(&self) -> u32;
 }

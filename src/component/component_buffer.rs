@@ -18,7 +18,7 @@ impl<T:Component> ComponentBuffer<T>
         }
     }
 
-    pub fn add(&mut self, index: usize)
+    pub fn add(&mut self, index: usize, component: T)
     {
         if index >= self.components.len()
         {
@@ -35,7 +35,7 @@ impl<T:Component> ComponentBuffer<T>
             return;
         }
 
-        self.components[index] = Some(T::new());
+        self.components[index] = Some(component);
         self.entity_set.insert(index);
     }
 

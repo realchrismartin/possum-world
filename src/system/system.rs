@@ -6,105 +6,107 @@ use crate::graphics::draw_batch::DrawBatch;
 use crate::graphics::renderable::Renderable;
 use crate::graphics::sprite::Sprite;
 use crate::graphics::text::Text;
+use crate::graphics::animation::Animation;
 use crate::game::animated_entity::AnimatedEntity;
 use crate::util::logging::log;
 use crate::scene::scene::Scene;
-use crate::component::component::Component;
 use crate::component::physics_component::PhysicsComponent;
+use crate::component::component::Component;
 
-pub fn init_systems(game_state: &mut GameState, render_state: &mut RenderState, scene: &mut Scene)
+pub fn resize_system(scene: &mut Scene, render_state: &mut RenderState)
 {
-    //get data from game state, initialize stuff in render state for it
-    render_state.clear();
-    game_state.init(render_state);
+    //Runs when the viewport is resized.
+    //TODO: not wired
+}
 
-    //TODO: remove this placeholder stuff.
+//Runs at game start
+pub fn init_scene(scene: &mut Scene)
+{
+    //TODO: clear scene perhap?
+
+    //The First POSS
     let first = match scene.add_entity()
     {
         Some(e) => e,
         None => {return;}
     };
 
-    let second = match scene.add_entity()
-    {
-        Some(e) => e,
-        None => {return;}
-    };
+    scene.add_component::<Sprite>(first, Sprite::new([2,81],[58,18],0));
 
-    let third = match scene.add_entity()
-    {
-        Some(e) => e,
-        None => {return;}
-    };
+    //TODO: update renderer to immediately set initial pos from renderable
 
-    scene.add_component::<PhysicsComponent>(second);
-    scene.add_component::<PhysicsComponent>(third);
-    scene.add_component::<Sprite>(third);
+    //Create grounds 
+    //Create grass
+    //Create bg
+    //Create posses
+}
 
-    scene.run_on_component::<PhysicsComponent, _>(third, |pc: &PhysicsComponent|
+pub fn init_render_data_from_scene(scene: &mut Scene, render_state: &mut RenderState)
+{
+    //Register our renderrables with the renderstate and get their ids set
+    scene.apply_to_entities_with::<Sprite, _>(|entity_uid: usize, component: &mut Sprite|
     {
-        log(format!("before mod entity 3 has PC position {} {}",pc.get_position().x,pc.get_position().y).as_str());
+        render_state.request_new_renderable::<Sprite>(component);
     });
 
-    scene.apply_to_entities_with_both::<PhysicsComponent,Sprite, _>(|entity_uid: usize, pc: &mut PhysicsComponent, s: &mut Sprite|
+    scene.apply_to_entities_with::<Text, _>(|entity_uid: usize, component: &mut Text|
     {
-        let current_pos = pc.get_position();
-
-        pc.set_position(current_pos.x + s.get_size()[0] as f32, current_pos.y + s.get_size()[1] as f32);
-
-        log(format!("test, entity with both a sprite and a PC is {}",entity_uid).as_str());
+        render_state.request_new_renderable::<Text>(component);
     });
 
-    scene.run_on_component::<PhysicsComponent, _>(third, |pc: &PhysicsComponent|
+    scene.apply_to_entities_with::<Animation, _>(|entity_uid: usize, component: &mut Animation|
     {
-        log(format!("after mod entity 3 has PC position {} {}",pc.get_position().x,pc.get_position().y).as_str());
+        //TODO: request multiple sprites and update animation with all renderable uids
     });
 }
 
+//Runs every game tick. Updates all of the components, then renders all renderables that get batched.
 pub fn run_systems(scene: &mut Scene, game_state: &mut GameState, render_state: &mut RenderState, input_state: &mut InputState, delta_time : f32)
 {
-    run_input_system(scene, input_state, render_state, game_state); //TODO: stop passing render state
+    run_cursor_position_system(input_state,render_state);
+    run_input_system(scene, input_state, render_state, game_state); //TODO: only take scene and input state as args?
     run_physics_system(scene, game_state, render_state, delta_time); //TODO: stop passing render state
     run_ai_system(scene, game_state, render_state, delta_time); //TODO: stop passing render state
     run_animation_system(scene, game_state, delta_time);
     run_camera_update_system(scene, game_state, render_state);
 
-    run_render_system(scene, game_state,render_state);
+    run_render_system(scene, game_state,render_state); //TODO: stop passing game state
 }
 
-//TODO: maybe later remove game_state from here, pass entity deets from elsewhere
+//TODO: stop passing mutable ref to scene here (need to allow const iteration first)
+fn load_batch_for_renderable_type<T: Renderable + Component>(scene: &mut Scene, batch: &mut DrawBatch<T>)
+{
+    scene.apply_to_entities_with::<T, _>(|entity_uid: usize, renderable: &mut T|
+    {
+        batch.add(&renderable.get_renderable_uid());
+    });
+}
+
+//TODO: can we somehow generify this?
+fn load_batch_for_animation(scene: &mut Scene, batch: &mut DrawBatch<Sprite>)
+{
+    scene.apply_to_entities_with::<Animation, _>(|entity_uid: usize, animation: &mut Animation|
+    {
+        batch.add(&animation.get_renderable_uid());
+    });
+}
+
 fn run_render_system(scene: &mut Scene, game_state: &GameState, render_state: &mut RenderState)
 {   
     render_state.clear_context();
     render_state.submit_camera_uniforms(); 
     render_state.bind_and_update_transform_buffer_data();
 
+    //TODO: can we determine which batches we want to make by iterating over a static array of types?
     let mut sprite_batch = DrawBatch::<Sprite>::new();
     let mut text_batch = DrawBatch::<Text>::new();
 
-    scene.apply_to_entities_with::<Sprite, _>(|entity_uid: usize, sprite: &mut Sprite|
-    {
-    //    sprite_batch.add(entity_uid);
-    });
+    load_batch_for_renderable_type::<Sprite>(scene,&mut sprite_batch);
+    load_batch_for_renderable_type::<Text>(scene, &mut text_batch);
+    load_batch_for_animation(scene,&mut sprite_batch);
 
+    //TODO: old code - remove when deprecated!
     /*
-    scene.apply_to_entities_with::<Text, _>(|entity_uid: usize, sprite: &mut Sprite|
-    {
-        text_batch.add(entity_uid);
-    });
-
-    scene.apply_to_entities_with::<Animation, _>(|entity_uid: usize, sprite: &mut Animation|
-    {
-        let uid = match animation.get_renderable_uid()
-        {
-            Some(u) => {u},
-            None => {continue;}
-        };
-
-        sprite_batch.add(entity_uid);
-    });
-    */
-
     for uid in game_state.get_tiles()
     {
         sprite_batch.add(uid);
@@ -136,10 +138,16 @@ fn run_render_system(scene: &mut Scene, game_state: &GameState, render_state: &m
 
         sprite_batch.add(uid);
     }
+    */
 
     //Render any entities that want to be drawn
     render_state.draw(&sprite_batch);
     render_state.draw(&text_batch);
+}
+
+fn run_cursor_position_system(input_state: &InputState, render_state: &RenderState)
+{
+    //TODO: move the calculation of the coordinates here as x and y ratio (0 ... 1) and store that data on the input state
 }
 
 //TODO: apply input to whatever entities want it

@@ -11,7 +11,9 @@ use crate::component::component::Component;
 pub struct Sprite {
     texture_coordinates: [i32;2],
     size: [i32;2],
-    texture_index: u32
+    texture_index: u32,
+    starting_world_position: glm::Vec3,
+    renderable_uid: u32
 }
 
 impl Sprite
@@ -20,24 +22,17 @@ impl Sprite
     {
         Self
         {
+            renderable_uid: 0,  //TODO: better deefault
             texture_coordinates :tex_coordinates,
             size: sprite_size,
-            texture_index: tex_index
+            texture_index: tex_index,
+            starting_world_position: glm::vec3(0.0,0.0,0.0)
         }
     }
 }
 
 impl Component for Sprite
 {
-    fn new() -> Self
-    {
-        Self
-        {
-            texture_coordinates: [0,0],
-            size: [1,1],
-            texture_index: 0
-        }
-    }
 }
 
 impl Renderable for Sprite
@@ -103,5 +98,20 @@ impl Renderable for Sprite
     fn get_size(&self) -> &[i32;2]
     {
         &&self.size
+    }
+
+    fn get_starting_world_position(&self) -> Option<&glm::Vec3> 
+    {
+       Some(&&self.starting_world_position)
+    }
+
+    fn get_renderable_uid(&self) -> u32
+    {
+        self.renderable_uid
+    }
+
+    fn set_renderable_uid(&mut self, uid: u32)
+    {
+        self.renderable_uid = uid;
     }
 }

@@ -21,7 +21,7 @@ use state::game_state::GameState;
 use state::input_state::InputState;
 use state::render_state::RenderState;
 use scene::scene::Scene;
-use crate::system::system::{init_systems,run_systems};
+use crate::system::system::{init_scene, init_render_data_from_scene, run_systems};
 
 #[wasm_bindgen]
 pub struct Game
@@ -58,7 +58,10 @@ impl Game
 
     pub fn init(&mut self)
     {
-        init_systems(&mut self.game_state, &mut self.render_state, &mut self.scene);
+        self.render_state.clear();
+
+        init_scene(&mut self.scene);
+        init_render_data_from_scene(&mut self.scene, &mut self.render_state)
     }
 
     pub fn run_systems(&mut self, delta_time: f32)
@@ -83,8 +86,7 @@ impl Game
 
     pub fn set_canvas_dimensions(&mut self, x: u32, y: u32)
     {
-        self.render_state.clear();
         self.render_state.set_canvas_dimensions(x,y);
-        self.game_state.init(&mut self.render_state);
+        self.init(); //reinit the game
     }
 }

@@ -10,3 +10,4 @@ pub mod transform;
 pub mod draw_batch;
 pub mod font;
 pub mod text;
+pub mod animation;

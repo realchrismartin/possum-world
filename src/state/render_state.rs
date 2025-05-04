@@ -106,18 +106,19 @@ impl RenderState
         Some(web_context)
     }
 
-    pub fn request_new_renderable_with_existing_transform<T: Renderable>(&mut self, renderable: &T, reuse_existing_transform_for_uid: u32) -> Option<u32>
+    pub fn request_new_renderable_with_existing_transform<T: Renderable>(&mut self, renderable: &mut T, reuse_existing_transform_for_uid: u32) -> Option<u32>
     {
         self.request_new_renderable_impl::<T>(renderable,&Some(reuse_existing_transform_for_uid))
     }
 
-    pub fn request_new_renderable<T: Renderable>(&mut self, renderable: &T) -> Option<u32>
+    pub fn request_new_renderable<T: Renderable>(&mut self, renderable: &mut T) -> Option<u32>
     {
         self.request_new_renderable_impl::<T>(renderable,&None::<u32>)
     }
 
-    fn request_new_renderable_impl<T: Renderable>(&mut self, renderable: &T, reuse_existing_transform_for_uid: &Option<u32>) -> Option<u32>
+    fn request_new_renderable_impl<T: Renderable>(&mut self, renderable: &mut T, reuse_existing_transform_for_uid: &Option<u32>) -> Option<u32>
     {
+        //TODO: stop tracking uids in here and move it to the individual vertex buffers
         self.next_uid += 1;
 
         let new_uid = self.next_uid.clone();
@@ -144,6 +145,8 @@ impl RenderState
         //TODO: this only applies to sprites. fix/remove
         self.uid_to_size_map.insert(new_uid.clone(),renderable.get_size().clone());
 
+        renderable.set_renderable_uid(new_uid);
+        //TODO: later don't return anything, is set on renderable
         Some(new_uid)
     }
 
@@ -351,6 +354,7 @@ impl RenderState
 
         buffer.bind(web_context);
 
+        //TODO: could set state on the buffer about which elements to draw next tick instead of making a batch
         for uid in draw_batch.get_uids()
         {
             let range = match buffer.get_draw_range_for_uid(&uid)
@@ -367,6 +371,7 @@ impl RenderState
                 continue;
             }
 
+            //TODO: could pass this into buffer to remove need to pass range back here
             web_context.draw_elements_with_i32(T::get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,range.start);
         }
 

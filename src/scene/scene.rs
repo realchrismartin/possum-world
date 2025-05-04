@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::collections::HashSet;
-use std::collections::hash_set::Intersection;
 use std::any::TypeId;
 use std::any::Any;
 use std::cell::RefCell;
@@ -8,7 +6,7 @@ use core::cell::Ref;
 use core::cell::RefMut;
 use crate::component::component::Component;
 use crate::component::component_buffer::ComponentBuffer;
-use crate::util::logging::log;
+//use crate::util::logging::log;
 
 pub struct Scene
 {
@@ -27,7 +25,7 @@ impl Scene
         }
     }
 
-    pub fn run_on_component<T: Component, F>(&self, entity_uid: usize, functor: F)
+    pub fn apply_to_entity_with<T: Component, F>(&self, entity_uid: usize, functor: F)
     where
         F: Fn(&T)
     {
@@ -160,7 +158,7 @@ impl Scene
         return Some(self.next_entity_uid);
     }
 
-    pub fn add_component<T: Component>(&mut self, entity_uid: usize)
+    pub fn add_component<T: Component>(&mut self, entity_uid: usize, component: T)
     {
         //Lazy init the component buffer for this type
         self.init_component_buffer::<T>();
@@ -171,7 +169,7 @@ impl Scene
             None => { return; }
         };
 
-        mut_buffer.add(entity_uid);
+        mut_buffer.add(entity_uid, component);
     }
 
     fn init_component_buffer<T: Component>(&mut self)
