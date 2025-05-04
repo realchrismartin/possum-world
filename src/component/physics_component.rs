@@ -18,6 +18,15 @@ impl PhysicsBody
         }
 
     }
+    pub fn new_with_position(position: glm::Vec2) -> Self
+    {
+        Self
+        {
+            position: position,
+            velocity: glm::vec2(0.0,0.0)
+        }
+
+    }
     pub fn get_position(&self) -> &glm::Vec2
     {
         &&self.position

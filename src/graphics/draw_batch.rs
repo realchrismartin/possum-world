@@ -23,8 +23,8 @@ impl<T: Renderable> DrawBatch<T>
         self.uids.push(uid.clone());
     }
 
-    pub fn get_uids(&self) -> &Vec<u32>
+    pub fn get_mut_uids(&mut self) -> &mut Vec<u32>
     {
-        &self.uids
+        &mut self.uids
     }
 }

@@ -10,6 +10,7 @@ use crate::scene::scene::Scene;
 use crate::graphics::font::Font;
 use crate::component::physics_component::PhysicsBody;
 use crate::component::player_input::PlayerInput;
+use crate::component::ai::{AIState, AI};
 use crate::component::component::Component;
 use std::collections::HashMap;
 use rand::Rng;
@@ -52,15 +53,21 @@ pub fn init_scene(scene: &mut Scene)
         None => {return;}
     };
 
+    let logo_subtitle = match scene.add_entity()
+    {
+        Some(e) => e,
+        None => {return;}
+    };
+
     //BG, ground
     scene.add_component::<Sprite>(bg, Sprite::new_with_position([105,2],[100,100],1, glm::vec2(0.0,0.0),-2.0, glm::vec2(1000.0,1000.0)));
     scene.add_component::<Sprite>(ground, Sprite::new_with_position([2,2],[100,100],1, glm::vec2(0.0,-75.0),-1.0, glm::vec2(100.0,1.0)));
     scene.add_component::<Sprite>(underground, Sprite::new_with_position([207,2],[100,100],1, glm::vec2(0.0,-550.0), -1.5, glm::vec2(100.0,10.0)));
 
-    //Grasses        
-    //TODO: since we're using a set to iterate, order isn't guaranteed, so sampling is off
-    /*
     let mut rng = rand::thread_rng();
+
+    //Grasses        
+    let mut z = -0.75;
 
     for _index in 0..rng.gen_range(4..50)
     {
@@ -70,9 +77,61 @@ pub fn init_scene(scene: &mut Scene)
             None => {return;}
         };
 
-        scene.add_component::<Sprite>(grass, Sprite::new_with_position([309,2],[62,46],1, glm::vec2(rng.gen_range(0.0..1000.0),0.0),-1.1, glm::vec2(1.0,1.0)));
+        z += 0.002;
+
+        scene.add_component::<Sprite>(grass, Sprite::new_with_position([309,2],[62,46],1, glm::vec2(rng.gen_range(0.0..1000.0),-25.0),z, glm::vec2(1.0,1.0)));
     }
-    */
+
+    //NPC Posses
+
+    for _index in 0..rng.gen_range(4..10)
+    {
+        let poss = match scene.add_entity()
+        {
+            Some(e) => e,
+            None => {continue;}
+        };
+
+        z += 0.002;
+
+        scene.add_component::<PhysicsBody>(poss, PhysicsBody::new_with_position(glm::vec2(rng.gen_range(-250.0..250.0),-25.0)));
+        scene.add_component::<AI>(poss, AI::new());
+        scene.add_component::<Animation::<Sprite>>(poss,Animation::<Sprite>::new(
+            HashMap::from([
+                (AnimationState::FacingRight, vec![
+                    Sprite::new([2,21],[58,18],0)
+                ]),
+                (AnimationState::FacingLeft, vec![
+                    Sprite::new([2,81],[58,18],0),
+                ]),
+                (AnimationState::WalkingLeft, vec![
+                    Sprite::new([2,81],[58,18],0),
+                    Sprite::new([62,81],[58,18],0),
+                    Sprite::new([122,81],[58,18],0),
+                    Sprite::new([182,81],[58,18],0),
+                    Sprite::new([242,81],[58,18],0),
+                    Sprite::new([302,81],[58,18],0),
+                    Sprite::new([362,81],[58,18],0),
+                    Sprite::new([422,81],[58,18],0),
+                ]),
+                (AnimationState::WalkingRight, vec![
+                    Sprite::new([2,21],[58,18],0),
+                    Sprite::new([62,21],[58,18],0),
+                    Sprite::new([122,21],[58,18],0),
+                    Sprite::new([182,21],[58,18],0),
+                    Sprite::new([242,21],[58,18],0),
+                    Sprite::new([302,21],[58,18],0),
+                    Sprite::new([362,21],[58,18],0),
+                    Sprite::new([422,21],[58,18],0),
+                ]),
+            ]),
+            AnimationState::FacingRight,
+            50.0,
+            glm::vec2(0.0,0.0),
+            z,
+            glm::vec2(2.0,2.0)
+        ));
+    }
 
     //Player Possum ("Barry")
     scene.add_component::<PlayerInput>(player, PlayerInput::new());
@@ -114,9 +173,8 @@ pub fn init_scene(scene: &mut Scene)
     ));
 
     //Logo Text
-    scene.add_component::<Text>(logo, Text::new_with_position("Possum World", &Font::Default, glm::vec2(100.0,100.0), 0.002, glm::vec2(2.0,2.0)));
-
-    //Grasses
+    scene.add_component::<Text>(logo, Text::new_with_position("Possum World", &Font::Default, glm::vec2(0.0,150.0), 0.002, glm::vec2(1.0,1.0)));
+    scene.add_component::<Text>(logo_subtitle, Text::new_with_position("insert 1 coin to continue", &Font::Default, glm::vec2(0.0,100.0), 0.002, glm::vec2(1.0,1.0)));
 }
 
 //Register our renderables and types which own renderables with the renderstate and get their ids set
@@ -228,8 +286,8 @@ fn run_render_system(scene: &mut Scene, render_state: &mut RenderState)
     load_batch_for_renderable_type(scene, &mut text_batch); //Texts
 
     //Render any entities that want to be drawn
-    render_state.draw(&sprite_batch);
-    render_state.draw(&text_batch);
+    render_state.draw(&mut sprite_batch);
+    render_state.draw(&mut text_batch);
 }
 
 fn run_input_system(scene: &mut Scene, input_state: &InputState)
@@ -288,10 +346,22 @@ fn run_physics_system(scene: &mut Scene,  delta_time: f32)
     });
 }
 
-fn run_ai_system(scene: &mut Scene, _delta_time: f32)
+fn run_ai_system(scene: &mut Scene, delta_time: f32)
 {
-    //TODO: operate only on AI components.
-    //Then, pass the AI data to the physics components
+    scene.apply_to_entities_with::<AI, _>(|component: &mut AI|
+    {
+        component.update(delta_time);
+    });
+
+    scene.apply_to_entities_with_both::<AI, PhysicsBody, _>(|ai: &mut AI, physics_body: &mut PhysicsBody|
+    {
+        match ai.get_state()
+        {
+            AIState::Idling => { physics_body.set_velocity(0.0,0.0); }
+            AIState::WalkingLeft => { physics_body.set_velocity(-1.0,0.0); }
+            AIState::WalkingRight => { physics_body.set_velocity(1.0,0.0); }
+        };
+    });
 
     //For now:
     //Set the state of the animation based on the velocity direction

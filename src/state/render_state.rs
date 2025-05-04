@@ -17,6 +17,7 @@ use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
 use crate::util::util::world_position_to_screen_translation;
 use crate::graphics::draw_batch::DrawBatch;
+use std::cmp::Ordering;
 
 pub struct RenderState
 {
@@ -240,6 +241,11 @@ impl RenderState
         self.transform_buffer.set_z(uid,z);
     }
 
+    fn get_z(&self, uid: &u32) -> Option<&f32>
+    {
+        self.transform_buffer.get_z(uid)
+    }
+
     pub fn set_rotation(&mut self, uid: &u32, rotation: f32)
     {
         self.transform_buffer.set_rotation(uid, rotation);
@@ -310,7 +316,7 @@ impl RenderState
         web_context.uniform_matrix4fv_with_f32_array(vp_location.as_ref(),false,vp_converted.as_slice());
     }
 
-    pub fn draw<T: Renderable>(&self, draw_batch: &DrawBatch<T>)
+    pub fn draw<T: Renderable>(&self, draw_batch: &mut DrawBatch<T>)
     {
         let web_context = match self.context.as_ref()
         {
@@ -325,9 +331,34 @@ impl RenderState
         };
 
         buffer.bind(web_context);
+        
+        //Sort by Z so that we sample transparency correctly
+        //TODO: can we stop doing this?
+        //NB: this will NOT work across batches.
+        draw_batch.get_mut_uids().sort_by(|a, b| 
+        {
+            let a_z = match self.get_z(a)
+            {
+                Some(z) => *z,
+                None => {return Ordering::Equal;}
+            };
+
+           let b_z = match self.get_z(b)
+            {
+                Some(z) => *z,
+                None => {return Ordering::Equal;}
+            };
+
+            if a_z < b_z
+            {
+                return Ordering::Less;
+            }
+
+            Ordering::Greater
+        });
 
         //TODO: could set state on the buffer about which elements to draw next tick instead of making a batch
-        for uid in draw_batch.get_uids()
+        for uid in draw_batch.get_mut_uids()
         {
             let range = match buffer.get_draw_range_for_uid(&uid)
             {

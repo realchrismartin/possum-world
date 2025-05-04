@@ -29,6 +29,11 @@ impl Transform
         self.translation.z = z;
     }
 
+    pub fn get_z(&self) -> &f32
+    {
+        &&self.translation.z
+    }
+
     pub fn set_scale(&mut self, scale: &glm::Vec2)
     {
         self.scale.x = scale.x;

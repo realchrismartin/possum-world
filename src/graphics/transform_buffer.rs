@@ -125,6 +125,22 @@ impl TransformBuffer
         self.dirty_transforms.insert(*index);
     }
 
+    pub fn get_z(&self, uid: &u32) -> Option<&f32>
+    {
+        let index = match self.uid_to_index_map.get(uid)
+        {
+            Some(i) => i,
+            None => { return None; }
+        };
+
+        if self.transforms.len() <= *index as usize
+        {
+            return None;
+        }        
+
+        Some(self.transforms[*index as usize].get_z())
+    }
+
     pub fn set_rotation(&mut self, uid: &u32, rotation: f32)
     {
         let index = match self.uid_to_index_map.get(uid)
