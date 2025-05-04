@@ -10,6 +10,15 @@ pub struct PhysicsComponent
 
 impl PhysicsComponent
 {
+    pub fn new() -> Self
+    {
+        Self
+        {
+            position: glm::vec2(0.0,0.0),
+            velocity: glm::vec2(0.0,0.0)
+        }
+
+    }
     pub fn get_position(&self) -> &glm::Vec2
     {
         &&self.position

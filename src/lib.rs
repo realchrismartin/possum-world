@@ -10,14 +10,12 @@ extern crate nalgebra_glm as glm;
 mod state;
 mod util;
 mod graphics;
-mod game;
 mod system;
 mod component;
 mod scene;
 
 use web_sys::{Document, HtmlImageElement};
 
-use state::game_state::GameState;
 use state::input_state::InputState;
 use state::render_state::RenderState;
 use scene::scene::Scene;
@@ -26,10 +24,9 @@ use crate::system::system::{init_scene, init_render_data_from_scene, run_systems
 #[wasm_bindgen]
 pub struct Game
 {
-    game_state: GameState,
+    scene: Scene,
     render_state: RenderState,
     input_state: InputState,
-    scene: Scene
 }
 
 #[wasm_bindgen]
@@ -39,10 +36,9 @@ impl Game
     {
         Self
         {
-            game_state: GameState::new(),
+            scene: Scene::new(),
             render_state: RenderState::new(document),
-            input_state: InputState::new(),
-            scene: Scene::new()
+            input_state: InputState::new()
         }
     }
 
@@ -66,7 +62,7 @@ impl Game
 
     pub fn run_systems(&mut self, delta_time: f32)
     {
-        run_systems(&mut self.scene, &mut self.game_state,&mut self.render_state,&mut self.input_state, delta_time);
+        run_systems(&mut self.scene, &mut self.render_state,&mut self.input_state, delta_time);
     }
 
     pub fn process_keypress_event(&mut self, pressed: bool, code : &str)
@@ -88,5 +84,6 @@ impl Game
     {
         self.render_state.set_canvas_dimensions(x,y);
         self.init(); //reinit the game
+        //TODO: call resize_system here
     }
 }

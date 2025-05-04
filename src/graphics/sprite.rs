@@ -28,6 +28,18 @@ impl Sprite
             starting_world_position: glm::vec3(0.0,0.0,0.0)
         }
     }
+
+    pub fn new_with_position(tex_coordinates: [i32;2], sprite_size: [i32;2], tex_index: u32, starting_world_position: glm::Vec3) -> Self 
+    {
+        Self
+        {
+            renderable_uid: 0,  //TODO: better deefault
+            texture_coordinates :tex_coordinates,
+            size: sprite_size,
+            texture_index: tex_index,
+            starting_world_position: starting_world_position
+        }
+    }
 }
 
 impl Component for Sprite

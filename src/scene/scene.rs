@@ -6,8 +6,6 @@ use core::cell::Ref;
 use core::cell::RefMut;
 use crate::component::component::Component;
 use crate::component::component_buffer::ComponentBuffer;
-//use crate::util::logging::log;
-
 pub struct Scene
 {
     next_entity_uid: usize,
@@ -23,25 +21,6 @@ impl Scene
             next_entity_uid: 0,
             component_buffer_map: HashMap::new(),
         }
-    }
-
-    pub fn apply_to_entity_with<T: Component, F>(&self, entity_uid: usize, functor: F)
-    where
-        F: Fn(&T)
-    {
-        let buffer = match Self::get_component_buffer::<T>(&self.component_buffer_map)
-        {
-            Some(a) => a,
-            None => { return; }
-        };
-
-        let component = match buffer.get(entity_uid)
-        {
-            Some(c) => c,
-            None => {return; }
-        };
-
-        functor(component);
     }
 
     pub fn apply_to_entities_with_both<T: Component, U: Component, F>(&mut self, mut functor: F)
@@ -111,6 +90,7 @@ impl Scene
     where
         F: FnMut(usize,&mut T)
     {
+        
         let set: Vec<usize>;
 
         {

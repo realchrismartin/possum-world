@@ -84,9 +84,11 @@ impl Camera
         self.dirty = true;
     }
 
-    pub fn set_camera_world_position(&mut self, position: &glm::Vec3)
+    pub fn set_camera_world_position(&mut self, position: &glm::Vec2)
     {
-        let screen_translation = world_position_to_screen_translation(&position,&glm::vec2(self.canvas_width as f32,self.canvas_height as f32));
+        let vec3Pos = glm::vec3(position.x,position.y,0.0); //Z is unused for this calc.
+
+        let screen_translation = world_position_to_screen_translation(&vec3Pos,&glm::vec2(self.canvas_width as f32,self.canvas_height as f32));
 
         self.eye.x = screen_translation.x;
         self.eye.y = screen_translation.y;

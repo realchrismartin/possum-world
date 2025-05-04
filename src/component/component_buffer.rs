@@ -1,5 +1,6 @@
 use crate::component::component::Component;
 use std::collections::HashSet;
+//use crate::util::logging::log;
 
 pub struct ComponentBuffer<T>
 {
@@ -25,11 +26,7 @@ impl<T:Component> ComponentBuffer<T>
             return;
         }
 
-        match self.components.get(index)
-        {
-            Some(s) => {return;}
-            None => {}
-        };
+        //TODO check if vec alraedy has??
 
         self.components[index] = Some(component);
         self.entity_set.insert(index);
@@ -41,12 +38,6 @@ impl<T:Component> ComponentBuffer<T>
         {
             return;
         }
-
-        match self.components.get(index)
-        {
-            Some(s) => {return;}
-            None => {}
-        };
 
         self.components[index] = None;
         self.entity_set.remove(&index);

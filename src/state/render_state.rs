@@ -106,17 +106,17 @@ impl RenderState
         Some(web_context)
     }
 
-    pub fn request_new_renderable_with_existing_transform<T: Renderable>(&mut self, renderable: &mut T, reuse_existing_transform_for_uid: u32) -> Option<u32>
+    pub fn request_new_renderable_with_existing_transform<T: Renderable>(&mut self, renderable: &mut T, reuse_existing_transform_for_uid: u32)
     {
         self.request_new_renderable_impl::<T>(renderable,&Some(reuse_existing_transform_for_uid))
     }
 
-    pub fn request_new_renderable<T: Renderable>(&mut self, renderable: &mut T) -> Option<u32>
+    pub fn request_new_renderable<T: Renderable>(&mut self, renderable: &mut T)
     {
         self.request_new_renderable_impl::<T>(renderable,&None::<u32>)
     }
 
-    fn request_new_renderable_impl<T: Renderable>(&mut self, renderable: &mut T, reuse_existing_transform_for_uid: &Option<u32>) -> Option<u32>
+    fn request_new_renderable_impl<T: Renderable>(&mut self, renderable: &mut T, reuse_existing_transform_for_uid: &Option<u32>)
     {
         //TODO: stop tracking uids in here and move it to the individual vertex buffers
         self.next_uid += 1;
@@ -139,6 +139,7 @@ impl RenderState
             }
         };
 
+
         //immediately submit data to the buffer. This will only be done once.
         self.submit_data::<T>(&new_uid, &renderable.get_vertices(&self, model_matrix_transform_index), &renderable.get_indices());
 
@@ -146,8 +147,12 @@ impl RenderState
         self.uid_to_size_map.insert(new_uid.clone(),renderable.get_size().clone());
 
         renderable.set_renderable_uid(new_uid);
-        //TODO: later don't return anything, is set on renderable
-        Some(new_uid)
+        
+        match renderable.get_starting_world_position()
+        {
+            Some(p) => { self.set_position(&new_uid, *p)},
+            None => {}
+        };
     }
 
     //TODO: later move this
@@ -301,7 +306,7 @@ impl RenderState
         self.transform_buffer.recalculate_transforms_and_update_data(web_context);
     }
 
-    pub fn set_camera_world_position(&mut self, position: &glm::Vec3)
+    pub fn set_camera_world_position(&mut self, position: &glm::Vec2)
     {
         self.camera.set_camera_world_position(position);
     }

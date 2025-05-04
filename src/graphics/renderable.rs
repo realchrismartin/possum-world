@@ -5,7 +5,7 @@ use crate::RenderState;
 //A Renderable is:
 // Some static metadata on how to set up a Vertex Buffer a certain way
 // Using this data, the renderer can set up a buffer for a renderable type and hold the data, passing back a lightweight handle that knows where the data is.
-pub trait Renderable : 'static
+pub trait Renderable : Clone + 'static
 {
     fn init_vertex_layout(context: &WebGl2RenderingContext) where Self: Sized
     {
