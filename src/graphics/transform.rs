@@ -18,24 +18,21 @@ impl Transform
         }
     }
 
-    pub fn get_translation(&self) -> &glm::Vec3
+    pub fn set_translation(&mut self, translation: &glm::Vec2)
     {
-        &self.translation
+        self.translation.x = translation.x;
+        self.translation.y = translation.y;
     }
 
-    pub fn get_scale(&self) -> &glm::Vec3
+    pub fn set_z(&mut self, z: f32)
     {
-        &self.scale
+        self.translation.z = z;
     }
 
-    pub fn set_translation(&mut self, translation: glm::Vec3)
+    pub fn set_scale(&mut self, scale: &glm::Vec2)
     {
-        self.translation = translation;
-    }
-
-    pub fn set_scale(&mut self, scale: glm::Vec3)
-    {
-        self.scale = scale;
+        self.scale.x = scale.x;
+        self.scale.y = scale.y;
     }
 
     pub fn set_rotation(&mut self, rotation: f32)

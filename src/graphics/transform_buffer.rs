@@ -89,7 +89,7 @@ impl TransformBuffer
        context.bind_buffer(WebGl2RenderingContext::UNIFORM_BUFFER, None);
     }
 
-    pub fn set_translation(&mut self, uid: &u32, translation: glm::Vec3)
+    pub fn set_translation(&mut self, uid: &u32, translation: &glm::Vec2)
     {
         let index = match self.uid_to_index_map.get(uid)
         {
@@ -107,20 +107,22 @@ impl TransformBuffer
         self.dirty_transforms.insert(*index);
     }
 
-    pub fn get_translation(&self, uid: &u32) -> Option<&glm::Vec3>
+    pub fn set_z(&mut self, uid: &u32, z: f32)
     {
         let index = match self.uid_to_index_map.get(uid)
         {
             Some(i) => i,
-            None => { return None; }
+            None => { return; }
         };
 
         if self.transforms.len() <= *index as usize
         {
-            return None;
+            return;
         }        
 
-        Some(self.transforms[*index as usize].get_translation())
+        self.transforms[*index as usize].set_z(z);
+
+        self.dirty_transforms.insert(*index);
     }
 
     pub fn set_rotation(&mut self, uid: &u32, rotation: f32)
@@ -141,7 +143,7 @@ impl TransformBuffer
         self.dirty_transforms.insert(index.clone());
     }
 
-    pub fn set_scale(&mut self, uid: &u32, scale: glm::Vec3)
+    pub fn set_scale(&mut self, uid: &u32, scale: &glm::Vec2)
     {
         let index = match self.uid_to_index_map.get(uid)
         {
@@ -158,22 +160,6 @@ impl TransformBuffer
         self.transforms[*index as usize].set_scale(scale);
 
         self.dirty_transforms.insert(index.clone());
-    }
-
-    pub fn get_scale(&self, uid: &u32) -> Option<&glm::Vec3>
-    {
-        let index = match self.uid_to_index_map.get(uid)
-        {
-            Some(i) => i,
-            None => { return None; }
-        };
-
-        if self.transforms.len() <= *index as usize
-        {
-            return None;
-        }        
-
-        Some(self.transforms[*index as usize].get_scale())
     }
 
     //For each transform matrix, update the raw data if it needs to be updated.

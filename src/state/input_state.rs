@@ -2,22 +2,28 @@ use crate::util::logging::log;
 use std::collections::{HashMap, VecDeque};
 use std::fmt;
 
+#[derive(Copy)]
+#[derive(Clone)]
 pub struct Click
 {
     x_coordinate: i32,
     y_coordinate: i32,
+    canvas_ratio_x: f32,
+    canvas_ratio_y: f32,
     active: bool
 }
 
 impl Click
 {
-    pub fn new(x_coordinate: i32, y_coordinate: i32, active: bool) -> Self
+    pub fn new() -> Self
     {
         Self
         {
-            x_coordinate,
-            y_coordinate,
-            active
+            x_coordinate: 0,
+            y_coordinate: 0,
+            canvas_ratio_x: 0.0,
+            canvas_ratio_y: 0.0,
+            active: false
         }
     }
 
@@ -41,9 +47,29 @@ impl Click
         self.y_coordinate = y;
     }
 
+    pub fn set_canvas_ratio_x(&mut self, x: f32)
+    {
+        self.canvas_ratio_x = x;
+    }
+
+    pub fn set_canvas_ratio_y(&mut self, y: f32)
+    {
+        self.canvas_ratio_y = y;
+    }
+
     pub fn set_active(&mut self, active : bool)
     {
         self.active = active;
+    }
+
+    pub fn get_canvas_ratio_x(&self) -> &f32
+    {
+        &&self.canvas_ratio_x
+    }
+
+    pub fn get_canvas_ratio_y(&self) -> &f32
+    {
+        &&self.canvas_ratio_y
     }
 
     pub fn is_active(&self) -> bool
@@ -56,7 +82,9 @@ pub struct InputState
 {
     active: HashMap<KeyPress,bool>,
     click_locations: VecDeque<Click>,
-    last_mouse_location: Click
+    last_mouse_location: Click,
+    canvas_size_x: u32,
+    canvas_size_y: u32,
 }
 
 #[derive(Hash)]
@@ -89,7 +117,9 @@ impl InputState
         {
             active: HashMap::from([(KeyPress::W, false),(KeyPress::S, false),(KeyPress::A, false), (KeyPress::D, false)]),
             click_locations: VecDeque::new(),
-            last_mouse_location: Click::new(0,0, false)
+            last_mouse_location: Click::new(),
+            canvas_size_x: 1,
+            canvas_size_y: 1,
         }
     }
 
@@ -135,10 +165,13 @@ impl InputState
         //Started click
         if start_or_end_click
         {
-            self.click_locations.push_back(Click::new(x,y,true));
             self.last_mouse_location.set_active(true);
             self.last_mouse_location.set_x_coordinate(x);
             self.last_mouse_location.set_y_coordinate(y);
+            self.last_mouse_location.set_canvas_ratio_x(x as f32 / self.canvas_size_x as f32);
+            self.last_mouse_location.set_canvas_ratio_y(y as f32 / self.canvas_size_y as f32);
+
+            self.click_locations.push_back(self.last_mouse_location.clone());
             return;
         }
 
@@ -150,6 +183,14 @@ impl InputState
     {
         self.last_mouse_location.set_x_coordinate(x);
         self.last_mouse_location.set_y_coordinate(y);
+        self.last_mouse_location.set_canvas_ratio_x(x as f32 / self.canvas_size_x as f32);
+        self.last_mouse_location.set_canvas_ratio_y(y as f32 / self.canvas_size_y as f32);
+    }
+
+    pub fn set_canvas_dimensions(&mut self, canvas_size_x: u32, canvas_size_y: u32)
+    {
+        self.canvas_size_x = canvas_size_x;
+        self.canvas_size_y = canvas_size_y;
     }
 
     pub fn process_input(&mut self, pressed: bool, code: &str)

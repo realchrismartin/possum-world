@@ -54,8 +54,6 @@ impl Game
 
     pub fn init(&mut self)
     {
-        self.render_state.clear();
-
         init_scene(&mut self.scene);
         init_render_data_from_scene(&mut self.scene, &mut self.render_state)
     }
@@ -83,7 +81,7 @@ impl Game
     pub fn set_canvas_dimensions(&mut self, x: u32, y: u32)
     {
         self.render_state.set_canvas_dimensions(x,y);
-        self.init(); //reinit the game
-        //TODO: call resize_system here
+        self.input_state.set_canvas_dimensions(x,y);
+        //self.init(); //reinit the game //TODO - need to clear scene
     }
 }

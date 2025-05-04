@@ -1,6 +1,5 @@
 use crate::component::component::Component;
 
-#[derive(Copy)]
 #[derive(Clone)]
 pub struct PhysicsComponent
 {

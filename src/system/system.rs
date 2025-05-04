@@ -6,18 +6,14 @@ use crate::graphics::renderable::Renderable;
 use crate::graphics::animation::{AnimationState,Animation};
 use crate::graphics::sprite::Sprite;
 use crate::graphics::text::Text;
-use crate::util::logging::log;
 use crate::scene::scene::Scene;
 use crate::graphics::font::Font;
 use crate::component::physics_component::PhysicsComponent;
+use crate::component::player_input::PlayerInput;
 use crate::component::component::Component;
 use std::collections::HashMap;
 
-pub fn resize_system(scene: &mut Scene, render_state: &mut RenderState)
-{
-    //Runs when the viewport is resized.
-    //TODO: not wired
-}
+//use crate::util::logging::log;
 
 //Runs at game start
 pub fn init_scene(scene: &mut Scene)
@@ -43,7 +39,7 @@ pub fn init_scene(scene: &mut Scene)
         None => {return;}
     };
 
-    scene.add_component::<Sprite>(bg, Sprite::new_with_position([105,2],[100,100],1, glm::vec3(0.0,0.0,-2.0)));
+    scene.add_component::<Sprite>(bg, Sprite::new_with_position([105,2],[100,100],1, glm::vec2(0.0,0.0),-2.0));
 
     scene.add_component::<PhysicsComponent>(first, PhysicsComponent::new());
     scene.add_component::<Animation::<Sprite>>(first,Animation::<Sprite>::new(
@@ -74,6 +70,10 @@ pub fn init_scene(scene: &mut Scene)
 //Register our renderables and types which own renderables with the renderstate and get their ids set
 pub fn init_render_data_from_scene(scene: &mut Scene, render_state: &mut RenderState)
 {
+    render_state.clear();
+    render_state.clear_buffer::<Sprite>();
+    render_state.clear_buffer::<Text>();
+
     scene.apply_to_entities_with::<Sprite, _>(|entity_uid: usize, component: &mut Sprite|
     {
         render_state.request_new_renderable::<Sprite>(component);
@@ -120,15 +120,13 @@ pub fn init_render_data_from_scene(scene: &mut Scene, render_state: &mut RenderS
 //Runs every game tick. Updates all of the components, then renders all renderables that get batched.
 pub fn run_systems(scene: &mut Scene, render_state: &mut RenderState, input_state: &mut InputState, delta_time : f32)
 {
-    run_cursor_position_system(input_state,render_state);
     run_input_system(scene, input_state); 
     run_physics_system(scene, delta_time);
     run_ai_system(scene, delta_time);
     run_animation_system(scene, delta_time);
     run_update_render_from_physics_system(scene, render_state);
     run_camera_update_system(scene, render_state);
-
-    run_render_system(scene, render_state); //TODO: stop passing game state
+    run_render_system(scene, render_state); 
 }
 
 //TODO: stop passing mutable ref to scene here (need to allow const iteration first)
@@ -163,12 +161,6 @@ fn run_render_system(scene: &mut Scene, render_state: &mut RenderState)
     render_state.draw(&text_batch);
 }
 
-fn run_cursor_position_system(input_state: &InputState, render_state: &RenderState)
-{
-    //TODO: move the calculation of the coordinates here as x and y ratio (0 ... 1) and store that data on the input state
-    //if input_state.get_current_mouse_location().get_x_coordinate() > (render_state.get_canvas_size_x()/2) as i32
-}
-
 //TODO: apply input to whatever entities want it
 //TODO: stop passing all of these state datas
 fn run_input_system(scene: &mut Scene, input_state: &InputState)
@@ -189,12 +181,6 @@ fn run_input_system(scene: &mut Scene, input_state: &InputState)
         */
     }
 
-    scene.apply_to_entities_with::<PhysicsComponent, _>(|entity_uid: usize, pc: &mut PhysicsComponent|
-    {
-       //TODO: only affect player
-       pc.set_velocity(velocity.x,velocity.y);
-    });
-
     /*
     let mut clicked = false;
     while input_state.has_next_click()
@@ -214,13 +200,24 @@ fn run_input_system(scene: &mut Scene, input_state: &InputState)
         //TODO
     }
     */
+
+    scene.apply_to_entities_with_both::<PhysicsComponent, PlayerInput, _>(|entity_uid: usize, physics_component: &mut PhysicsComponent, input_component: &mut PlayerInput|
+    {
+       physics_component.set_velocity(velocity.x,velocity.y);
+    });
+
 }
 
 fn run_physics_system(scene: &mut Scene,  delta_time: f32)
 {
     scene.apply_to_entities_with::<PhysicsComponent, _>(|entity_uid: usize, component: &mut PhysicsComponent|
     {
+        //Apply drag
+
         //position.y -= (delta_time / 5.0) * 10.0;
+        
+        //Change position based on velocity
+        //TODO: mass later?
         let new_position = glm::vec2(component.get_position().x + (delta_time / 5.0) * component.get_velocity().x, component.get_position().y + (delta_time / 5.0) * component.get_velocity().y);
         component.set_position(new_position.x,new_position.y);
     });
@@ -234,8 +231,6 @@ fn run_ai_system(scene: &mut Scene, _delta_time: f32)
 
 fn run_animation_system(scene: &mut Scene, delta_time: f32)
 {
-    //TODO: generify over renderable types?
-
     scene.apply_to_entities_with::<Animation<Sprite>, _>(|entity_uid: usize, component: &mut Animation<Sprite>|
     {
         component.update(delta_time);
@@ -259,15 +254,23 @@ fn run_camera_update_system(scene: &mut Scene, render_state: &mut RenderState)
 
 fn run_update_render_from_physics_system(scene: &mut Scene, render_state: &mut RenderState)
 {
-    //TODO: generify over renderable types?
+    scene.apply_to_entities_with_both::<PhysicsComponent, Sprite, _>(|entity_uid: usize, physics_component: &mut PhysicsComponent, sprite: &mut Sprite|
+    {
+        render_state.set_position(&sprite.get_renderable_uid(), &physics_component.get_position());
+    });
+
+    scene.apply_to_entities_with_both::<PhysicsComponent, Text, _>(|entity_uid: usize, physics_component: &mut PhysicsComponent, text: &mut Text|
+    {
+        render_state.set_position(&text.get_renderable_uid(), &physics_component.get_position());
+    });
+
     scene.apply_to_entities_with_both::<PhysicsComponent, Animation<Sprite>, _>(|entity_uid: usize, physics_component: &mut PhysicsComponent, animation: &mut Animation<Sprite>|
     {
-        //TODO: z hardcoded
-        let z = 0.0;
-
-        let vec_3_pos = glm::vec3(physics_component.get_position().x, physics_component.get_position().y, z);
-
-        render_state.set_position(&animation.get_renderable_uid(), vec_3_pos);
+        render_state.set_position(&animation.get_renderable_uid(), &physics_component.get_position());
     });
-    //TODO: add other renderables to have their positions updated here
+
+    scene.apply_to_entities_with_both::<PhysicsComponent, Animation<Text>, _>(|entity_uid: usize, physics_component: &mut PhysicsComponent, animation: &mut Animation<Text>|
+    {
+        render_state.set_position(&animation.get_renderable_uid(), &physics_component.get_position());
+    });
 }

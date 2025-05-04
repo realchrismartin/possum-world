@@ -16,7 +16,8 @@ pub struct Text {
     content: String,
     font: Font,
     size: [i32;2],
-    starting_world_position: glm::Vec3
+    starting_world_position: glm::Vec2,
+    starting_z: f32
 }
 
 impl Component for Text
@@ -29,11 +30,25 @@ impl Text
     {
         Self
         {
+            renderable_uid: 0, //TODO: better default
+            content: String::from(content),
+            font: font.clone(),
+            size: [1,1], //TODO: unused
+            starting_world_position: glm::vec2(0.0,0.0),
+            starting_z: 0.0
+        }
+    }
+
+    pub fn new_with_position(content: &str, font: &Font, starting_world_position: glm::Vec2, starting_z: f32) -> Self
+    {
+        Self
+        {
             renderable_uid: 0, //TODO: better deefault
             content: String::from(content),
             font: font.clone(),
             size: [1,1], //TODO: unused
-            starting_world_position: glm::vec3(0.0,0.0,0.0),
+            starting_world_position: starting_world_position,
+            starting_z: starting_z
         }
     }
 }
@@ -209,9 +224,14 @@ impl Renderable for Text
         &&self.size
     }
 
-    fn get_starting_world_position(&self) -> Option<&glm::Vec3> 
+    fn get_starting_world_position(&self) -> Option<&glm::Vec2> 
     {
         Some(&&self.starting_world_position)
+    }
+
+    fn get_starting_z(&self) -> Option<f32> 
+    {
+        Some(self.starting_z)
     }
 
     fn get_renderable_uid(&self) -> u32

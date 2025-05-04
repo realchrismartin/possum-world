@@ -13,11 +13,9 @@ use std::collections::HashMap;
 use std::any::TypeId;
 use std::any::Any;
 use crate::graphics::renderable::Renderable;
-use crate::graphics::sprite::Sprite;
-use crate::graphics::text::Text;
 use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
-use crate::util::util::{world_position_to_screen_translation,screen_translation_to_world_position};
+use crate::util::util::world_position_to_screen_translation;
 use crate::graphics::draw_batch::DrawBatch;
 
 pub struct RenderState
@@ -28,7 +26,6 @@ pub struct RenderState
     camera: Camera,
     vertex_buffer_map: HashMap<TypeId,Box<dyn Any>>,
     transform_buffer: TransformBuffer,
-    uid_to_size_map: HashMap<u32,[i32;2]>, //Size of renderables
     next_uid: u32
 }
 
@@ -48,8 +45,7 @@ impl RenderState
             camera: Camera::new(canvas_size[0],canvas_size[1]),
             vertex_buffer_map: HashMap::new(),
             transform_buffer: transform_buffer,
-            next_uid: 0,
-            uid_to_size_map: HashMap::new(),
+            next_uid: 0
         }
     }
 
@@ -118,7 +114,6 @@ impl RenderState
 
     fn request_new_renderable_impl<T: Renderable>(&mut self, renderable: &mut T, reuse_existing_transform_for_uid: &Option<u32>)
     {
-        //TODO: stop tracking uids in here and move it to the individual vertex buffers
         self.next_uid += 1;
 
         let new_uid = self.next_uid.clone();
@@ -139,18 +134,20 @@ impl RenderState
             }
         };
 
-
         //immediately submit data to the buffer. This will only be done once.
         self.submit_data::<T>(&new_uid, &renderable.get_vertices(&self, model_matrix_transform_index), &renderable.get_indices());
-
-        //TODO: this only applies to sprites. fix/remove
-        self.uid_to_size_map.insert(new_uid.clone(),renderable.get_size().clone());
 
         renderable.set_renderable_uid(new_uid);
         
         match renderable.get_starting_world_position()
         {
-            Some(p) => { self.set_position(&new_uid, *p)},
+            Some(p) => { self.set_position(&new_uid, p)},
+            None => {}
+        };
+
+        match renderable.get_starting_z()
+        {
+            Some(z) => { self.set_z(&new_uid, z)},
             None => {}
         };
     }
@@ -226,24 +223,15 @@ impl RenderState
         let _ = web_context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT);
     }
 
-    //0,0 is the bottom left corner of the world
-    //0,max_y is the top left corner
-    pub fn set_position(&mut self, uid: &u32, position: glm::Vec3)
+    pub fn set_position(&mut self, uid: &u32, position: &glm::Vec2)
     {
-        self.transform_buffer.set_translation(uid, world_position_to_screen_translation(&position,
+        self.transform_buffer.set_translation(uid, &world_position_to_screen_translation(position,
             &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)));
     }
 
-    pub fn get_position(&self, uid: &u32) -> Option<glm::Vec3>
+    pub fn set_z(&mut self, uid: &u32, z: f32)
     {
-        let translation = match self.transform_buffer.get_translation(uid)
-        {
-            Some(t) => t,
-            None => {return None;}
-        };
-
-        Some(screen_translation_to_world_position(&translation,
-            &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)))
+        self.transform_buffer.set_z(uid,z);
     }
 
     pub fn set_rotation(&mut self, uid: &u32, rotation: f32)
@@ -251,36 +239,9 @@ impl RenderState
         self.transform_buffer.set_rotation(uid, rotation);
     }
 
-    pub fn set_scale(&mut self, uid: &u32, scale: glm::Vec3)
+    pub fn set_scale(&mut self, uid: &u32, scale: &glm::Vec2)
     {
         self.transform_buffer.set_scale(uid,scale)
-    }
-
-    pub fn get_scale(&self, uid: &u32) -> Option<&glm::Vec3>
-    {
-        self.transform_buffer.get_scale(uid)
-    }
-
-    pub fn get_size(&self, uid: &u32) -> Option<&[i32;2]>
-    {
-        self.uid_to_size_map.get(uid)
-    }
-
-    pub fn get_scaled_size(&self, uid: &u32) -> Option<glm::Vec3>
-    {
-        let scale = match self.get_scale(uid)
-        {
-            Some(s) => s,
-            None => { return None; }
-        };
-
-        let size = match self.get_size(uid)
-        {
-            Some(s) => s,
-            None => { return None; }
-        };
-
-        Some(glm::vec3(size[0] as f32 * scale.x, size[1] as f32 * scale.y, 1.0))
     }
 
     pub fn bind_and_update_transform_buffer_data(&mut self)
@@ -511,16 +472,10 @@ impl RenderState
     pub fn clear(&mut self)
     {
         self.next_uid = 0;
-        self.uid_to_size_map.clear();
-
         self.transform_buffer.clear();
-        
-        //TODO: clear other buffers when we can
-        self.clear_buffer::<Sprite>();
-        self.clear_buffer::<Text>();
     }
 
-    fn clear_buffer<T: Renderable>(&mut self)
+    pub fn clear_buffer<T: Renderable>(&mut self)
     {
         let buffer = match Self::get_mut_mapped_buffer::<T>(&mut self.vertex_buffer_map)
         {

@@ -11,8 +11,9 @@ pub struct Sprite {
     texture_coordinates: [i32;2],
     size: [i32;2],
     texture_index: u32,
-    starting_world_position: glm::Vec3,
-    renderable_uid: u32
+    starting_world_position: glm::Vec2,
+    renderable_uid: u32,
+    starting_z: f32
 }
 
 impl Sprite
@@ -21,23 +22,25 @@ impl Sprite
     {
         Self
         {
-            renderable_uid: 0,  //TODO: better deefault
+            renderable_uid: 0,  //TODO: better default
             texture_coordinates :tex_coordinates,
             size: sprite_size,
             texture_index: tex_index,
-            starting_world_position: glm::vec3(0.0,0.0,0.0)
+            starting_world_position: glm::vec2(0.0,0.0),
+            starting_z: 0.0
         }
     }
 
-    pub fn new_with_position(tex_coordinates: [i32;2], sprite_size: [i32;2], tex_index: u32, starting_world_position: glm::Vec3) -> Self 
+    pub fn new_with_position(tex_coordinates: [i32;2], sprite_size: [i32;2], tex_index: u32, starting_world_position: glm::Vec2, starting_z: f32) -> Self 
     {
         Self
         {
-            renderable_uid: 0,  //TODO: better deefault
+            renderable_uid: 0,  //TODO: better default
             texture_coordinates :tex_coordinates,
             size: sprite_size,
             texture_index: tex_index,
-            starting_world_position: starting_world_position
+            starting_world_position: starting_world_position,
+            starting_z: starting_z
         }
     }
 }
@@ -111,9 +114,14 @@ impl Renderable for Sprite
         &&self.size
     }
 
-    fn get_starting_world_position(&self) -> Option<&glm::Vec3> 
+    fn get_starting_world_position(&self) -> Option<&glm::Vec2> 
     {
-       Some(&&self.starting_world_position)
+        Some(&&self.starting_world_position)
+    }
+
+    fn get_starting_z(&self) -> Option<f32> 
+    {
+        Some(self.starting_z)
     }
 
     fn get_renderable_uid(&self) -> u32
