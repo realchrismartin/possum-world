@@ -8,12 +8,13 @@ use crate::component::component::Component;
 
 #[derive(Clone)]
 pub struct Sprite {
+    renderable_uid: u32,
     texture_coordinates: [i32;2],
     size: [i32;2],
     texture_index: u32,
     starting_world_position: glm::Vec2,
-    renderable_uid: u32,
-    starting_z: f32
+    starting_z: f32,
+    starting_scale: glm::Vec2
 }
 
 impl Sprite
@@ -27,11 +28,12 @@ impl Sprite
             size: sprite_size,
             texture_index: tex_index,
             starting_world_position: glm::vec2(0.0,0.0),
+            starting_scale: glm::vec2(1.0,1.0),
             starting_z: 0.0
         }
     }
 
-    pub fn new_with_position(tex_coordinates: [i32;2], sprite_size: [i32;2], tex_index: u32, starting_world_position: glm::Vec2, starting_z: f32) -> Self 
+    pub fn new_with_position(tex_coordinates: [i32;2], sprite_size: [i32;2], tex_index: u32, starting_world_position: glm::Vec2, starting_z: f32, starting_scale: glm::Vec2) -> Self 
     {
         Self
         {
@@ -40,6 +42,7 @@ impl Sprite
             size: sprite_size,
             texture_index: tex_index,
             starting_world_position: starting_world_position,
+            starting_scale: starting_scale,
             starting_z: starting_z
         }
     }
@@ -117,6 +120,11 @@ impl Renderable for Sprite
     fn get_starting_world_position(&self) -> Option<&glm::Vec2> 
     {
         Some(&&self.starting_world_position)
+    }
+
+    fn get_starting_scale(&self) -> Option<&glm::Vec2> 
+    {
+        Some(&&self.starting_scale)
     }
 
     fn get_starting_z(&self) -> Option<f32> 

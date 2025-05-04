@@ -8,20 +8,21 @@ use crate::graphics::sprite::Sprite;
 use crate::graphics::text::Text;
 use crate::scene::scene::Scene;
 use crate::graphics::font::Font;
-use crate::component::physics_component::PhysicsComponent;
+use crate::component::physics_component::PhysicsBody;
 use crate::component::player_input::PlayerInput;
 use crate::component::component::Component;
 use std::collections::HashMap;
+use rand::Rng;
 
-//use crate::util::logging::log;
+use crate::util::logging::log;
 
 //Runs at game start
 pub fn init_scene(scene: &mut Scene)
 {
-    //TODO: clear scene perhap?
+    scene.clear();
 
     //The First POSS
-    let first = match scene.add_entity()
+    let player = match scene.add_entity()
     {
         Some(e) => e,
         None => {return;}
@@ -33,18 +34,58 @@ pub fn init_scene(scene: &mut Scene)
         None => {return;}
     };
 
+    let ground = match scene.add_entity()
+    {
+        Some(e) => e,
+        None => {return;}
+    };
+
+    let underground = match scene.add_entity()
+    {
+        Some(e) => e,
+        None => {return;}
+    };
+
     let logo = match scene.add_entity()
     {
         Some(e) => e,
         None => {return;}
     };
 
-    scene.add_component::<Sprite>(bg, Sprite::new_with_position([105,2],[100,100],1, glm::vec2(0.0,0.0),-2.0));
+    //BG, ground
+    scene.add_component::<Sprite>(bg, Sprite::new_with_position([105,2],[100,100],1, glm::vec2(0.0,0.0),-2.0, glm::vec2(1000.0,1000.0)));
+    scene.add_component::<Sprite>(ground, Sprite::new_with_position([2,2],[100,100],1, glm::vec2(0.0,-75.0),-1.0, glm::vec2(100.0,1.0)));
+    scene.add_component::<Sprite>(underground, Sprite::new_with_position([207,2],[100,100],1, glm::vec2(0.0,-550.0), -1.5, glm::vec2(100.0,10.0)));
 
-    scene.add_component::<PhysicsComponent>(first, PhysicsComponent::new());
-    scene.add_component::<Animation::<Sprite>>(first,Animation::<Sprite>::new(
+    //Grasses        
+    //TODO: since we're using a set to iterate, order isn't guaranteed, so sampling is off
+    /*
+    let mut rng = rand::thread_rng();
+
+    for _index in 0..rng.gen_range(4..50)
+    {
+        let grass = match scene.add_entity()
+        {
+            Some(e) => e,
+            None => {return;}
+        };
+
+        scene.add_component::<Sprite>(grass, Sprite::new_with_position([309,2],[62,46],1, glm::vec2(rng.gen_range(0.0..1000.0),0.0),-1.1, glm::vec2(1.0,1.0)));
+    }
+    */
+
+    //Player Possum ("Barry")
+    scene.add_component::<PlayerInput>(player, PlayerInput::new());
+    scene.add_component::<PhysicsBody>(player, PhysicsBody::new());
+    scene.add_component::<Animation::<Sprite>>(player,Animation::<Sprite>::new(
         HashMap::from([
-            (AnimationState::Default, vec![
+            (AnimationState::FacingRight, vec![
+                Sprite::new([2,21],[58,18],0)
+            ]),
+            (AnimationState::FacingLeft, vec![
+                Sprite::new([2,81],[58,18],0),
+            ]),
+            (AnimationState::WalkingLeft, vec![
                 Sprite::new([2,81],[58,18],0),
                 Sprite::new([62,81],[58,18],0),
                 Sprite::new([122,81],[58,18],0),
@@ -53,18 +94,29 @@ pub fn init_scene(scene: &mut Scene)
                 Sprite::new([302,81],[58,18],0),
                 Sprite::new([362,81],[58,18],0),
                 Sprite::new([422,81],[58,18],0),
-            ])
+            ]),
+            (AnimationState::WalkingRight, vec![
+                Sprite::new([2,21],[58,18],0),
+                Sprite::new([62,21],[58,18],0),
+                Sprite::new([122,21],[58,18],0),
+                Sprite::new([182,21],[58,18],0),
+                Sprite::new([242,21],[58,18],0),
+                Sprite::new([302,21],[58,18],0),
+                Sprite::new([362,21],[58,18],0),
+                Sprite::new([422,21],[58,18],0),
+            ]),
         ]),
-        50.0
+        AnimationState::FacingRight,
+        50.0,
+        glm::vec2(0.0,0.0),
+        0.0001,
+        glm::vec2(5.0,5.0)
     ));
 
+    //Logo Text
+    scene.add_component::<Text>(logo, Text::new_with_position("Possum World", &Font::Default, glm::vec2(100.0,100.0), 0.002, glm::vec2(2.0,2.0)));
 
-    scene.add_component::<Text>(logo, Text::new("Possum World", &Font::Default));
-
-    //Create grounds 
-    //Create grass
-    //Create bg
-    //Create posses
+    //Grasses
 }
 
 //Register our renderables and types which own renderables with the renderstate and get their ids set
@@ -74,17 +126,17 @@ pub fn init_render_data_from_scene(scene: &mut Scene, render_state: &mut RenderS
     render_state.clear_buffer::<Sprite>();
     render_state.clear_buffer::<Text>();
 
-    scene.apply_to_entities_with::<Sprite, _>(|entity_uid: usize, component: &mut Sprite|
+    scene.apply_to_entities_with::<Sprite, _>(|component: &mut Sprite|
     {
         render_state.request_new_renderable::<Sprite>(component);
     });
 
-    scene.apply_to_entities_with::<Text, _>(|entity_uid: usize, component: &mut Text|
+    scene.apply_to_entities_with::<Text, _>(|component: &mut Text|
     {
         render_state.request_new_renderable::<Text>(component);
     });
 
-    scene.apply_to_entities_with::<Animation<Sprite>, _>(|entity_uid: usize, component: &mut Animation<Sprite>|
+    scene.apply_to_entities_with::<Animation<Sprite>, _>(|component: &mut Animation<Sprite>|
     {
         let mut first_renderable_uid : Option<u32> = None;
         component.apply_to_renderables(|renderable: &mut Sprite|
@@ -95,12 +147,26 @@ pub fn init_render_data_from_scene(scene: &mut Scene, render_state: &mut RenderS
             } else
             {
                 render_state.request_new_renderable::<Sprite>(renderable);
+
                 first_renderable_uid = Some(renderable.get_renderable_uid());
             }
         });
+
+        if first_renderable_uid.is_none()
+        {
+            return;
+        }
+
+        let uid = &first_renderable_uid.unwrap();
+
+        //Since we don't provide default position/scale/etc for animations, set it once on the shared transform here
+        //NB: all frames have the same data, including scale.
+        render_state.set_position(uid, component.get_starting_world_position());
+        render_state.set_z(uid, component.get_starting_z());
+        render_state.set_scale(uid, component.get_starting_scale());
     });
 
-    scene.apply_to_entities_with::<Animation<Text>, _>(|entity_uid: usize, component: &mut Animation<Text>|
+    scene.apply_to_entities_with::<Animation<Text>, _>(|component: &mut Animation<Text>|
     {
         let mut first_renderable_uid : Option<u32> = None;
         component.apply_to_renderables(|renderable: &mut Text|
@@ -115,6 +181,8 @@ pub fn init_render_data_from_scene(scene: &mut Scene, render_state: &mut RenderS
             }
         });
     });
+
+    //TODO: scale visuals to fit physics body sizes? how to handle sizes? (text size is incorrect in the ctor, animations have multiple sizes)
 }
 
 //Runs every game tick. Updates all of the components, then renders all renderables that get batched.
@@ -132,14 +200,18 @@ pub fn run_systems(scene: &mut Scene, render_state: &mut RenderState, input_stat
 //TODO: stop passing mutable ref to scene here (need to allow const iteration first)
 fn load_batch_for_renderable_type<T: Renderable + Component>(scene: &mut Scene, batch: &mut DrawBatch<T>)
 {
-    scene.apply_to_entities_with::<T, _>(|entity_uid: usize, renderable: &mut T|
+    scene.apply_to_entities_with::<T, _>(|renderable: &mut T|
     {
         batch.add(&renderable.get_renderable_uid());
     });
 
-    scene.apply_to_entities_with::<Animation<T>, _>(|entity_uid: usize, animation: &mut Animation<T>|
+    scene.apply_to_entities_with::<Animation<T>, _>(|animation: &mut Animation<T>|
     {
-        batch.add(&animation.get_renderable_uid());
+        match animation.get_renderable_uid()
+        {
+            Some(u) => { batch.add(&u); }
+            None => {}
+        }
     });
 }
 
@@ -149,7 +221,6 @@ fn run_render_system(scene: &mut Scene, render_state: &mut RenderState)
     render_state.submit_camera_uniforms(); 
     render_state.bind_and_update_transform_buffer_data();
 
-    //TODO: can we determine which batches we want to make by iterating over a static array of types?
     let mut sprite_batch = DrawBatch::<Sprite>::new();
     let mut text_batch = DrawBatch::<Text>::new();
 
@@ -161,24 +232,18 @@ fn run_render_system(scene: &mut Scene, render_state: &mut RenderState)
     render_state.draw(&text_batch);
 }
 
-//TODO: apply input to whatever entities want it
-//TODO: stop passing all of these state datas
 fn run_input_system(scene: &mut Scene, input_state: &InputState)
 {
-    
     let mut velocity = glm::vec2(0.0,0.0);
 
     if input_state.get_current_mouse_location().is_active()
     {
-        velocity.x = -1.0; //TODO
-        /*
-        if input_state.get_current_mouse_location().get_x_coordinate() > (render_state.get_canvas_size_x()/2) as i32
+        if *input_state.get_current_mouse_location().get_canvas_ratio_x() > 0.5
         {
             velocity.x = 1.0;
         } else {
             velocity.x = -1.0;
         }
-        */
     }
 
     /*
@@ -201,7 +266,7 @@ fn run_input_system(scene: &mut Scene, input_state: &InputState)
     }
     */
 
-    scene.apply_to_entities_with_both::<PhysicsComponent, PlayerInput, _>(|entity_uid: usize, physics_component: &mut PhysicsComponent, input_component: &mut PlayerInput|
+    scene.apply_to_entities_with_both::<PhysicsBody, PlayerInput, _>(|physics_component: &mut PhysicsBody, _player_input: &mut PlayerInput|
     {
        physics_component.set_velocity(velocity.x,velocity.y);
     });
@@ -210,7 +275,7 @@ fn run_input_system(scene: &mut Scene, input_state: &InputState)
 
 fn run_physics_system(scene: &mut Scene,  delta_time: f32)
 {
-    scene.apply_to_entities_with::<PhysicsComponent, _>(|entity_uid: usize, component: &mut PhysicsComponent|
+    scene.apply_to_entities_with::<PhysicsBody, _>(|component: &mut PhysicsBody|
     {
         //Apply drag
 
@@ -227,16 +292,43 @@ fn run_ai_system(scene: &mut Scene, _delta_time: f32)
 {
     //TODO: operate only on AI components.
     //Then, pass the AI data to the physics components
+
+    //For now:
+    //Set the state of the animation based on the velocity direction
+    scene.apply_to_entities_with_both::<Animation<Sprite>, PhysicsBody, _>(|animation: &mut Animation<Sprite>, physics_body: &mut PhysicsBody|
+    {
+        if physics_body.get_velocity().x == 0.0
+        {
+            match animation.get_animation_state()
+            {
+                AnimationState::Default => {},
+                AnimationState::FacingRight => {},
+                AnimationState::FacingLeft => {},
+                AnimationState::WalkingLeft => { animation.set_animation_state(AnimationState::FacingLeft)},
+                AnimationState::WalkingRight => { animation.set_animation_state(AnimationState::FacingRight)},
+            };
+
+            animation.set_animating(false);
+        } else if physics_body.get_velocity().x > 0.0
+        {
+            animation.set_animating(true);
+            animation.set_animation_state(AnimationState::WalkingRight);
+        } else
+        {
+            animation.set_animating(true);
+            animation.set_animation_state(AnimationState::WalkingLeft);
+        }
+    });
 }
 
 fn run_animation_system(scene: &mut Scene, delta_time: f32)
 {
-    scene.apply_to_entities_with::<Animation<Sprite>, _>(|entity_uid: usize, component: &mut Animation<Sprite>|
+    scene.apply_to_entities_with::<Animation<Sprite>, _>(|component: &mut Animation<Sprite>|
     {
         component.update(delta_time);
     });
 
-    scene.apply_to_entities_with::<Animation<Text>, _>(|entity_uid: usize, component: &mut Animation<Text>|
+    scene.apply_to_entities_with::<Animation<Text>, _>(|component: &mut Animation<Text>|
     {
         component.update(delta_time);
     });
@@ -244,33 +336,43 @@ fn run_animation_system(scene: &mut Scene, delta_time: f32)
 
 fn run_camera_update_system(scene: &mut Scene, render_state: &mut RenderState)
 {
-    //TODO: set to the player position instead of whatever has a PC
-    scene.apply_to_entities_with::<PhysicsComponent, _>(|entity_uid: usize, component: &mut PhysicsComponent|
+    scene.apply_to_entities_with_both::<PlayerInput, PhysicsBody, _>(|player_input: &mut PlayerInput, physics_body: &mut PhysicsBody|
     {
-        //TODO
-        render_state.set_camera_world_position(component.get_position());
+        render_state.set_camera_world_position(physics_body.get_position());
     });
 }
 
 fn run_update_render_from_physics_system(scene: &mut Scene, render_state: &mut RenderState)
 {
-    scene.apply_to_entities_with_both::<PhysicsComponent, Sprite, _>(|entity_uid: usize, physics_component: &mut PhysicsComponent, sprite: &mut Sprite|
+    scene.apply_to_entities_with_both::<PhysicsBody, Sprite, _>(|physics_component: &mut PhysicsBody, renderable: &mut Sprite|
     {
-        render_state.set_position(&sprite.get_renderable_uid(), &physics_component.get_position());
+        render_state.set_position(&renderable.get_renderable_uid(), &physics_component.get_position());
     });
 
-    scene.apply_to_entities_with_both::<PhysicsComponent, Text, _>(|entity_uid: usize, physics_component: &mut PhysicsComponent, text: &mut Text|
+    scene.apply_to_entities_with_both::<PhysicsBody, Text, _>(|physics_component: &mut PhysicsBody, renderable: &mut Text|
     {
-        render_state.set_position(&text.get_renderable_uid(), &physics_component.get_position());
+        render_state.set_position(&renderable.get_renderable_uid(), &physics_component.get_position());
     });
 
-    scene.apply_to_entities_with_both::<PhysicsComponent, Animation<Sprite>, _>(|entity_uid: usize, physics_component: &mut PhysicsComponent, animation: &mut Animation<Sprite>|
+    scene.apply_to_entities_with_both::<PhysicsBody, Animation<Sprite>, _>(|physics_component: &mut PhysicsBody, animation: &mut Animation<Sprite>|
     {
-        render_state.set_position(&animation.get_renderable_uid(), &physics_component.get_position());
+        match animation.get_renderable_uid()
+        {
+            Some(u) => { 
+                render_state.set_position(&u, &physics_component.get_position());
+            }
+            None => {}
+        }
     });
 
-    scene.apply_to_entities_with_both::<PhysicsComponent, Animation<Text>, _>(|entity_uid: usize, physics_component: &mut PhysicsComponent, animation: &mut Animation<Text>|
+    scene.apply_to_entities_with_both::<PhysicsBody, Animation<Text>, _>(|physics_component: &mut PhysicsBody, animation: &mut Animation<Text>|
     {
-        render_state.set_position(&animation.get_renderable_uid(), &physics_component.get_position());
+        match animation.get_renderable_uid()
+        {
+            Some(u) => {
+                render_state.set_position(&u, &physics_component.get_position());
+            }
+            None => {}
+        }
     });
 }

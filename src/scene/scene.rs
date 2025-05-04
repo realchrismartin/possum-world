@@ -23,9 +23,15 @@ impl Scene
         }
     }
 
+    pub fn clear(&mut self)
+    {
+        self.next_entity_uid = 0;
+        self.component_buffer_map.clear();
+    }
+
     pub fn apply_to_entities_with_both<T: Component, U: Component, F>(&mut self, mut functor: F)
     where
-        F: FnMut(usize,&mut T, &mut U)
+        F: FnMut(&mut T, &mut U)
     {
         //First, create a list of uids that are all entities which have both component types
         let intersection : Vec<usize>;
@@ -82,13 +88,13 @@ impl Scene
                 None => { continue; }
             };
 
-            functor(entity_uid,component_instance_a,component_instance_b);
+            functor(component_instance_a,component_instance_b);
         }
     }
 
     pub fn apply_to_entities_with<T: Component, F>(&mut self, mut functor: F)
     where
-        F: FnMut(usize,&mut T)
+        F: FnMut(&mut T)
     {
         
         let set: Vec<usize>;
@@ -122,7 +128,7 @@ impl Scene
                 None => { continue; }
             };
 
-            functor(entity_uid,component_instance);
+            functor(component_instance);
         }
     }
 

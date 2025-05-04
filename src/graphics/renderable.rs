@@ -51,10 +51,11 @@ pub trait Renderable : Clone + 'static
 
     fn get_draw_type() -> u32 where Self: Sized;
 
-    //TODO: remove this;
+    //TODO: remove this later.
     fn get_size(&self) -> &[i32;2];
 
     fn get_starting_world_position(&self) -> Option<&glm::Vec2> where Self: Sized;
+    fn get_starting_scale(&self) -> Option<&glm::Vec2> where Self: Sized;
     fn get_starting_z(&self) -> Option<f32> where Self: Sized;
 
     fn set_renderable_uid(&mut self, uid: u32);

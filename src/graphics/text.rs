@@ -17,6 +17,7 @@ pub struct Text {
     font: Font,
     size: [i32;2],
     starting_world_position: glm::Vec2,
+    starting_scale: glm::Vec2,
     starting_z: f32
 }
 
@@ -35,11 +36,12 @@ impl Text
             font: font.clone(),
             size: [1,1], //TODO: unused
             starting_world_position: glm::vec2(0.0,0.0),
+            starting_scale: glm::vec2(0.0,0.0),
             starting_z: 0.0
         }
     }
 
-    pub fn new_with_position(content: &str, font: &Font, starting_world_position: glm::Vec2, starting_z: f32) -> Self
+    pub fn new_with_position(content: &str, font: &Font, starting_world_position: glm::Vec2, starting_z: f32, starting_scale: glm::Vec2) -> Self
     {
         Self
         {
@@ -48,6 +50,7 @@ impl Text
             font: font.clone(),
             size: [1,1], //TODO: unused
             starting_world_position: starting_world_position,
+            starting_scale: starting_scale,
             starting_z: starting_z
         }
     }
@@ -227,6 +230,11 @@ impl Renderable for Text
     fn get_starting_world_position(&self) -> Option<&glm::Vec2> 
     {
         Some(&&self.starting_world_position)
+    }
+
+    fn get_starting_scale(&self) -> Option<&glm::Vec2> 
+    {
+        Some(&&self.starting_scale)
     }
 
     fn get_starting_z(&self) -> Option<f32> 

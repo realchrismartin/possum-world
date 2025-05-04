@@ -7,6 +7,8 @@ use std::collections::HashMap;
 pub enum AnimationState 
 {
     Default,
+    FacingLeft,
+    FacingRight,
     WalkingRight,
     WalkingLeft
 }
@@ -24,6 +26,9 @@ pub struct Animation<T: Renderable>
     animating: bool,
     time_since_frame_change: f32,
     time_per_frame: f32,
+    starting_world_position: glm::Vec2,
+    starting_z: f32,
+    starting_scale: glm::Vec2,
 }
 
 impl<T: Renderable> Component for Animation<T>
@@ -35,17 +40,24 @@ impl<T: Renderable> Animation<T>
 {
     pub fn new(
         renderable_map: HashMap<AnimationState,Vec<T>>,
-        time_per_frame: f32
+        default_state: AnimationState,
+        time_per_frame: f32,
+        starting_world_position: glm::Vec2,
+        starting_z: f32,
+        starting_scale: glm::Vec2,
     ) -> Self
     {
         Self
         {
             renderable_map: renderable_map,
             current_renderable_index: 0,
-            current_animation_state: AnimationState::Default,
-            animating: true,
+            current_animation_state: default_state,
+            animating: false,
             time_since_frame_change: 0.0,
-            time_per_frame: time_per_frame
+            time_per_frame: time_per_frame,
+            starting_world_position,
+            starting_z,
+            starting_scale
         }
     }
 
@@ -53,7 +65,7 @@ impl<T: Renderable> Animation<T>
     where
         F: FnMut(&mut T)
     {
-        for (state_key, mutable_renderable_vec) in self.renderable_map.iter_mut() {
+        for (_state_key, mutable_renderable_vec) in self.renderable_map.iter_mut() {
 
             for renderable in mutable_renderable_vec.iter_mut()
             {
@@ -62,21 +74,21 @@ impl<T: Renderable> Animation<T>
         }
     }
 
-    pub fn get_renderable_uid(&self) -> u32
+    pub fn get_renderable_uid(&self) -> Option<u32> 
     {
         let renderables_for_state = match self.renderable_map.get(&self.current_animation_state)
         {
             Some(r) => r,
-            None => {return 0;}
+            None => {return None;}
         };
 
         let renderable = match renderables_for_state.get(self.current_renderable_index)
         {
             Some(u) => u,
-            None => {return 0;}
+            None => {return None;}
         };
 
-        renderable.get_renderable_uid()
+        Some(renderable.get_renderable_uid())
     }
 
     pub fn step_animation(&mut self)
@@ -124,6 +136,32 @@ impl<T: Renderable> Animation<T>
 
     pub fn set_animation_state(&mut self, state: AnimationState)
     {
+        if self.current_animation_state == state
+        {
+            return;
+        }
+
         self.current_animation_state = state;
+        self.reset_animation();
+    }
+
+    pub fn get_animation_state(&self) -> &AnimationState
+    {
+        &&self.current_animation_state
+    }
+
+    pub fn get_starting_world_position(&self) -> &glm::Vec2
+    {
+        &&self.starting_world_position
+    }
+
+    pub fn get_starting_z(&self) -> f32
+    {
+        self.starting_z
+    }
+
+    pub fn get_starting_scale(&self) -> &glm::Vec2
+    {
+        &&self.starting_scale
     }
 }

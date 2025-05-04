@@ -1,13 +1,13 @@
 use crate::component::component::Component;
 
 #[derive(Clone)]
-pub struct PhysicsComponent
+pub struct PhysicsBody
 {
     position: glm::Vec2,
     velocity: glm::Vec2
 }
 
-impl PhysicsComponent
+impl PhysicsBody
 {
     pub fn new() -> Self
     {
@@ -41,6 +41,6 @@ impl PhysicsComponent
     }
 }
 
-impl Component for PhysicsComponent
+impl Component for PhysicsBody
 {
 }

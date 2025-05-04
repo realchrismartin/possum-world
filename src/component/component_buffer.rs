@@ -19,6 +19,16 @@ impl<T:Component> ComponentBuffer<T>
         }
     }
 
+    pub fn clear(&mut self)
+    {
+        self.entity_set.clear();
+
+        for index in 0..self.components.len()
+        {
+            self.components[index] = None;
+        }
+    }
+
     pub fn add(&mut self, index: usize, component: T)
     {
         if self.entity_set.contains(&index)

@@ -150,6 +150,12 @@ impl RenderState
             Some(z) => { self.set_z(&new_uid, z)},
             None => {}
         };
+
+        match renderable.get_starting_scale()
+        {
+            Some(s) => { self.set_scale(&new_uid, s)},
+            None => {}
+        };
     }
 
     //TODO: later move this
