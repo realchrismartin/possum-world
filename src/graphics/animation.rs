@@ -6,7 +6,6 @@ use std::collections::HashMap;
 #[derive(Eq, Hash, PartialEq)]
 pub enum AnimationState 
 {
-    Default,
     FacingLeft,
     FacingRight,
     WalkingRight,

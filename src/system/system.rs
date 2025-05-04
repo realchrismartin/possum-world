@@ -8,14 +8,14 @@ use crate::graphics::sprite::Sprite;
 use crate::graphics::text::Text;
 use crate::scene::scene::Scene;
 use crate::graphics::font::Font;
-use crate::component::physics_component::PhysicsBody;
+use crate::component::physics_body::PhysicsBody;
 use crate::component::player_input::PlayerInput;
 use crate::component::ai::{AIState, AI};
 use crate::component::component::Component;
 use std::collections::HashMap;
 use rand::Rng;
 
-use crate::util::logging::log;
+//use crate::util::logging::log;
 
 //Runs at game start
 pub fn init_scene(scene: &mut Scene)
@@ -67,9 +67,9 @@ pub fn init_scene(scene: &mut Scene)
     let mut rng = rand::thread_rng();
 
     //Grasses        
-    let mut z = -0.75;
+    let mut z = -1.5;
 
-    for _index in 0..rng.gen_range(4..50)
+    for _index in 0..rng.gen_range(50..120)
     {
         let grass = match scene.add_entity()
         {
@@ -79,10 +79,11 @@ pub fn init_scene(scene: &mut Scene)
 
         z += 0.002;
 
-        scene.add_component::<Sprite>(grass, Sprite::new_with_position([309,2],[62,46],1, glm::vec2(rng.gen_range(0.0..1000.0),-25.0),z, glm::vec2(1.0,1.0)));
+        scene.add_component::<Sprite>(grass, Sprite::new_with_position([309,2],[62,46],1, glm::vec2(rng.gen_range(-1000.0..1000.0),-15.0),z, glm::vec2(1.0,1.0)));
     }
 
     //NPC Posses
+    z = -0.75;
 
     for _index in 0..rng.gen_range(4..10)
     {
@@ -324,9 +325,9 @@ fn run_input_system(scene: &mut Scene, input_state: &InputState)
     }
     */
 
-    scene.apply_to_entities_with_both::<PhysicsBody, PlayerInput, _>(|physics_component: &mut PhysicsBody, _player_input: &mut PlayerInput|
+    scene.apply_to_entities_with_both::<PhysicsBody, PlayerInput, _>(|physics_body: &mut PhysicsBody, _player_input: &mut PlayerInput|
     {
-       physics_component.set_velocity(velocity.x,velocity.y);
+       physics_body.set_velocity(velocity.x,velocity.y);
     });
 
 }
@@ -371,7 +372,6 @@ fn run_ai_system(scene: &mut Scene, delta_time: f32)
         {
             match animation.get_animation_state()
             {
-                AnimationState::Default => {},
                 AnimationState::FacingRight => {},
                 AnimationState::FacingLeft => {},
                 AnimationState::WalkingLeft => { animation.set_animation_state(AnimationState::FacingLeft)},
@@ -406,7 +406,7 @@ fn run_animation_system(scene: &mut Scene, delta_time: f32)
 
 fn run_camera_update_system(scene: &mut Scene, render_state: &mut RenderState)
 {
-    scene.apply_to_entities_with_both::<PlayerInput, PhysicsBody, _>(|player_input: &mut PlayerInput, physics_body: &mut PhysicsBody|
+    scene.apply_to_entities_with_both::<PlayerInput, PhysicsBody, _>(|_player_input: &mut PlayerInput, physics_body: &mut PhysicsBody|
     {
         render_state.set_camera_world_position(physics_body.get_position());
     });
@@ -414,33 +414,33 @@ fn run_camera_update_system(scene: &mut Scene, render_state: &mut RenderState)
 
 fn run_update_render_from_physics_system(scene: &mut Scene, render_state: &mut RenderState)
 {
-    scene.apply_to_entities_with_both::<PhysicsBody, Sprite, _>(|physics_component: &mut PhysicsBody, renderable: &mut Sprite|
+    scene.apply_to_entities_with_both::<PhysicsBody, Sprite, _>(|physics_body: &mut PhysicsBody, renderable: &mut Sprite|
     {
-        render_state.set_position(&renderable.get_renderable_uid(), &physics_component.get_position());
+        render_state.set_position(&renderable.get_renderable_uid(), &physics_body.get_position());
     });
 
-    scene.apply_to_entities_with_both::<PhysicsBody, Text, _>(|physics_component: &mut PhysicsBody, renderable: &mut Text|
+    scene.apply_to_entities_with_both::<PhysicsBody, Text, _>(|physics_body: &mut PhysicsBody, renderable: &mut Text|
     {
-        render_state.set_position(&renderable.get_renderable_uid(), &physics_component.get_position());
+        render_state.set_position(&renderable.get_renderable_uid(), &physics_body.get_position());
     });
 
-    scene.apply_to_entities_with_both::<PhysicsBody, Animation<Sprite>, _>(|physics_component: &mut PhysicsBody, animation: &mut Animation<Sprite>|
+    scene.apply_to_entities_with_both::<PhysicsBody, Animation<Sprite>, _>(|physics_body: &mut PhysicsBody, animation: &mut Animation<Sprite>|
     {
         match animation.get_renderable_uid()
         {
             Some(u) => { 
-                render_state.set_position(&u, &physics_component.get_position());
+                render_state.set_position(&u, &physics_body.get_position());
             }
             None => {}
         }
     });
 
-    scene.apply_to_entities_with_both::<PhysicsBody, Animation<Text>, _>(|physics_component: &mut PhysicsBody, animation: &mut Animation<Text>|
+    scene.apply_to_entities_with_both::<PhysicsBody, Animation<Text>, _>(|physics_body: &mut PhysicsBody, animation: &mut Animation<Text>|
     {
         match animation.get_renderable_uid()
         {
             Some(u) => {
-                render_state.set_position(&u, &physics_component.get_position());
+                render_state.set_position(&u, &physics_body.get_position());
             }
             None => {}
         }
