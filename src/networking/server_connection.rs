@@ -6,6 +6,8 @@ use web_sys::js_sys::{ArrayBuffer,Uint8Array};
 use web_sys::BinaryType;
 use crate::util::logging::log;
 
+static RATE_LIMIT : f32 = 2000.0;
+
 pub struct Message
 {
     x: f32,
@@ -39,7 +41,8 @@ impl Message
 
 pub struct ServerConnection
 {
-    socket: Option<WebSocket>
+    socket: Option<WebSocket>,
+    time_since_last_update: f32
 }
 
 impl ServerConnection
@@ -74,12 +77,22 @@ impl ServerConnection
 
         Self
         {
-            socket
+            socket,
+            time_since_last_update: RATE_LIMIT
         }
     }
 
-    pub fn send_message(&self, message: &Message)
+    pub fn send_message_if_ready(&mut self, message: &Message, delta_time: f32)
     {
+        self.time_since_last_update += delta_time;
+
+        if self.time_since_last_update < RATE_LIMIT
+        {
+            return;
+        }
+
+        self.time_since_last_update = 0.0;
+
         if self.socket.is_none()
         {
             return;
