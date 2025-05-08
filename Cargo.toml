@@ -34,7 +34,9 @@ features = [
   'WebGlTexture',
   'KeyboardEvent',
   'EventTarget',
-  'console'
+  'console',
+  'WebSocket',
+  'BinaryType'
 ]
 
 [dev-dependencies]

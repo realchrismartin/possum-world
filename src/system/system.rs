@@ -12,6 +12,7 @@ use crate::component::physics_body::PhysicsBody;
 use crate::component::player_input::PlayerInput;
 use crate::component::ai::{AIState, AI};
 use crate::component::component::Component;
+use crate::networking::server_connection::{ServerConnection,Message};
 use std::collections::HashMap;
 use rand::Rng;
 
@@ -245,8 +246,9 @@ pub fn init_render_data_from_scene(scene: &mut Scene, render_state: &mut RenderS
 }
 
 //Runs every game tick. Updates all of the components, then renders all renderables that get batched.
-pub fn run_systems(scene: &mut Scene, render_state: &mut RenderState, input_state: &mut InputState, delta_time : f32)
+pub fn run_systems(scene: &mut Scene, render_state: &mut RenderState, input_state: &mut InputState, server_connection: &mut ServerConnection, delta_time : f32)
 {
+    run_networking_system(scene, server_connection);
     run_input_system(scene, input_state); 
     run_physics_system(scene, delta_time);
     run_ai_system(scene, delta_time);
@@ -271,6 +273,14 @@ fn load_batch_for_renderable_type<T: Renderable + Component>(scene: &mut Scene, 
             Some(u) => { batch.add(&u); }
             None => {}
         }
+    });
+}
+
+fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnection)
+{
+    scene.apply_to_entities_with_both::<PlayerInput, PhysicsBody, _>(|_player_input: &mut PlayerInput, physics_body: &mut PhysicsBody|
+    {
+        server_connection.send_message(&Message::new(physics_body.get_position().x,physics_body.get_position().y));
     });
 }
 

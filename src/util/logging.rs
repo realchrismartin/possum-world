@@ -10,3 +10,8 @@ pub fn log(value : &str)
 {
     console::log_1(&JsValue::from_str(value).into());
 }
+
+pub fn log_string(value: &String)
+{
+    log(value.as_str());
+}
