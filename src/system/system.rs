@@ -12,8 +12,9 @@ use crate::component::physics_body::PhysicsBody;
 use crate::component::player_input::PlayerInput;
 use crate::component::ai::{AIState, AI};
 use crate::component::component::Component;
-use crate::networking::server_connection::{ServerConnection,Message};
+use crate::networking::server_connection::{ServerConnection,OutboundMessage,InboundMessage};
 use std::collections::HashMap;
+use crate::util::logging::log;
 use rand::Rng;
 
 //use crate::util::logging::log;
@@ -280,7 +281,12 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
 {
     scene.apply_to_entities_with_both::<PlayerInput, PhysicsBody, _>(|_player_input: &mut PlayerInput, physics_body: &mut PhysicsBody|
     {
-        server_connection.send_message_if_ready(&Message::new(physics_body.get_position().x,physics_body.get_position().y), delta_time);
+        server_connection.send_message_if_ready(&OutboundMessage::new(physics_body.get_position().x,physics_body.get_position().y), delta_time);
+    });
+
+    server_connection.receive_inbound_messages(&|message : &InboundMessage|
+    {
+        log(&format!("Another poss with ID {} is at {}x{}",message.uuid(),message.x(),message.y()));
     });
 }
 

@@ -4,17 +4,20 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::js_sys::{ArrayBuffer,Uint8Array};
 use web_sys::BinaryType;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::convert::TryInto;
 use crate::util::logging::log;
 
 static RATE_LIMIT : f32 = 2000.0;
 
-pub struct Message
+pub struct OutboundMessage
 {
     x: f32,
     y: f32
 }
 
-impl Message
+impl OutboundMessage
 {
     pub fn new(x: f32, y: f32) -> Self
     {
@@ -39,28 +42,93 @@ impl Message
     }
 }
 
+pub struct InboundMessage
+{
+    uuid: String,
+    x: f32,
+    y: f32
+}
+
+impl InboundMessage
+{
+    pub fn from_bytes(bytes: &[u8;44]) -> Self
+    {
+        let mut x = 0.0;
+        let mut y = 0.0;
+
+        match &bytes[36..40].try_into()
+        {
+            Ok(x_s) => {
+                x = f32::from_le_bytes(*x_s);
+            }
+            Err(_) => {}
+        };
+
+        match &bytes[40..44].try_into()
+        {
+            Ok(y_s) => {
+                y = f32::from_le_bytes(*y_s);
+            }
+            Err(_) => {}
+        };
+
+        Self
+        {
+            uuid: String::from_utf8_lossy(&bytes[0..36]).to_string(),
+            x: x,
+            y: y
+        }
+    }
+
+    pub fn x(&self) -> &f32
+    {
+        &&self.x
+    }
+
+    pub fn y(&self) -> &f32
+    {
+        &&self.y
+    }
+
+    pub fn uuid(&self) -> &String
+    {
+        &&self.uuid
+    }
+}
+
 pub struct ServerConnection
 {
     socket: Option<WebSocket>,
-    time_since_last_update: f32
+    time_since_last_update: f32,
+    inbound_message_queue: Arc<Mutex<Vec<InboundMessage>>>
 }
 
 impl ServerConnection
 {
     pub fn new() -> Self
     {
+        let inbound_message_queue = Arc::new(Mutex::new(Vec::<InboundMessage>::new()));
+
         let socket = match WebSocket::new("ws://127.0.0.1:8000")
         {
             Ok(ws) => {
+
+                let queue_ref = inbound_message_queue.clone();
+
                 ws.set_binary_type(BinaryType::Arraybuffer);
                 let onmessage_callback = Closure::<dyn FnMut(_)>::new(move |e: MessageEvent| {
                     if let Ok(abuf) = e.data().dyn_into::<ArrayBuffer>() {
-                        /*
-                        for i in Uint8Array::new(&abuf).to_vec().into_iter()
+                        let byte_array = Uint8Array::new(&abuf);
+
+                        if byte_array.byte_length() != 44
                         {
-                            log(&format!("Received a byte from the server: {}",i));
+                            log(&format!("Received a message with the wrong number of bytes, got {}", byte_array.byte_length()));
+                        } else
+                        {
+                            let mut raw_bytes : [u8;44] = [0;44];
+                            byte_array.copy_to(&mut raw_bytes);
+                            queue_ref.lock().unwrap().push(InboundMessage::from_bytes(&raw_bytes)); 
                         }
-                        */
                     }
                 });
                 ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
@@ -74,15 +142,15 @@ impl ServerConnection
             }
         };
 
-
         Self
         {
             socket,
+            inbound_message_queue: inbound_message_queue,
             time_since_last_update: RATE_LIMIT
         }
     }
 
-    pub fn send_message_if_ready(&mut self, message: &Message, delta_time: f32)
+    pub fn send_message_if_ready(&mut self, message: &OutboundMessage, delta_time: f32)
     {
         self.time_since_last_update += delta_time;
 
@@ -122,5 +190,17 @@ impl ServerConnection
             Ok(_) => {},
             Err(err) => log(format!("error sending message: {:?}", err).as_str()),
         }
+    }
+
+    pub fn receive_inbound_messages(&mut self, functor: &dyn Fn(&InboundMessage))
+    {
+        let mut locked_queue = self.inbound_message_queue.lock().unwrap();
+
+        for i in locked_queue.iter()
+        {
+            functor(i);
+        }
+
+        locked_queue.clear();
     }
 }
