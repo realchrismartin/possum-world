@@ -6,6 +6,9 @@ use core::cell::Ref;
 use core::cell::RefMut;
 use crate::component::component::Component;
 use crate::component::component_buffer::ComponentBuffer;
+use crate::util::logging::log;
+use crate::component::component_buffer::ContainsEntity;
+
 pub struct Scene
 {
     next_entity_uid: usize,
@@ -142,6 +145,29 @@ impl Scene
 
         self.next_entity_uid += 1;
         return Some(self.next_entity_uid);
+    }
+
+    pub fn remove_entity(&mut self, entity_uid: usize)
+    {
+        for (type_id, ref_cell) in self.component_buffer_map.iter_mut() {
+            match ref_cell.try_borrow_mut()
+            {
+                Ok(mut borrowed_mut) => {
+                    match borrowed_mut.downcast_mut::<Box<dyn ContainsEntity>>()
+                    {
+                        Some(component_buffer) => {
+                            component_buffer.remove_entity(entity_uid);
+                        },
+                        None => {
+                            log(&format!("Type with ID {:?} does not implement ContainsEntity.", type_id));
+                        }
+                    };
+                },
+                Err(_) => {
+                    log(&format!("Type with ID {:?} failed to borrow", type_id));
+                }
+            };
+        }
     }
 
     pub fn add_component<T: Component>(&mut self, entity_uid: usize, component: T)
