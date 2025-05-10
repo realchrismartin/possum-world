@@ -9,7 +9,7 @@ use std::sync::Mutex;
 use std::convert::TryInto;
 use crate::util::logging::log;
 
-static RATE_LIMIT : f32 = 2000.0;
+static RATE_LIMIT : f32 = 50.0;
 
 pub struct OutboundMessage
 {
@@ -192,7 +192,7 @@ impl ServerConnection
         }
     }
 
-    pub fn receive_inbound_messages(&mut self, functor: &dyn Fn(&InboundMessage))
+    pub fn receive_inbound_messages(&mut self, functor: &mut dyn FnMut(&InboundMessage))
     {
         let mut locked_queue = self.inbound_message_queue.lock().unwrap();
 

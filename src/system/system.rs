@@ -13,8 +13,9 @@ use crate::component::player_input::PlayerInput;
 use crate::component::ai::{AIState, AI};
 use crate::component::component::Component;
 use crate::networking::server_connection::{ServerConnection,OutboundMessage,InboundMessage};
-use std::collections::HashMap;
 use crate::util::logging::log;
+use std::collections::HashMap;
+use std::collections::HashSet;
 use rand::Rng;
 
 //use crate::util::logging::log;
@@ -249,7 +250,7 @@ pub fn init_render_data_from_scene(scene: &mut Scene, render_state: &mut RenderS
 //Runs every game tick. Updates all of the components, then renders all renderables that get batched.
 pub fn run_systems(scene: &mut Scene, render_state: &mut RenderState, input_state: &mut InputState, server_connection: &mut ServerConnection, delta_time : f32)
 {
-    run_networking_system(scene, server_connection, delta_time);
+    run_networking_system(scene, server_connection, render_state, delta_time); //TODO: remove render state 
     run_input_system(scene, input_state); 
     run_physics_system(scene, delta_time);
     run_ai_system(scene, delta_time);
@@ -277,17 +278,146 @@ fn load_batch_for_renderable_type<T: Renderable + Component>(scene: &mut Scene, 
     });
 }
 
-fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnection, delta_time: f32)
+fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnection, render_state: &mut RenderState, delta_time: f32)
 {
     scene.apply_to_entities_with_both::<PlayerInput, PhysicsBody, _>(|_player_input: &mut PlayerInput, physics_body: &mut PhysicsBody|
     {
         server_connection.send_message_if_ready(&OutboundMessage::new(physics_body.get_position().x,physics_body.get_position().y), delta_time);
     });
 
-    server_connection.receive_inbound_messages(&|message : &InboundMessage|
+    let mut present_peers = HashSet::<String>::new();
+
+    let mut rng = rand::thread_rng();
+
+    server_connection.receive_inbound_messages(&mut |message : &InboundMessage|
     {
-        log(&format!("Another poss with ID {} is at {}x{}",message.uuid(),message.x(),message.y()));
+        //log(&format!("Another poss with ID {} is at {}x{}",message.uuid(),message.x(),message.y()));
+
+        present_peers.insert(message.uuid().clone()); //TODO: $$
+
+        let mut entity_uid : Option<usize> = None;
+
+        {
+            match scene.get_entity_for_peer(message.uuid())
+            {
+                Some(e) => {entity_uid = Some(*e);}
+                None => {}
+            };
+        }
+
+        match entity_uid
+        {
+            Some(euid) => {
+                scene.apply_to_entity::<PhysicsBody, _>(euid, |physics_body : &mut PhysicsBody| 
+                {
+                    //Make peers walk to their current position
+
+                    let x = physics_body.get_position().x - *message.x();
+                    let y = physics_body.get_position().y - *message.y();
+
+                    if x < 10.0 && x > -10.0
+                    {
+                        physics_body.set_velocity(0.0,0.0);
+                    } else if x > 10.0
+                    {
+                        physics_body.set_velocity(-1.0,0.0);
+                    } else
+                    {
+                        physics_body.set_velocity(1.0,0.0);
+                    }
+                });
+            },
+            None => {
+
+                let peer_entity = match scene.add_entity_for_peer(message.uuid())
+                {
+                    Some(e) => e,
+                    None => {return;}
+                };
+
+                scene.add_component::<PhysicsBody>(peer_entity, PhysicsBody::new());
+                scene.add_component::<Animation::<Sprite>>(peer_entity,Animation::<Sprite>::new(
+                    HashMap::from([
+                        (AnimationState::FacingRight, vec![
+                            Sprite::new([2,21],[58,18],0)
+                        ]),
+                        (AnimationState::FacingLeft, vec![
+                            Sprite::new([2,81],[58,18],0),
+                        ]),
+                        (AnimationState::WalkingLeft, vec![
+                            Sprite::new([2,81],[58,18],0),
+                            Sprite::new([62,81],[58,18],0),
+                            Sprite::new([122,81],[58,18],0),
+                            Sprite::new([182,81],[58,18],0),
+                            Sprite::new([242,81],[58,18],0),
+                            Sprite::new([302,81],[58,18],0),
+                            Sprite::new([362,81],[58,18],0),
+                            Sprite::new([422,81],[58,18],0),
+                        ]),
+                        (AnimationState::WalkingRight, vec![
+                            Sprite::new([2,21],[58,18],0),
+                            Sprite::new([62,21],[58,18],0),
+                            Sprite::new([122,21],[58,18],0),
+                            Sprite::new([182,21],[58,18],0),
+                            Sprite::new([242,21],[58,18],0),
+                            Sprite::new([302,21],[58,18],0),
+                            Sprite::new([362,21],[58,18],0),
+                            Sprite::new([422,21],[58,18],0),
+                        ]),
+                    ]),
+                    AnimationState::FacingRight,
+                    50.0,
+                    glm::vec2(0.0,0.0),
+                    -0.75,
+                    glm::vec2(5.0,5.0)
+                ));
+
+                scene.apply_to_entity::<Animation<Sprite>, _>(peer_entity, |component: &mut Animation<Sprite>|
+                {
+                    let mut first_renderable_uid : Option<u32> = None;
+                    component.apply_to_renderables(|renderable: &mut Sprite|
+                    {
+                        if first_renderable_uid.is_some()
+                        {
+                            render_state.request_new_renderable_with_existing_transform::<Sprite>(renderable, first_renderable_uid.unwrap());
+                        } else
+                        {
+                            render_state.request_new_renderable::<Sprite>(renderable);
+            
+                            first_renderable_uid = Some(renderable.get_renderable_uid());
+                        }
+                    });
+            
+                    if first_renderable_uid.is_none()
+                    {
+                        return;
+                    }
+            
+                    let uid = &first_renderable_uid.unwrap();
+            
+                    //Since we don't provide default position/scale/etc for animations, set it once on the shared transform here
+                    //NB: all frames have the same data, including scale.
+                    render_state.set_position(uid, component.get_starting_world_position());
+                    render_state.set_z(uid, component.get_starting_z());
+                    render_state.set_scale(uid, component.get_starting_scale());
+                });
+
+                let names = vec!["Lumpy Nick", "Lumpy Regan", "Lumpy J"];
+                let name = names[rng.gen_range(0..names.len())];
+                scene.add_component::<Text>(peer_entity, Text::new_with_position(name, &Font::Default, glm::vec2(0.0,150.0), 0.002, glm::vec2(1.0,1.0)));
+
+                scene.apply_to_entity::<Text, _>(peer_entity,|component: &mut Text|
+                {
+                    render_state.request_new_renderable::<Text>(component);
+                });
+            }
+        }
     });
+
+    //TODO: this breaks stuff... maybe?
+    //scene.remove_departed_peers(&present_peers);
+
+    //NB: this doesn't remove graphics data. Do that later..
 }
 
 fn run_render_system(scene: &mut Scene, render_state: &mut RenderState)
@@ -437,7 +567,11 @@ fn run_update_render_from_physics_system(scene: &mut Scene, render_state: &mut R
 
     scene.apply_to_entities_with_both::<PhysicsBody, Text, _>(|physics_body: &mut PhysicsBody, renderable: &mut Text|
     {
-        render_state.set_position(&renderable.get_renderable_uid(), &physics_body.get_position());
+        //TODO: hacked to allow for nametags for now
+        //render_state.set_position(&renderable.get_renderable_uid(), &physics_body.get_position());
+        let body_pos = physics_body.get_position();
+        let offset_pos = glm::vec2(body_pos.x, body_pos.y - 75.0);
+        render_state.set_position(&renderable.get_renderable_uid(),&offset_pos);
     });
 
     scene.apply_to_entities_with_both::<PhysicsBody, Animation<Sprite>, _>(|physics_body: &mut PhysicsBody, animation: &mut Animation<Sprite>|

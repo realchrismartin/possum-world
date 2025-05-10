@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::any::TypeId;
 use std::any::Any;
 use std::cell::RefCell;
@@ -13,6 +14,7 @@ pub struct Scene
 {
     next_entity_uid: usize,
     component_buffer_map: HashMap<TypeId,RefCell<Box<dyn Any + 'static>>>,
+    peer_entity_uid_map: HashMap<String,usize>
 }
 
 impl Scene
@@ -23,6 +25,7 @@ impl Scene
         {
             next_entity_uid: 0,
             component_buffer_map: HashMap::new(),
+            peer_entity_uid_map: HashMap::new(),
         }
     }
 
@@ -135,6 +138,25 @@ impl Scene
         }
     }
 
+    pub fn apply_to_entity<T: Component, F>(&mut self, entity_uid: usize, mut functor: F)
+    where
+        F: FnMut(&mut T)
+    {
+        let mut buffer = match Self::get_mut_component_buffer::<T>(&mut self.component_buffer_map)
+        {
+            Some(a) => a,
+            None => { return; }
+        };
+
+        let component_instance = match buffer.get_mut(entity_uid)
+        {
+            Some(a) => a,
+            None => { return; }
+        };
+
+        functor(component_instance);
+    }
+
     pub fn add_entity(&mut self) -> Option<usize>
     {
         //Can't have more entities than component buffer size
@@ -147,8 +169,61 @@ impl Scene
         return Some(self.next_entity_uid);
     }
 
+    pub fn add_entity_for_peer(&mut self, uuid: &String) -> Option<usize>
+    {
+        if self.peer_entity_uid_map.contains_key(uuid)
+        {
+            return None;
+        }
+
+        let entity_uid = match self.add_entity()
+        {
+            Some(u) => Some(u),
+            None => { return None; }
+        };
+
+        self.peer_entity_uid_map.insert(uuid.clone(),entity_uid.unwrap().clone());
+
+        entity_uid
+    }
+
+    pub fn get_entity_for_peer(&mut self, uuid: &String) -> Option<&usize>
+    {
+        self.peer_entity_uid_map.get(uuid)
+    }
+
+    pub fn remove_departed_peers(&mut self, peers: &HashSet<String>)
+    {
+        let mut removals = Vec::<String>::new(); //TODO: $
+
+        for (peer_uid, entity_uid) in self.peer_entity_uid_map.iter()
+        {
+            if !peers.contains(peer_uid)
+            {
+                removals.push(peer_uid.clone()); //TODO: $
+            }
+        }
+
+        for departed_peer in removals
+        {
+            self.remove_entity_for_peer(&departed_peer)
+        }
+    }
+
+    fn remove_entity_for_peer(&mut self, uuid: &String)
+    {
+        if !self.peer_entity_uid_map.contains_key(uuid)
+        {
+            return;
+        }
+
+        self.peer_entity_uid_map.remove(uuid);
+        self.remove_entity(*self.peer_entity_uid_map.get(uuid).unwrap()); 
+    }
+
     pub fn remove_entity(&mut self, entity_uid: usize)
     {
+        //TODO: something here breaks the game
         for (type_id, ref_cell) in self.component_buffer_map.iter_mut() {
             match ref_cell.try_borrow_mut()
             {
