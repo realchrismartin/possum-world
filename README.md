@@ -5,8 +5,6 @@
   <p>
   2D Rust & WebGL Browser Game!
   </p>
-
-  ![screenshot](img/preview.gif)
 </div>
 
 # Table of Contents
@@ -18,9 +16,7 @@
 
 ## About the Project
 
-Possum World is a side-scrolling browser game implemented using Rust, WASM, and WebGL. This project exists because I wanted an excuse to learn a bit of Rust and play with WebGL APIs at the same time.
-
-[Play Possum World](https://therealchrismartin.com/projects) For Free Today (!) on my personal website.
+Possum World is a side-scrolling browser game implemented using Rust, WASM, and WebGL.
 
 This repository contains both the game engine and the game content. 
 
@@ -42,6 +38,3 @@ This repository contains both the game engine and the game content.
 
 - Build the project using `wasm-pack` and `npm run-script build` to generate the WASM content and then build the Javascript fluff
 - If desired, build the `possum-world-fileserver` dependency and use it to host the generated content. Alternately, any static hosting site should be able to host this project.
-
-### Attributions
-This project currently leverages sprite resources borrowed from [B38tn1k](https://b38tn1k.com/).
