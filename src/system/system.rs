@@ -12,10 +12,11 @@ use crate::component::physics_body::PhysicsBody;
 use crate::component::player_input::PlayerInput;
 use crate::component::ai::{AIState, AI};
 use crate::component::component::Component;
-use crate::networking::server_connection::{ServerConnection,OutboundMessage,InboundMessage};
+use crate::networking::server_connection::{ServerConnection,OutboundMessage,InboundMessage, MessageType};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use rand::Rng;
+use crate::util::logging::log;
 
 //Runs at game start
 pub fn init_scene(scene: &mut Scene)
@@ -244,6 +245,21 @@ pub fn init_render_data_from_scene(scene: &mut Scene, render_state: &mut RenderS
     //TODO: scale visuals to fit physics body sizes? how to handle sizes? (text size is incorrect in the ctor, animations have multiple sizes)
 }
 
+//Runs whenever we want to remove an entity.
+//Any time we add a component, we need to add a call here, otherwise the buffers will never remove components for these entities...
+//TODO: this could be nicer..
+pub fn remove_entity(scene: &mut Scene, entity_uid: usize)
+{
+    //NB: this doesn't remove graphics data from the buffers. Do that later..
+
+    scene.remove_component::<Sprite>(entity_uid);
+    scene.remove_component::<Text>(entity_uid);
+    scene.remove_component::<Animation::<Sprite>>(entity_uid);
+    scene.remove_component::<Animation::<Text>>(entity_uid);
+    scene.remove_component::<PhysicsBody>(entity_uid);
+    scene.remove_component::<PlayerInput>(entity_uid);
+}
+
 //Runs every game tick. Updates all of the components, then renders all renderables that get batched.
 pub fn run_systems(scene: &mut Scene, render_state: &mut RenderState, input_state: &mut InputState, server_connection: &mut ServerConnection, delta_time : f32)
 {
@@ -282,16 +298,10 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
         server_connection.send_message_if_ready(&OutboundMessage::new(physics_body.get_position().x,physics_body.get_position().y), delta_time);
     });
 
-    let mut present_peers = HashSet::<String>::new();
-
     let mut rng = rand::thread_rng();
 
     server_connection.receive_inbound_messages(&mut |message : &InboundMessage|
     {
-        //log(&format!("Another poss with ID {} is at {}x{}",message.uuid(),message.x(),message.y()));
-
-        present_peers.insert(message.uuid().clone()); //TODO: $$
-
         let mut entity_uid : Option<usize> = None;
 
         {
@@ -301,6 +311,26 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
                 None => {}
             };
         }
+
+        match message.message_type()
+        {
+            MessageType::Update => {},
+            MessageType::Departure => {
+
+                log(&format!("{} is departing...",message.uuid()));
+
+                if !entity_uid.is_none()
+                {
+                    //Tell the scene to remove the entity from the map
+                    scene.remove_entity_for_peer(message.uuid());
+
+                    //Also remove components. We have to do this separately for now because generics..
+                    remove_entity(scene,entity_uid.unwrap());
+                }
+
+                return;
+            }
+        };
 
         match entity_uid
         {
@@ -329,6 +359,8 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
                     Some(e) => e,
                     None => {return;}
                 };
+
+                log(&format!("{} has arrived!",message.uuid()));
 
                 scene.add_component::<PhysicsBody>(peer_entity, PhysicsBody::new());
                 scene.add_component::<Animation::<Sprite>>(peer_entity,Animation::<Sprite>::new(
@@ -408,11 +440,6 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
             }
         }
     });
-
-    //TODO: this breaks stuff... maybe?
-    //scene.remove_departed_peers(&present_peers);
-
-    //NB: this doesn't remove graphics data. Do that later..
 }
 
 fn run_render_system(scene: &mut Scene, render_state: &mut RenderState)
@@ -432,7 +459,7 @@ fn run_render_system(scene: &mut Scene, render_state: &mut RenderState)
     render_state.draw(&mut text_batch);
 }
 
-fn run_input_system(scene: &mut Scene, input_state: &InputState)
+fn run_input_system(scene: &mut Scene, input_state: &mut InputState)
 {
     let mut velocity = glm::vec2(0.0,0.0);
 
@@ -446,7 +473,6 @@ fn run_input_system(scene: &mut Scene, input_state: &InputState)
         }
     }
 
-    /*
     let mut clicked = false;
     while input_state.has_next_click()
     {
@@ -464,7 +490,6 @@ fn run_input_system(scene: &mut Scene, input_state: &InputState)
     {
         //TODO
     }
-    */
 
     scene.apply_to_entities_with_both::<PhysicsBody, PlayerInput, _>(|physics_body: &mut PhysicsBody, _player_input: &mut PlayerInput|
     {

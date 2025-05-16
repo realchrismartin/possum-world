@@ -37,8 +37,6 @@ impl RenderState
         let canvas_size = Self::get_canvas_size(document);
         let transform_buffer = TransformBuffer::new(web_context.as_ref(),"ModelMatrixBlock");
 
-        log(&format!("Canvas: {} {}",canvas_size[0],canvas_size[1]));
-
         Self
         {
             context: web_context,
@@ -491,11 +489,11 @@ impl RenderState
         web_context.viewport(0, 0, x as i32, y as i32);
 
         let viewport = web_context.get_parameter(WebGl2RenderingContext::VIEWPORT).unwrap();
-        log_value(&viewport);
 
         self.camera.set_canvas_dimensions(x, y);
         
         //Zoom the camera to an appropriate level based on how big the canvas is.
+        //900 is an arbitrary value for a decent zoom
         self.camera.set_zoom(900.0 / std::cmp::min(x,y) as f32);
     }
 

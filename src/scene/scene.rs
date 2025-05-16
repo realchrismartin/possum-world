@@ -8,7 +8,6 @@ use core::cell::RefMut;
 use crate::component::component::Component;
 use crate::component::component_buffer::ComponentBuffer;
 use crate::util::logging::log;
-use crate::component::component_buffer::ContainsEntity;
 
 pub struct Scene
 {
@@ -193,25 +192,8 @@ impl Scene
         self.peer_entity_uid_map.get(uuid)
     }
 
-    pub fn remove_departed_peers(&mut self, peers: &HashSet<String>)
-    {
-        let mut removals = Vec::<String>::new(); //TODO: $
-
-        for (peer_uid, _eid) in self.peer_entity_uid_map.iter()
-        {
-            if !peers.contains(peer_uid)
-            {
-                removals.push(peer_uid.clone()); //TODO: $
-            }
-        }
-
-        for departed_peer in removals
-        {
-            self.remove_entity_for_peer(&departed_peer)
-        }
-    }
-
-    fn remove_entity_for_peer(&mut self, uuid: &String)
+    //NB: this does NOT remove component data for this entity.
+    pub fn remove_entity_for_peer(&mut self, uuid: &String)
     {
         if !self.peer_entity_uid_map.contains_key(uuid)
         {
@@ -219,31 +201,6 @@ impl Scene
         }
 
         self.peer_entity_uid_map.remove(uuid);
-        self.remove_entity(*self.peer_entity_uid_map.get(uuid).unwrap()); 
-    }
-
-    pub fn remove_entity(&mut self, entity_uid: usize)
-    {
-        //TODO: something here breaks the game
-        for (type_id, ref_cell) in self.component_buffer_map.iter_mut() {
-            match ref_cell.try_borrow_mut()
-            {
-                Ok(mut borrowed_mut) => {
-                    match borrowed_mut.downcast_mut::<Box<dyn ContainsEntity>>()
-                    {
-                        Some(component_buffer) => {
-                            component_buffer.remove_entity(entity_uid);
-                        },
-                        None => {
-                            log(&format!("Type with ID {:?} does not implement ContainsEntity.", type_id));
-                        }
-                    };
-                },
-                Err(_) => {
-                    log(&format!("Type with ID {:?} failed to borrow", type_id));
-                }
-            };
-        }
     }
 
     pub fn add_component<T: Component>(&mut self, entity_uid: usize, component: T)
@@ -258,6 +215,17 @@ impl Scene
         };
 
         mut_buffer.add(entity_uid, component);
+    }
+
+    pub fn remove_component<T: Component>(&mut self, entity_uid: usize)
+    {
+        let mut mut_buffer = match Self::get_mut_component_buffer::<T>(&mut self.component_buffer_map)
+        {
+            Some(b) => b,
+            None => { return; }
+        };
+
+        mut_buffer.remove_entity(entity_uid);
     }
 
     fn init_component_buffer<T: Component>(&mut self)

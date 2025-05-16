@@ -1,32 +1,10 @@
 use crate::component::component::Component;
 use std::collections::HashSet;
-//use crate::util::logging::log;
-
-pub trait ContainsEntity
-{
-    fn remove_entity(&mut self, index: usize);
-}
 
 pub struct ComponentBuffer<T>
 {
     components: Vec<Option<T>>,
     entity_set: HashSet<usize>
-}
-
-impl<T:Component> ContainsEntity for ComponentBuffer<T>
-{
-    fn remove_entity(&mut self, index: usize)
-    {
-        if !self.entity_set.contains(&index)
-        {
-            return;
-        }
-
-        self.components[index] = None;
-        self.entity_set.remove(&index);
-
-        //TODO: reuse gaps?
-    }
 }
 
 impl<T:Component> ComponentBuffer<T>
@@ -61,6 +39,19 @@ impl<T:Component> ComponentBuffer<T>
 
         self.components[index] = Some(component);
         self.entity_set.insert(index);
+    }
+
+    pub fn remove_entity(&mut self, index: usize)
+    {
+        if !self.entity_set.contains(&index)
+        {
+            return;
+        }
+
+        self.components[index] = None;
+        self.entity_set.remove(&index);
+
+        //TODO: reuse gaps?
     }
 
     pub fn get(&self, index: usize) -> Option<&T>

@@ -42,16 +42,23 @@ impl OutboundMessage
     }
 }
 
+pub enum MessageType
+{
+    Update,
+    Departure
+}
+
 pub struct InboundMessage
 {
     uuid: String,
     x: f32,
-    y: f32
+    y: f32,
+    message_type: MessageType
 }
 
 impl InboundMessage
 {
-    pub fn from_bytes(bytes: &[u8;44]) -> Self
+    pub fn from_update_message_bytes(bytes: &[u8;44]) -> Self
     {
         let mut x = 0.0;
         let mut y = 0.0;
@@ -76,7 +83,19 @@ impl InboundMessage
         {
             uuid: String::from_utf8_lossy(&bytes[0..36]).to_string(),
             x: x,
-            y: y
+            y: y,
+            message_type: MessageType::Update
+        }
+    }
+
+    pub fn from_departure_message_bytes(bytes: &[u8;36]) -> Self
+    {
+        Self
+        {
+            uuid: String::from_utf8_lossy(&bytes[0..36]).to_string(),
+            x: 0.0,
+            y: 0.0, 
+            message_type: MessageType::Departure
         }
     }
 
@@ -93,6 +112,11 @@ impl InboundMessage
     pub fn uuid(&self) -> &String
     {
         &&self.uuid
+    }
+
+    pub fn message_type(&self) -> &MessageType
+    {
+        &&self.message_type
     }
 }
 
@@ -120,14 +144,19 @@ impl ServerConnection
                     if let Ok(abuf) = e.data().dyn_into::<ArrayBuffer>() {
                         let byte_array = Uint8Array::new(&abuf);
 
-                        if byte_array.byte_length() != 44
-                        {
-                            log(&format!("Received a message with the wrong number of bytes, got {}", byte_array.byte_length()));
-                        } else
+                        if byte_array.byte_length() == 44
                         {
                             let mut raw_bytes : [u8;44] = [0;44];
                             byte_array.copy_to(&mut raw_bytes);
-                            queue_ref.lock().unwrap().push(InboundMessage::from_bytes(&raw_bytes)); 
+                            queue_ref.lock().unwrap().push(InboundMessage::from_update_message_bytes(&raw_bytes)); 
+                        } else if byte_array.byte_length() == 36 
+                        {
+                            let mut raw_bytes : [u8;36] = [0;36];
+                            byte_array.copy_to(&mut raw_bytes);
+                            queue_ref.lock().unwrap().push(InboundMessage::from_departure_message_bytes(&raw_bytes)); 
+                        } else
+                        {
+                            log(&format!("Received a message with the wrong number of bytes, got {}", byte_array.byte_length()));
                         }
                     }
                 });
@@ -135,7 +164,7 @@ impl ServerConnection
                 onmessage_callback.forget();
                 Some(ws)
             }
-            Err(_e) => 
+            Err(_) => 
             {
                 //TODO: log
                 None
