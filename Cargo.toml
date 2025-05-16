@@ -50,5 +50,5 @@ strip = true
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = [
-  "--enable-bulk-memory"
+  "--enable-threads --enable-bulk-memory --all-features"
 ]
