@@ -429,7 +429,7 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
                     render_state.set_scale(uid, component.get_starting_scale());
                 });
 
-                let names = vec!["Lumpy Nick", "Lumpy Regan", "Lumpy J"];
+                let names = vec!["Lumpy Nick", "Lumpy Regan", "Lumpy J", "Lumpy Mike", "Pointy Nick", "Pointy Regan", "Pointy J", "Pointy Mike"];
                 let name = names[rng.gen_range(0..names.len())];
                 scene.add_component::<Text>(peer_entity, Text::new_with_position(name, &Font::Default, glm::vec2(0.0,150.0), 0.002, glm::vec2(1.0,1.0)));
 
