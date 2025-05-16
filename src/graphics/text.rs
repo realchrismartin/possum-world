@@ -78,13 +78,13 @@ impl Renderable for Text
 
         let kerning_width = match self.font.get_kerning_pixel_width()
         {
-            Some(v) => v as f32 / render_state.get_canvas_size_x() as f32,
+            Some(v) => v as f32,
             None => { 0.0 }
         };
 
         let whitespace_width = match self.font.get_whitespace_pixel_width()
         {
-            Some(v) => v as f32 / render_state.get_canvas_size_x() as f32,
+            Some(v) => v as f32,
             None => { 0.0 }
         };
 
@@ -116,10 +116,9 @@ impl Renderable for Text
                 None => { continue; }
             };
 
-            //Local size is set according to how big the character should be in comparison to the canvas size.
             let character_size = char_data.get_size();
-            let x_axis = character_size[0] as f32 / render_state.get_canvas_size_x() as f32;
-            let y_axis = character_size[1] as f32 / render_state.get_canvas_size_y() as f32;
+            let x_axis = character_size[0] as f32 * 0.5;
+            let y_axis = character_size[1] as f32 * 0.5;
 
             total_x_canvas_size += x_axis + kerning_width;
             tallest_character_height = tallest_character_height.max(y_axis);
@@ -156,8 +155,8 @@ impl Renderable for Text
             let character_tex_coords = char_data.get_tex_coords();
 
             //Local size is set according to how big the character should be in comparison to the canvas size.
-            let x_axis = character_size[0] as f32 / render_state.get_canvas_size_x() as f32;
-            let y_axis = character_size[1] as f32 / render_state.get_canvas_size_y() as f32;
+            let x_axis = character_size[0] as f32 * 0.5;
+            let y_axis = character_size[1] as f32 * 0.5;
 
             //TODO: position might be slightly off on both axes, for different reasons here
 

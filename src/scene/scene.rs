@@ -160,8 +160,9 @@ impl Scene
     pub fn add_entity(&mut self) -> Option<usize>
     {
         //Can't have more entities than component buffer size
-        if self.next_entity_uid >= 99
+        if self.next_entity_uid >= 1000 
         {
+            log(&format!("Tried to add an entity, but we exceeded the max number of entities."));
             return None;
         }
 

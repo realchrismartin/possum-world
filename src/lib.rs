@@ -86,6 +86,6 @@ impl Game
     {
         self.render_state.set_canvas_dimensions(x,y);
         self.input_state.set_canvas_dimensions(x,y);
-        self.init();  //TODO: later, rescale stuff instead of resetting
+        //self.init();  //TODO: later, rescale stuff instead of resetting
     }
 }

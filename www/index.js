@@ -2,6 +2,14 @@ import {Game} from "possum_world"
 
 export function init(textures,shader_sources)
 {
+    //Ensure the canvas is the right size before initialization
+    /*
+    let container = document.getElementById("canvas-container");
+    let canvas = document.getElementById("canvas");
+    canvas.width = container.clientWidth; 
+    canvas.height = container.clientHeight; 
+    */
+
     const game = Game.new(document);
 
     let setCanvasSizeFn = (game_object) => 
@@ -19,8 +27,6 @@ export function init(textures,shader_sources)
     {
         setCanvasSizeFn(game);
     });
-
-    setCanvasSizeFn(game);
 
     //Attach event listeners for keypresses
     addEventListener("keydown",(event) => 
@@ -47,6 +53,9 @@ export function init(textures,shader_sources)
     {
         game.process_click_event(false,event.offsetX,event.offsetY);
     });
+
+    //Ensure canvas and input know how big canvas is
+    setCanvasSizeFn(game);
     
     //Load shader
     //TODO: allow loading more than one shader

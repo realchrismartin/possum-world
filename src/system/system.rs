@@ -177,8 +177,8 @@ pub fn init_scene(scene: &mut Scene)
     ));
 
     //Logo Text
-    scene.add_component::<Text>(logo, Text::new_with_position("Possum World", &Font::Default, glm::vec2(0.0,150.0), 0.002, glm::vec2(1.0,1.0)));
-    scene.add_component::<Text>(logo_subtitle, Text::new_with_position("insert 1 coin to continue", &Font::Default, glm::vec2(0.0,100.0), 0.002, glm::vec2(1.0,1.0)));
+    scene.add_component::<Text>(logo, Text::new_with_position("Possum World", &Font::Default, glm::vec2(0.0,350.0), 0.002, glm::vec2(2.0,2.0)));
+    scene.add_component::<Text>(logo_subtitle, Text::new_with_position("insert 1 coin to continue", &Font::Default, glm::vec2(0.0,200.0), 0.002, glm::vec2(2.0,2.0)));
 }
 
 //Register our renderables and types which own renderables with the renderstate and get their ids set

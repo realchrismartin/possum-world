@@ -74,10 +74,8 @@ impl Renderable for Sprite
 
         let tex_coords = get_rectangular_texture_coordinates(&self.texture_coordinates,&self.size,&texture_dimensions);
 
-        //Local size is set according to how big the sprite should be in comparison to the canvas size.
-        //TODO: sprites may be 2x too big, but "fixing" this breaks position
-        let x_axis = self.size[0] as f32 / render_state.get_canvas_size_x() as f32;
-        let y_axis = self.size[1] as f32 / render_state.get_canvas_size_y() as f32;
+        let x_axis = self.size[0] as f32 * 0.5;
+        let y_axis = self.size[1] as f32 * 0.5;
 
         vec![
             -x_axis,y_axis,0.0,

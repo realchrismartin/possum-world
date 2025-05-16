@@ -38,6 +38,8 @@ impl RenderState
         let canvas_size = Self::get_canvas_size(document);
         let transform_buffer = TransformBuffer::new(web_context.as_ref(),"ModelMatrixBlock");
 
+        log(&format!("Canvas: {} {}",canvas_size[0],canvas_size[1]));
+
         Self
         {
             context: web_context,
@@ -232,8 +234,7 @@ impl RenderState
 
     pub fn set_position(&mut self, uid: &u32, position: &glm::Vec2)
     {
-        self.transform_buffer.set_translation(uid, &world_position_to_screen_translation(position,
-            &glm::vec2(self.camera.get_canvas_width() as f32, self.camera.get_canvas_height() as f32)));
+        self.transform_buffer.set_translation(uid,&position);
     }
 
     pub fn set_z(&mut self, uid: &u32, z: f32)
@@ -494,6 +495,9 @@ impl RenderState
         log_value(&viewport);
 
         self.camera.set_canvas_dimensions(x, y);
+        
+        //Zoom the camera to an appropriate level based on how big the canvas is.
+        self.camera.set_zoom(900.0 / std::cmp::min(x,y) as f32);
     }
 
     pub fn get_canvas_size_x(&self) -> u32

@@ -6,7 +6,7 @@ use phf::Map;
 static FONT_DATA: phf::Map<&'static str, FontData> = phf_map! {
     "default" => FontData::new(
         2, //Texture index
-        10, //Whitespace width
+        8, //Whitespace width
         4, //Kerning
         phf_map!
         {
