@@ -47,6 +47,3 @@ wasm-bindgen-test = "0.3.34"
 opt-level = "s"
 # Fix issue with webpack (Internal failure: parseVec could not cast the value)
 strip = true
-
-[package.metadata.wasm-pack.profile.release]
-wasm-opt = ["--all-features"]
