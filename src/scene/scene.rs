@@ -197,7 +197,7 @@ impl Scene
     {
         let mut removals = Vec::<String>::new(); //TODO: $
 
-        for (peer_uid, entity_uid) in self.peer_entity_uid_map.iter()
+        for (peer_uid, _eid) in self.peer_entity_uid_map.iter()
         {
             if !peers.contains(peer_uid)
             {

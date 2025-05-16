@@ -27,16 +27,6 @@ impl Click
         }
     }
 
-    pub fn get_x_coordinate(&self) -> i32
-    {
-        self.x_coordinate
-    }
-
-    pub fn get_y_coordinate(&self) -> i32
-    {
-        self.y_coordinate
-    }
-
     pub fn set_x_coordinate(&mut self, x: i32)
     {
         self.x_coordinate = x;
@@ -65,11 +55,6 @@ impl Click
     pub fn get_canvas_ratio_x(&self) -> &f32
     {
         &&self.canvas_ratio_x
-    }
-
-    pub fn get_canvas_ratio_y(&self) -> &f32
-    {
-        &&self.canvas_ratio_y
     }
 
     pub fn is_active(&self) -> bool
@@ -162,14 +147,16 @@ impl InputState
 
     pub fn process_click(&mut self, start_or_end_click: bool, x: i32, y: i32)
     {
+        let inverted_y = self.canvas_size_y as i32 - y;
+
         //Started click
         if start_or_end_click
         {
             self.last_mouse_location.set_active(true);
             self.last_mouse_location.set_x_coordinate(x);
-            self.last_mouse_location.set_y_coordinate(y);
+            self.last_mouse_location.set_y_coordinate(inverted_y);
             self.last_mouse_location.set_canvas_ratio_x(x as f32 / self.canvas_size_x as f32);
-            self.last_mouse_location.set_canvas_ratio_y(y as f32 / self.canvas_size_y as f32);
+            self.last_mouse_location.set_canvas_ratio_y(inverted_y as f32 / self.canvas_size_y as f32);
 
             self.click_locations.push_back(self.last_mouse_location.clone());
             return;
@@ -181,10 +168,12 @@ impl InputState
 
     pub fn process_mouse_move(&mut self, x: i32, y: i32)
     {
+        let inverted_y = self.canvas_size_y as i32 - y;
+
         self.last_mouse_location.set_x_coordinate(x);
-        self.last_mouse_location.set_y_coordinate(y);
+        self.last_mouse_location.set_y_coordinate(inverted_y);
         self.last_mouse_location.set_canvas_ratio_x(x as f32 / self.canvas_size_x as f32);
-        self.last_mouse_location.set_canvas_ratio_y(y as f32 / self.canvas_size_y as f32);
+        self.last_mouse_location.set_canvas_ratio_y(inverted_y as f32 / self.canvas_size_y as f32);
     }
 
     pub fn set_canvas_dimensions(&mut self, canvas_size_x: u32, canvas_size_y: u32)

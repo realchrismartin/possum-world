@@ -13,12 +13,9 @@ use crate::component::player_input::PlayerInput;
 use crate::component::ai::{AIState, AI};
 use crate::component::component::Component;
 use crate::networking::server_connection::{ServerConnection,OutboundMessage,InboundMessage};
-use crate::util::logging::log;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use rand::Rng;
-
-//use crate::util::logging::log;
 
 //Runs at game start
 pub fn init_scene(scene: &mut Scene)
@@ -311,9 +308,7 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
                 scene.apply_to_entity::<PhysicsBody, _>(euid, |physics_body : &mut PhysicsBody| 
                 {
                     //Make peers walk to their current position
-
                     let x = physics_body.get_position().x - *message.x();
-                    let y = physics_body.get_position().y - *message.y();
 
                     if x < 10.0 && x > -10.0
                     {

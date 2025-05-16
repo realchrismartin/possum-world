@@ -15,7 +15,6 @@ use std::any::Any;
 use crate::graphics::renderable::Renderable;
 use crate::graphics::camera::Camera;
 use crate::graphics::transform_buffer::TransformBuffer;
-use crate::util::util::world_position_to_screen_translation;
 use crate::graphics::draw_batch::DrawBatch;
 use std::cmp::Ordering;
 
@@ -498,16 +497,6 @@ impl RenderState
         
         //Zoom the camera to an appropriate level based on how big the canvas is.
         self.camera.set_zoom(900.0 / std::cmp::min(x,y) as f32);
-    }
-
-    pub fn get_canvas_size_x(&self) -> u32
-    {
-        self.camera.get_canvas_width()
-    }
-
-    pub fn get_canvas_size_y(&self) -> u32
-    {
-        self.camera.get_canvas_height()
     }
 
     pub fn clear(&mut self)

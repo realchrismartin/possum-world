@@ -2,14 +2,6 @@ import {Game} from "possum_world"
 
 export function init(textures,shader_sources)
 {
-    //Ensure the canvas is the right size before initialization
-    /*
-    let container = document.getElementById("canvas-container");
-    let canvas = document.getElementById("canvas");
-    canvas.width = container.clientWidth; 
-    canvas.height = container.clientHeight; 
-    */
-
     const game = Game.new(document);
 
     let setCanvasSizeFn = (game_object) => 

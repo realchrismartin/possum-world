@@ -74,18 +74,17 @@ impl Game
 
     pub fn process_click_event(&mut self, start_or_end: bool, x: i32, y: i32)
     {
-        self.input_state.process_click(start_or_end,x,self.render_state.get_canvas_size_y() as i32 - y);
+        self.input_state.process_click(start_or_end,x,y);
     }
 
     pub fn process_mouse_move_event(&mut self, x: i32, y: i32)
     {
-        self.input_state.process_mouse_move(x,self.render_state.get_canvas_size_y() as i32 - y);
+        self.input_state.process_mouse_move(x,y);
     }
 
     pub fn set_canvas_dimensions(&mut self, x: u32, y: u32)
     {
         self.render_state.set_canvas_dimensions(x,y);
         self.input_state.set_canvas_dimensions(x,y);
-        //self.init();  //TODO: later, rescale stuff instead of resetting
     }
 }

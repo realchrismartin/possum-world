@@ -135,7 +135,7 @@ impl ServerConnection
                 onmessage_callback.forget();
                 Some(ws)
             }
-            Err(e) => 
+            Err(_e) => 
             {
                 //TODO: log
                 None

@@ -17,7 +17,6 @@ pub struct VertexBuffer<T>
     _phantom: PhantomData<T>, //Exists so that we can imply that <T> is associated with the VAO.
     vao: WebGlVertexArrayObject,
     vbo: WebGlBuffer,
-    ebo: WebGlBuffer,
     current_vertex_count: usize,
     current_index_count: usize,
     uid_to_range_map: HashMap<u32,Range<i32>>, //Map of renderable UIDs to ranges on this buffer for stored content
@@ -51,6 +50,7 @@ impl<T: Renderable> VertexBuffer<T>
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&vbo));
         context.buffer_data_with_i32(WebGl2RenderingContext::ARRAY_BUFFER, (MAX_VERTICES * std::mem::size_of::<f32>()) as i32, WebGl2RenderingContext::STATIC_DRAW);
 
+        //NB: we don't hold onto the EBO here since we don't need to read it
         context.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,Some(&ebo)); 
         context.buffer_data_with_i32(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, (MAX_INDICES * std::mem::size_of::<u32>()) as i32, WebGl2RenderingContext::STATIC_DRAW);
 
@@ -66,7 +66,6 @@ impl<T: Renderable> VertexBuffer<T>
             _phantom: PhantomData,
             vao: vao,
             vbo: vbo,
-            ebo: ebo,
             current_vertex_count: 0,
             current_index_count: 0,
             uid_to_range_map: HashMap::new()

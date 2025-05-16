@@ -1,6 +1,4 @@
 use nalgebra_glm::TMat4;
-use crate::util::util::world_position_to_screen_translation;
-use crate::util::logging::log;
 
 pub struct Camera
 {
@@ -59,16 +57,6 @@ impl Camera
         self.update_view_matrix();
         self.update_projection_matrix();
         self.dirty = false;
-    }
-
-    pub fn get_canvas_width(&self) -> u32
-    {
-        self.canvas_width
-    }
-
-    pub fn get_canvas_height(&self) -> u32
-    {
-        self.canvas_height
     }
 
     pub fn set_zoom(&mut self, zoom: f32)

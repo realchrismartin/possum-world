@@ -15,6 +15,7 @@ pub fn get_rectangular_texture_coordinates(top_left_pixel_coordinate: &[i32;2], 
     return [left_top,left_bottom,right_bottom,right_top];
 }
 
+/*
 pub fn world_position_to_screen_translation(position: &glm::Vec2, world_size: &glm::Vec2) -> glm::Vec2
 {
     //Screen is -1.0 to 1.0 (NDCs). Width and height of the screen are de facto each 2.0
@@ -33,7 +34,6 @@ pub fn world_position_to_screen_translation(position: &glm::Vec2, world_size: &g
     glm::vec2(x,y) 
 }
 
-/*
 pub fn screen_translation_to_world_position(translation: &glm::Vec3, world_size: &glm::Vec2) -> glm::Vec3
 {
     //Translation is -1 .. 1, -1 ... 1
