@@ -18,6 +18,17 @@ impl Transform
         }
     }
 
+    pub fn reset(&mut self)
+    {
+        self.translation.x = 0.0;
+        self.translation.y = 0.0;
+        self.translation.z = 0.0;
+        self.z_rotation = 0.0;
+        self.scale.x = 1.0;
+        self.scale.y = 1.0;
+        self.scale.z = 1.0;
+    }
+
     pub fn set_translation(&mut self, translation: &glm::Vec2)
     {
         self.translation.x = translation.x;

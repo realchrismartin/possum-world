@@ -102,6 +102,26 @@ impl RenderState
         Some(web_context)
     }
 
+    pub fn free_renderable<T: Renderable>(&mut self, renderable: &T)
+    {
+        let type_id = TypeId::of::<T>();
+        if !self.vertex_buffer_map.contains_key(&type_id)
+        {
+            return;
+        }
+
+        let buffer = match Self::get_mut_mapped_buffer::<T>(&mut self.vertex_buffer_map)
+        {
+            Some(buffer) => buffer,
+            None => { return; }
+        };
+
+        
+        buffer.free(&renderable.get_renderable_uid());
+
+        self.transform_buffer.free_transform_if_no_longer_referenced(&renderable.get_renderable_uid());
+    }
+
     pub fn request_new_renderable_with_existing_transform<T: Renderable>(&mut self, renderable: &mut T, reuse_existing_transform_for_uid: u32)
     {
         self.request_new_renderable_impl::<T>(renderable,&Some(reuse_existing_transform_for_uid))
