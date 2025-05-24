@@ -2,6 +2,7 @@ use crate::util::logging::log;
 use crate::util::logging::log_value;
 
 use wasm_bindgen::JsCast;
+use std::mem;
 use web_sys::Document;
 use web_sys::HtmlImageElement;
 use web_sys::WebGl2RenderingContext;
@@ -388,12 +389,14 @@ impl RenderState
 
             if count < 0 
             {
-                //NB: already checked by buffer
                 continue;
             }
 
+            //TODO: could precompute in buffer
+            let offset = mem::size_of::<f32>() as i32 * range.start;
+
             //TODO: could pass this into buffer to remove need to pass range back here
-            web_context.draw_elements_with_i32(T::get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,range.start);
+            web_context.draw_elements_with_i32(T::get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,offset);
         }
 
         VertexBuffer::<T>::unbind(web_context);
