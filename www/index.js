@@ -46,6 +46,26 @@ export function init(textures,shader_sources)
         game.process_click_event(false,event.offsetX,event.offsetY);
     });
 
+    let chatInput = document.querySelector(".chat-bar-input")
+    let chatSubmit = document.querySelector(".chat-bar-submit")
+
+    let chatSubmitFn = () => {
+        chatInput.value = '';
+        console.log("Enter in chat!");
+    };
+
+    chatInput.addEventListener("keydown",(e)=>{
+        if(e.key === 'Enter')
+        {
+            e.preventDefault();
+            chatSubmitFn();
+        }
+    });
+
+    chatSubmit.addEventListener("click",(e)=>{
+        chatSubmitFn();
+    });
+
     //Ensure canvas and input know how big canvas is
     setCanvasSizeFn(game);
     
