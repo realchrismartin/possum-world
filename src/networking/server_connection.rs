@@ -77,7 +77,11 @@ impl ServerConnection
         }
 
         self.time_since_last_update = 0.0;
+        self.immediately_send_message(message);
+    }
 
+    pub fn immediately_send_message(&mut self, message: &Message)
+    {
         if self.socket.is_none()
         {
             return;

@@ -326,6 +326,7 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
             },
             MessageType::ChatMessage => {
 
+                log(&format!("Received a chat message "));
                 let uuid = match message.uuid()
                 {
                     Some(u) => u,
@@ -341,6 +342,25 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
                 match entity_uid
                 {
                     Some(euid) => {
+                        //Ew. This is expensive.
+
+                        let mut updatedText = "".to_string();
+                        scene.apply_to_entity::<Text, _>(euid,|component: &mut Text|
+                        {
+                            updatedText = component.get_content().clone();
+                        });
+
+                        updatedText.push_str(": ");
+                        updatedText.push_str(chat_message);
+
+                        scene.remove_component::<Text>(euid);
+                        scene.add_component::<Text>(euid, Text::new_with_position(updatedText.as_str(), &Font::Default, glm::vec2(0.0,150.0), 0.002, glm::vec2(1.0,1.0)));
+
+                        scene.apply_to_entity::<Text, _>(euid,|component: &mut Text|
+                        {
+                            render_state.request_new_renderable::<Text>(component);
+                        });
+
                         log(&format!("Peer {} ({}) says: {}",uuid,euid,chat_message));
                     },
                     None => {

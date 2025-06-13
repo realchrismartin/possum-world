@@ -21,6 +21,7 @@ use state::input_state::InputState;
 use state::render_state::RenderState;
 use scene::scene::Scene;
 use networking::server_connection::ServerConnection;
+use networking::message::Message;
 use system::system::{init_scene, init_render_data_from_scene, run_systems};
 
 #[wasm_bindgen]
@@ -86,5 +87,11 @@ impl Game
     {
         self.render_state.set_canvas_dimensions(x,y);
         self.input_state.set_canvas_dimensions(x,y);
+    }
+
+    pub fn send_chat_message(&mut self, content: String)
+    {
+        let message = Message::new_chat_message(content);
+        self.server_connection.immediately_send_message(&message);
     }
 }

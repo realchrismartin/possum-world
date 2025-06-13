@@ -50,8 +50,8 @@ export function init(textures,shader_sources)
     let chatSubmit = document.querySelector(".chat-bar-submit")
 
     let chatSubmitFn = () => {
+        game.send_chat_message(chatInput.value);
         chatInput.value = '';
-        console.log("Enter in chat!");
     };
 
     chatInput.addEventListener("keydown",(e)=>{

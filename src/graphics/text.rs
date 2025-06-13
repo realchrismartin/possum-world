@@ -54,6 +54,11 @@ impl Text
             starting_z: starting_z
         }
     }
+
+    pub fn get_content(&self) -> &String
+    {
+        &&self.content
+    }
 }
 
 impl Renderable for Text

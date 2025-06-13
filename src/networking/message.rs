@@ -1,4 +1,5 @@
 use std::convert::TryInto;
+use crate::util::logging::log;
 
 pub enum MessageType
 {
@@ -175,6 +176,7 @@ impl Message
 
     fn to_departure_message_bytes(&self) -> Vec<u8>
     {
+        //NB This will never actually be sent - server generates these
         //Outgoing Departure: 4 (type)
         let mut bytes = Vec::<u8>::new();
         bytes.extend_from_slice(&self.message_type.id().to_le_bytes()); //4
@@ -224,7 +226,7 @@ impl Message
 
         Some(Self
         {
-            message_type: MessageType::Departure,
+            message_type: MessageType::ChatMessage,
             uuid: Some(String::from_utf8_lossy(&bytes[4..40]).to_string()),
             x: None,
             y: None,
