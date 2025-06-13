@@ -2,6 +2,7 @@ use crate::util::logging::log;
 use crate::util::logging::log_value;
 
 use wasm_bindgen::JsCast;
+use std::mem;
 use web_sys::Document;
 use web_sys::HtmlImageElement;
 use web_sys::WebGl2RenderingContext;
@@ -100,6 +101,26 @@ impl RenderState
         web_context.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
 
         Some(web_context)
+    }
+
+    pub fn free_renderable<T: Renderable>(&mut self, renderable: &T)
+    {
+        let type_id = TypeId::of::<T>();
+        if !self.vertex_buffer_map.contains_key(&type_id)
+        {
+            return;
+        }
+
+        let buffer = match Self::get_mut_mapped_buffer::<T>(&mut self.vertex_buffer_map)
+        {
+            Some(buffer) => buffer,
+            None => { return; }
+        };
+
+        
+        buffer.free(&renderable.get_renderable_uid());
+
+        self.transform_buffer.free_transform_if_no_longer_referenced(&renderable.get_renderable_uid());
     }
 
     pub fn request_new_renderable_with_existing_transform<T: Renderable>(&mut self, renderable: &mut T, reuse_existing_transform_for_uid: u32)
@@ -368,12 +389,14 @@ impl RenderState
 
             if count < 0 
             {
-                //NB: already checked by buffer
                 continue;
             }
 
+            //TODO: could precompute in buffer
+            let offset = mem::size_of::<f32>() as i32 * range.start;
+
             //TODO: could pass this into buffer to remove need to pass range back here
-            web_context.draw_elements_with_i32(T::get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,range.start);
+            web_context.draw_elements_with_i32(T::get_draw_type(),count, WebGl2RenderingContext::UNSIGNED_INT,offset);
         }
 
         VertexBuffer::<T>::unbind(web_context);

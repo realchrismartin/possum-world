@@ -249,9 +249,33 @@ pub fn init_render_data_from_scene(scene: &mut Scene, render_state: &mut RenderS
 //Runs whenever we want to remove an entity.
 //Any time we add a component, we need to add a call here, otherwise the buffers will never remove components for these entities...
 //TODO: this could be nicer..
-pub fn remove_entity(scene: &mut Scene, entity_uid: usize)
+pub fn remove_entity(scene: &mut Scene, render_state: &mut RenderState, entity_uid: usize)
 {
-    //NB: this doesn't remove graphics data from the buffers. Do that later..
+    scene.apply_to_entity::<Sprite, _>(entity_uid,|renderable: &mut Sprite|
+    {
+        render_state.free_renderable(renderable);
+    });
+
+    scene.apply_to_entity::<Text, _>(entity_uid,|renderable: &mut Text|
+    {
+        render_state.free_renderable(renderable);
+    });
+
+    scene.apply_to_entity::<Animation<Sprite>, _>(entity_uid, |component: &mut Animation<Sprite>|
+    {
+        component.apply_to_renderables(|renderable: &mut Sprite|
+        {
+            render_state.free_renderable(renderable);
+        });
+    });
+
+    scene.apply_to_entity::<Animation<Text>, _>(entity_uid, |component: &mut Animation<Text>|
+    {
+        component.apply_to_renderables(|renderable: &mut Text|
+        {
+            render_state.free_renderable(renderable);
+        });
+    });
 
     scene.remove_component::<Sprite>(entity_uid);
     scene.remove_component::<Text>(entity_uid);
@@ -503,7 +527,7 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
                     scene.remove_entity_for_peer(uuid);
 
                     //Also remove components. We have to do this separately for now because generics..
-                    remove_entity(scene,entity_uid.unwrap());
+                    remove_entity(scene,render_state, entity_uid.unwrap());
                 }
             }
         };

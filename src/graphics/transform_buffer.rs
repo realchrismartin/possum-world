@@ -16,7 +16,9 @@ pub struct TransformBuffer
     ubo: Option<WebGlBuffer>,
     next_available_index: u32,
     dirty_transforms: HashSet<u32>,
-    uid_to_index_map: HashMap<u32,u32>
+    uid_to_index_map: HashMap<u32,u32>,
+    index_to_use_counter: HashMap<u32,u32>,
+    freed_transform_indices: Vec<u32>
 }
 
 impl TransformBuffer
@@ -52,7 +54,9 @@ impl TransformBuffer
             ubo: ubo ,
             next_available_index: 0,
             dirty_transforms: HashSet::new(),
-            uid_to_index_map: HashMap::new()
+            uid_to_index_map: HashMap::new(),
+            index_to_use_counter: HashMap::new(),
+            freed_transform_indices: Vec::new()
         }
     }
 
@@ -212,9 +216,79 @@ impl TransformBuffer
         self.dirty_transforms.clear();
     }
 
+    fn increment_index_counter(&mut self, index: &u32)
+    {
+        let mut incremented_count = 0;
+
+        {
+            let count = self.index_to_use_counter.get(index);
+
+            incremented_count = match count
+            {
+                Some(c) => {
+                    c+1
+                },
+                None => {
+                    1
+                }
+            };
+        }
+
+        self.index_to_use_counter.insert(*index,incremented_count);
+    }
+
+    fn decrement_index_counter(&mut self, index: &u32) -> bool
+    {
+        let mut decremented_count = 0;
+
+        {
+            let count = self.index_to_use_counter.get(index);
+
+            decremented_count = match count
+            {
+                Some(c) => {
+                    if *c > 0
+                    {
+                        c-1
+                    } else {
+                        0
+                    }
+                },
+                None => {
+                    0
+                }
+            };
+        }
+        
+
+        self.index_to_use_counter.insert(*index,decremented_count);
+
+        decremented_count == 0
+    }
+
+    pub fn free_transform_if_no_longer_referenced(&mut self, uid: &u32)
+    {
+        let index_for_uid;
+
+        {
+            index_for_uid = match self.uid_to_index_map.get(uid)
+            {
+                Some(i) => i.clone(),
+                None => { return; } //UID doesn't have a tranform to release
+            };
+        }
+
+        if self.decrement_index_counter(&index_for_uid)
+        {
+            //Transform can be recycled
+            log(&format!("Freeing transform with index {}",index_for_uid));
+            self.freed_transform_indices.push(index_for_uid);
+        } 
+    }
+
     pub fn reuse_existing_transform_index(&mut self, uid: &u32, uid_to_reuse_transform_from: &u32) -> u32 
     {
-        let index = match self.uid_to_index_map.get(uid_to_reuse_transform_from)
+        let mut index = match self.uid_to_index_map.get(uid_to_reuse_transform_from)
         {
             Some(i) => *i,
             None => { 
@@ -222,6 +296,7 @@ impl TransformBuffer
             }
         };
 
+        self.increment_index_counter(&index);
         self.uid_to_index_map.insert(uid.clone(),index.clone());
 
         index.clone()
@@ -229,12 +304,31 @@ impl TransformBuffer
 
     pub fn request_new_transform_index(&mut self, uid: &u32) -> u32 
     {
+        match self.freed_transform_indices.pop()
+        {
+            Some(i) => {
+
+               if self.transforms.len() > i as usize
+               {
+                    log(&format!("Recycling transform with index {}",i));
+                   self.transforms[i as usize].reset();
+                   self.dirty_transforms.insert(i);
+                   self.increment_index_counter(&i);
+                   self.uid_to_index_map.insert(uid.clone(),i);
+                   return i;
+               }
+            },
+
+            None => {}
+        };
+
         //UID isn't in map, make a new transform
         let mat_index = self.next_available_index;
         self.next_available_index += 1;
 
         self.transforms.push(Transform::new());
         self.dirty_transforms.insert(mat_index);
+        self.increment_index_counter(&mat_index);
         self.uid_to_index_map.insert(uid.clone(),mat_index);
 
         mat_index
@@ -242,10 +336,19 @@ impl TransformBuffer
 
     pub fn clear(&mut self)
     {
-        //TODO: clear data or don't
-        self.next_available_index = 0;
+        //NB: doesn't clear the "next index" or the transforms. the data still lives on the buffer
+
+        for (index,count) in &self.index_to_use_counter
+        {
+            //for each transform currently used, put it in the free list
+            if *count > 0
+            {
+                self.freed_transform_indices.push(index.clone());
+            }
+        }
+
         self.dirty_transforms.clear();
-        self.transforms.clear();
         self.uid_to_index_map.clear();
+        self.index_to_use_counter.clear();
     }
 }
