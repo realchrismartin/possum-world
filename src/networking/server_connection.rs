@@ -24,7 +24,10 @@ impl ServerConnection
     {
         let inbound_message_queue = Arc::new(Mutex::new(Vec::<Message>::new()));
 
-        let socket = match WebSocket::new("ws://127.0.0.1:8000")
+        let remote = "ws://pw-loadbalancer-ecs-167373760.us-east-1.elb.amazonaws.com";
+        //let local = "ws://127.0.0.1:8000";
+
+        let socket = match WebSocket::new(remote)
         {
             Ok(ws) => {
 
