@@ -2,9 +2,7 @@
 
   <h1>Possum World</h1>
   
-  <p>
-  2D Rust & WebGL Browser Game!
-  </p>
+  <p>2D Rust & WebGL Browser Game!</p>
 </div>
 
 # Table of Contents
