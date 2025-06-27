@@ -74,7 +74,8 @@ impl BufferRanges
         //Return the first contiguous part of the range that can fit the new data
         //Update ourselves to be the second part of the range
 
-        log(&format!("Split a buffer of {} vertices and {} indices for a drawable, starting at {} (v) {} (i). Original buffer size: {}(v) {}(i)",vertex_count,index_count,self.get_vertex_offset(),self.get_index_offset(),self.get_vertex_count(),self.get_index_count()));
+        //Uncomment for debugging if needed
+        //log(&format!("Split a buffer of {} vertices and {} indices for a drawable, starting at {} (v) {} (i). Original buffer size: {}(v) {}(i)",vertex_count,index_count,self.get_vertex_offset(),self.get_index_offset(),self.get_vertex_count(),self.get_index_count()));
 
         //The returned buffer is the first piece
         let split_buffer = BufferRanges::new(

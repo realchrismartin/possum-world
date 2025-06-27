@@ -24,12 +24,14 @@ impl ServerConnection
     {
         let inbound_message_queue = Arc::new(Mutex::new(Vec::<Message>::new()));
 
-        let remote = "ws://pw-loadbalancer-ecs-167373760.us-east-1.elb.amazonaws.com";
+        let remote = "wss://backend.poss.ly/";
         //let local = "ws://127.0.0.1:8000";
 
         let socket = match WebSocket::new(remote)
         {
             Ok(ws) => {
+
+                log(&format!("WebSocket connection established to {}",remote));
 
                 let queue_ref = inbound_message_queue.clone();
 
