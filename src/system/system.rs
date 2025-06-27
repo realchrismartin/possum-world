@@ -258,6 +258,7 @@ pub fn remove_entity(scene: &mut Scene, render_state: &mut RenderState, entity_u
 
     scene.apply_to_entity::<Text, _>(entity_uid,|renderable: &mut Text|
     {
+        log(&format!("Freeing text renderable for entity {}",entity_uid));
         render_state.free_renderable(renderable);
     });
 
@@ -273,6 +274,7 @@ pub fn remove_entity(scene: &mut Scene, render_state: &mut RenderState, entity_u
     {
         component.apply_to_renderables(|renderable: &mut Text|
         {
+            log(&format!("Freeing animated text renderable for entity {}",entity_uid));
             render_state.free_renderable(renderable);
         });
     });
@@ -368,6 +370,7 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
                     Some(euid) => {
                         //Ew. This is expensive.
 
+                        /*
                         let mut updatedText = "".to_string();
                         scene.apply_to_entity::<Text, _>(euid,|component: &mut Text|
                         {
@@ -376,9 +379,10 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
 
                         updatedText.push_str(": ");
                         updatedText.push_str(chat_message);
+                        */
 
                         scene.remove_component::<Text>(euid);
-                        scene.add_component::<Text>(euid, Text::new_with_position(updatedText.as_str(), &Font::Default, glm::vec2(0.0,150.0), 0.002, glm::vec2(1.0,1.0)));
+                        scene.add_component::<Text>(euid, Text::new_with_position(chat_message, &Font::Default, glm::vec2(0.0,150.0), 0.002, glm::vec2(1.0,1.0)));
 
                         scene.apply_to_entity::<Text, _>(euid,|component: &mut Text|
                         {
@@ -500,6 +504,7 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
                             render_state.set_scale(uid, component.get_starting_scale());
                         });
 
+                        /*
                         let names = vec!["Lumpy Nick", "Lumpy Regan", "Lumpy J", "Lumpy Mike", "Pointy Nick", "Pointy Regan", "Pointy J", "Pointy Mike"];
                         let name = names[rng.gen_range(0..names.len())];
                         scene.add_component::<Text>(peer_entity, Text::new_with_position(name, &Font::Default, glm::vec2(0.0,150.0), 0.002, glm::vec2(1.0,1.0)));
@@ -508,6 +513,7 @@ fn run_networking_system(scene: &mut Scene, server_connection: &mut ServerConnec
                         {
                             render_state.request_new_renderable::<Text>(component);
                         });
+                        */
                     }
                 }
             },
@@ -687,7 +693,7 @@ fn run_update_render_from_physics_system(scene: &mut Scene, render_state: &mut R
         //TODO: hacked to allow for nametags for now
         //render_state.set_position(&renderable.get_renderable_uid(), &physics_body.get_position());
         let body_pos = physics_body.get_position();
-        let offset_pos = glm::vec2(body_pos.x, body_pos.y - 75.0);
+        let offset_pos = glm::vec2(body_pos.x, body_pos.y + 100.0);
         render_state.set_position(&renderable.get_renderable_uid(),&offset_pos);
     });
 
