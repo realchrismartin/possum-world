@@ -59,6 +59,7 @@ export function init(textures,shader_sources)
         {
             e.preventDefault();
             chatSubmitFn();
+            e.target.blur();
         }
     });
 
